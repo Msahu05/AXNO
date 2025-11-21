@@ -1,41 +1,69 @@
 import { Heart, ShoppingCart } from "lucide-react";
-import { Link } from "react-router-dom";
+import { cn } from "@/lib/utils";
 
 interface ProductCardProps {
   id: string;
   name: string;
-  price: string;
+  category: string;
+  price: number;
+  originalPrice: number;
   image: string;
-  bgColor: string;
+  accent: string;
+  onView?: (id: string) => void;
+  onAdd?: (id: string) => void;
+  onWishlist?: (id: string) => void;
 }
 
-const ProductCard = ({ id, name, price, image, bgColor }: ProductCardProps) => {
+const ProductCard = ({ id, name, category, price, originalPrice, image, accent, onView, onAdd, onWishlist }: ProductCardProps) => {
   return (
-    <Link to={`/product/${id}`}>
-      <div className="bg-card rounded-[2rem] p-6 shadow-card hover:shadow-product transition-all duration-300 hover:scale-105 group">
-        <div className="flex justify-between items-start mb-4">
-          <div className="bg-background/50 rounded-full p-2 cursor-pointer hover:bg-background transition-colors">
-            <Heart className="w-4 h-4 text-foreground" />
-          </div>
-          <div className="bg-background/50 rounded-full p-2 cursor-pointer hover:bg-background transition-colors">
-            <ShoppingCart className="w-4 h-4 text-foreground" />
-          </div>
+    <article className="group flex flex-col rounded-[36px] bg-gradient-to-br from-[var(--card)] to-[var(--muted)] p-6 shadow-[var(--shadow-soft)] transition hover:-translate-y-2 hover:shadow-2xl dark:shadow-[0_25px_90px_rgba(0,0,0,0.55)]">
+      <div className="relative overflow-hidden rounded-[28px] bg-gradient-to-br p-6" style={{ backgroundImage: accent }}>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.25),_transparent)]" />
+        <img
+          src={image}
+          alt={name}
+          className="relative z-10 mx-auto h-48 w-full object-cover object-top transition duration-500 group-hover:scale-105"
+        />
+        <button
+          className="absolute right-4 top-4 rounded-full bg-background/70 p-2 text-foreground backdrop-blur hover:text-primary"
+          aria-label="Add to wishlist"
+          onClick={() => onWishlist?.(id)}
+        >
+          <Heart className="h-5 w-5" />
+        </button>
+      </div>
+
+      <div className="mt-6 flex flex-1 flex-col gap-4">
+        <div>
+          <p className="text-xs uppercase tracking-[0.45em] text-muted-foreground">{category}</p>
+          <h3 className="text-xl font-semibold text-foreground">{name}</h3>
         </div>
-        
-        <div className={`${bgColor} rounded-[1.5rem] p-8 mb-4 flex items-center justify-center min-h-[200px] relative overflow-hidden`}>
-          <img 
-            src={image} 
-            alt={name}
-            className="w-full h-auto object-contain drop-shadow-2xl group-hover:scale-110 transition-transform duration-300"
-          />
+
+        <div className="flex items-baseline gap-3">
+          <p className="text-2xl font-bold text-foreground">₹{price}</p>
+          <p className="text-sm text-muted-foreground line-through">₹{originalPrice}</p>
         </div>
-        
-        <div className="space-y-1">
-          <h3 className="text-sm font-semibold text-muted-foreground">Popular Shoe Trends</h3>
-          <p className="text-2xl font-bold text-foreground">{price}</p>
+
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            className="rounded-full bg-primary/10 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-primary"
+            onClick={() => onView?.(id)}
+          >
+            View
+          </button>
+          <button
+            className={cn(
+              "flex items-center justify-center gap-2 rounded-full bg-foreground py-3 text-sm font-semibold uppercase tracking-[0.2em] text-background",
+              "transition hover:bg-foreground/90",
+            )}
+            onClick={() => onAdd?.(id)}
+          >
+            <ShoppingCart className="h-4 w-4" />
+            Add
+          </button>
         </div>
       </div>
-    </Link>
+    </article>
   );
 };
 
