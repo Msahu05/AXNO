@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Serif+Text:ital@0;1&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -7,6 +9,9 @@
   :root {
     --background: 270 50% 97%;
     --foreground: 252 33% 18%;
+    --scrollbar-track: hsl(268 45% 90%);
+    --scrollbar-thumb: hsl(268 67% 55%);
+    --scrollbar-thumb-hover: hsl(266 78% 48%);
 
     --card: 0 0% 100%;
     --card-foreground: 252 33% 18%;
@@ -83,8 +88,33 @@
   }
 
   body {
-    @apply min-h-screen bg-background font-sans text-foreground antialiased;
+    @apply min-h-screen bg-background font-display text-foreground antialiased;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
   }
+
+  .font-display {
+    font-family: "DM Serif Text", serif;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 11px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--scrollbar-thumb), var(--scrollbar-thumb-hover));
+  border: 2px solid var(--scrollbar-track);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--scrollbar-thumb-hover), hsl(265 85% 60%));
 }
 
 /* Landing animation */
@@ -92,6 +122,7 @@
   position: absolute;
   inset: 0;
   border-radius: 9999px;
+  clip-path: circle(50% at 50% 50%);
   opacity: 0;
   animation: orb-build 1.4s ease forwards, orb-split 2s 1.4s ease forwards;
 }
@@ -198,4 +229,44 @@
     opacity: 1;
     transform: scale(1);
   }
+}
+
+.hero-slide {
+  animation: heroSlide 0.7s cubic-bezier(0.4, 0.15, 0.2, 1) both;
+}
+
+@keyframes heroSlide {
+  from {
+    opacity: 0;
+    transform: translateX(30px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.gallery-slide {
+  animation: gallerySlide 0.55s cubic-bezier(0.4, 0.15, 0.2, 1) both;
+}
+
+@keyframes gallerySlide {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Hide scrollbar for horizontal scroll */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
 }

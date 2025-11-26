@@ -1,21 +1,8 @@
-import { memo } from "react";
-import { Heart, ShoppingCart } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { memo } from 'react';
+import { Heart, ShoppingCart } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-interface ProductCardProps {
-  id: string;
-  name: string;
-  category: string;
-  price: number;
-  originalPrice: number;
-  image: string;
-  accent: string;
-  onView?: (id: string) => void;
-  onAdd?: (id: string) => void;
-  onWishlist?: (id: string) => void;
-}
-
-const ProductCard = memo(({ id, name, category, price, originalPrice, image, accent, onView, onAdd, onWishlist }: ProductCardProps) => {
+const ProductCard = memo(({ id, name, category, price, originalPrice, image, accent, onView, onAdd, onWishlist }) => {
   return (
     <article className="group flex flex-col rounded-[36px] bg-gradient-to-br from-[var(--card)] to-[var(--muted)] p-6 shadow-[var(--shadow-soft)] transition hover:-translate-y-2 hover:shadow-2xl dark:shadow-[0_25px_90px_rgba(0,0,0,0.55)]">
       <div

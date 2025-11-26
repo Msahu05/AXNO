@@ -1,108 +1,30 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, CheckCircle2, Flame, PhoneCall, ShieldHalf, Star, UploadCloud, Waves, HeartHandshake } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, Flame, PhoneCall, ShieldHalf, Star, UploadCloud, Waves, HeartHandshake, Heart, Search, ShoppingCart } from "lucide-react";
 import LandingAnimation from "@/components/LandingAnimation";
 import ThemeToggle from "@/components/ThemeToggle";
 import ProductCard from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/auth-context";
+import { useCart } from "@/contexts/cart-context";
+import { userAPI } from "@/lib/api";
+import { allProducts } from "@/data/products";
+import { toast } from "@/hooks/use-toast";
 
-const heroProducts = [
-  {
-    id: "hoodie-a",
-    name: "Aurora Gradient Hoodie",
-    category: "Hoodies",
-    description: "Hand-painted gradients layered on plush, breathable fleece.",
-    image: "https://images.unsplash.com/photo-1503342250614-ca4407868a5b?auto=format&fit=crop&w=900&q=80",
-    accent: "linear-gradient(135deg,#f9d9ff,#b088ff)",
-  },
-  {
-    id: "tee-a",
-    name: "Orbit Drop Shoulder Tee",
-    category: "T-Shirts",
-    description: "Structured oversized fit with premium bio-washed cotton.",
-    image: "https://images.unsplash.com/photo-1503342296413-28a6ec376304?auto=format&fit=crop&w=900&q=80",
-    accent: "linear-gradient(135deg,#c6f2ff,#97c9ff)",
-  },
-  {
-    id: "sweat-a",
-    name: "Gravity Loop Sweatshirt",
-    category: "Sweatshirts",
-    description: "3D puff-print loops that react beautifully to neon lighting.",
-    image: "https://images.unsplash.com/photo-1514996937319-344454492b37?auto=format&fit=crop&w=900&q=80",
-    accent: "linear-gradient(135deg,#ffd6c4,#ffb299)",
-  },
-];
+const heroDescriptions = {
+  Hoodie: "Hand-painted gradients layered on plush, breathable fleece.",
+  "T-Shirt": "Structured oversized fit with premium bio-washed cotton.",
+  Sweatshirt: "3D puff-print loops that react beautifully to neon lighting.",
+};
 
-const catalogue = [
-  {
-    id: "hoodie-01",
-    name: "Prism Panel Hoodie",
-    category: "Hoodies",
-    price: 1099,
-    original: 1999,
-    image: "https://images.unsplash.com/photo-1516251193007-45ef944ab0c6?auto=format&fit=crop&w=900&q=80",
-    accent: "linear-gradient(135deg,#ffe1f7,#d3b0ff)",
-  },
-  {
-    id: "hoodie-02",
-    name: "Night Pulse Hoodie",
-    category: "Hoodies",
-    price: 1099,
-    original: 1999,
-    image: "https://images.unsplash.com/photo-1495107334309-fcf20504a5ab?auto=format&fit=crop&w=900&q=80",
-    accent: "linear-gradient(135deg,#252525,#000)",
-  },
-  {
-    id: "tee-01",
-    name: "Luminous Core Tee",
-    category: "T-Shirts",
-    price: 599,
-    original: 1099,
-    image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=900&q=80",
-    accent: "linear-gradient(135deg,#ffffff,#e1d8ff)",
-  },
-  {
-    id: "tee-02",
-    name: "Vanta Line Tee",
-    category: "T-Shirts",
-    price: 599,
-    original: 1099,
-    image: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=900&q=80",
-    accent: "linear-gradient(135deg,#222831,#0b0f19)",
-  },
-  {
-    id: "sweat-01",
-    name: "Neo Circuit Sweatshirt",
-    category: "Sweatshirts",
-    price: 999,
-    original: 1799,
-    image: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=900&q=80",
-    accent: "linear-gradient(135deg,#ffe5d4,#ffc2ac)",
-  },
-  {
-    id: "sweat-02",
-    name: "Mono Sculpt Sweatshirt",
-    category: "Sweatshirts",
-    price: 999,
-    original: 1799,
-    image: "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?auto=format&fit=crop&w=900&q=80",
-    accent: "linear-gradient(135deg,#dbe9ff,#7f9dff)",
-  },
-];
+const heroSlides = allProducts.slice(0, 5);
 
-const wishlistPicks = [
-  {
-    id: "wish-1",
-    title: "Shadowline Hoodie",
-    image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=600&q=80",
-  },
-  {
-    id: "wish-2",
-    title: "Pixel Wave Tee",
-    image: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=600&q=80",
-  },
-];
+const keywordBuckets = {
+  hoodie: ["hoodie", "hoodies", "sweatjacket", "winterwear"],
+  "t-shirt": ["tshirt", "tshirts", "t-shirt", "tee", "tees", "halfshirt", "fullshirt", "shirt", "shirts"],
+  sweatshirt: ["sweatshirt", "sweatshirts", "crewneck", "jumper", "sweater"],
+};
 
 const customizationSteps = [
   {
@@ -122,57 +44,235 @@ const customizationSteps = [
   },
 ];
 
+const condense = (value) => value.replace(/[\s\-]/g, "");
+
+const matchesKeyword = (category, normalizedTerm, condensedTerm) => {
+  const categoryKey = condense(category.toLowerCase());
+  return Object.entries(keywordBuckets).some(([bucket, synonyms]) => {
+    if (!categoryKey.includes(condense(bucket))) return false;
+    return synonyms.some((keyword) => {
+      const condensedKeyword = condense(keyword.toLowerCase());
+      return condensedTerm.includes(condensedKeyword) || normalizedTerm.includes(keyword.toLowerCase());
+    });
+  });
+};
+
 const Home = () => {
   const navigate = useNavigate();
-  const { openAuth } = useAuth();
+  const { isAuthenticated, user, refreshUser } = useAuth();
+  const { itemCount } = useCart();
   const [heroIndex, setHeroIndex] = useState(0);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [addresses, setAddresses] = useState([]);
+  const searchRef = useRef(null);
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      userAPI.getAddresses()
+        .then((data) => setAddresses(data.addresses || []))
+        .catch(() => setAddresses([]));
+    } else {
+      setAddresses([]);
+    }
+  }, [isAuthenticated, user]);
+
+  const productTypes = [
+    { key: "Hoodie", label: "Hoodies", route: "hoodies" },
+    { key: "T-Shirt", label: "T-Shirts", route: "t-shirts" },
+    { key: "Sweatshirt", label: "Sweatshirts", route: "sweatshirts" },
+  ];
+
+  const heroCount = heroSlides.length || 1;
+
+  const cycleHero = (direction) => {
+    setHeroIndex((current) => {
+      const next = direction === "next" ? current + 1 : current - 1;
+      return (next + heroCount) % heroCount;
+    });
+  };
 
   useEffect(() => {
     const interval = window.setInterval(() => {
-      setHeroIndex((current) => (current + 1) % heroProducts.length);
+      cycleHero("next");
     }, 4200);
     return () => window.clearInterval(interval);
-  }, []);
+  }, [heroCount]);
 
-  const handleProtectedAction = (destination: string) => {
-    openAuth(() => navigate(destination));
+  const searchSuggestions = useMemo(() => {
+    if (!debouncedSearchTerm.trim() || debouncedSearchTerm.length < 2) return [];
+    const term = debouncedSearchTerm.toLowerCase();
+    const suggestions = [];
+    
+    // Category suggestions
+    Object.entries(keywordBuckets).forEach(([category, synonyms]) => {
+      if (synonyms.some((s) => s.toLowerCase().includes(term))) {
+        const categoryName = category === "t-shirt" ? "T-Shirts" : category.charAt(0).toUpperCase() + category.slice(1) + "s";
+        suggestions.push({ type: "category", label: categoryName, value: category });
+      }
+    });
+    
+    // Product name suggestions - include all products (men, women, kids)
+    allProducts.forEach((product) => {
+      if (product.name.toLowerCase().includes(term) && suggestions.length < 8) {
+        suggestions.push({ type: "product", label: `${product.name} (${product.audience})`, value: product.id });
+      }
+    });
+    
+    return suggestions.slice(0, 8);
+  }, [debouncedSearchTerm]);
+
+  const filteredProducts = useMemo(() => {
+    if (!debouncedSearchTerm.trim()) return allProducts;
+    const normalizedTerm = debouncedSearchTerm.toLowerCase().trim();
+    const condensedTerm = condense(normalizedTerm);
+    return allProducts.filter((product) => {
+      const tokens = `${product.name} ${product.category} ${product.id}`.toLowerCase();
+      if (tokens.includes(normalizedTerm)) return true;
+      if (condense(tokens).includes(condensedTerm)) return true;
+      return matchesKeyword(product.category, normalizedTerm, condensedTerm);
+    });
+  }, [debouncedSearchTerm]);
+
+  const handleSearchSubmit = (e) => {
+    e?.preventDefault();
+    if (searchTerm.trim()) {
+      const suggestion = searchSuggestions[0];
+      if (suggestion?.type === "category") {
+        navigate(`/category/${suggestion.value}`);
+      } else if (suggestion?.type === "product") {
+        navigate(`/product/${suggestion.value}`);
+      }
+      setShowSuggestions(false);
+    }
   };
 
-  const activeHero = heroProducts[heroIndex];
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const requireAuth = (destination) => {
+    if (isAuthenticated) {
+      navigate(destination);
+    } else {
+      navigate(`/auth?redirect=${encodeURIComponent(destination)}`);
+    }
+  };
+
+  const handleProtectedAction = (destination) => {
+    requireAuth(destination);
+  };
+
+  const handleWishlistNav = () => {
+    requireAuth("/wishlist");
+  };
+
+  const activeHero = heroSlides[heroIndex % heroSlides.length];
+  const wishlistPicks = allProducts.slice(6, 10);
+  const heroSlideKey = `${activeHero.id}-${heroIndex}`;
+  const handleHeroPrev = () => cycleHero("prev");
+  const handleHeroNext = () => cycleHero("next");
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(124,90,255,0.12),_transparent_60%)]">
+    <div className="relative min-h-screen w-full overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(124,90,255,0.12),_transparent_60%)] pt-6">
       <LandingAnimation />
-      <div className="mx-auto flex max-w-6xl flex-col gap-14 px-4 py-10 sm:px-6 lg:px-0">
-        <header className="flex flex-wrap items-center justify-between gap-6 rounded-[48px] border border-white/20 bg-gradient-to-r from-[var(--card)]/80 via-[var(--muted)]/80 to-[var(--card)]/80 px-6 py-4 shadow-[var(--shadow-soft)] backdrop-blur dark:border-white/5 dark:shadow-[0_30px_80px_rgba(0,0,0,0.6)]">
-          <div className="text-2xl font-black tracking-[0.8em] text-primary">AXNO</div>
-          <nav className="flex flex-wrap items-center gap-4 text-xs font-semibold uppercase tracking-[0.5em] text-muted-foreground">
-            <button className="text-foreground hover:text-primary">Home</button>
-            <button className="hover:text-primary" onClick={() => document.getElementById("catalogue")?.scrollIntoView({ behavior: "smooth" })}>
-              Products
-            </button>
-            <button className="hover:text-primary" onClick={() => document.getElementById("custom")?.scrollIntoView({ behavior: "smooth" })}>
-              Customise
-            </button>
-            <button className="hover:text-primary" onClick={() => navigate("/wishlist")}>
-              Wishlist
-            </button>
-            <button className="hover:text-primary" onClick={() => navigate("/checkout")}>
-              Checkout
-            </button>
-          </nav>
-          <div className="flex items-center gap-3">
-            <Button className="rounded-full bg-gradient-to-r from-primary to-secondary px-6 py-2 text-xs font-semibold uppercase tracking-[0.4em] shadow-[var(--shadow-soft)]">
-              Own the look
-            </Button>
-            <ThemeToggle />
+      <div className="flex w-full flex-col gap-16 px-6 pb-12 sm:px-10 lg:px-16">
+        <header className="sticky top-0 z-40 rounded-[48px] border border-transparent bg-[#5c3d8a] px-6 py-4 text-white shadow-[0_20px_60px_rgba(92,61,138,0.35)] backdrop-blur dark:bg-[#120c1b]">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="font-display text-2xl uppercase tracking-[0.18em]">AXNO - Own The Look</div>
+            <nav className="flex flex-1 items-center justify-center gap-5 font-display text-lg tracking-[0.06em]">
+              <button className="hover:text-secondary">Home</button>
+              <button className="hover:text-secondary" onClick={() => document.getElementById("catalogue")?.scrollIntoView({ behavior: "smooth" })}>
+                Products
+              </button>
+              <button className="hover:text-secondary" onClick={() => document.getElementById("custom")?.scrollIntoView({ behavior: "smooth" })}>
+                Customise
+              </button>
+            </nav>
+            <div className="flex flex-wrap items-center gap-3">
+              <div ref={searchRef} className="relative w-48 sm:w-64">
+                <form onSubmit={handleSearchSubmit}>
+                  <Input
+                    value={searchTerm}
+                    onChange={(event) => {
+                      setSearchTerm(event.target.value);
+                      setShowSuggestions(true);
+                    }}
+                    onFocus={() => setShowSuggestions(true)}
+                    placeholder="Search drops"
+                    className="rounded-full border-white/40 bg-white/20 pl-10 text-white placeholder:text-white/70 focus-visible:ring-white"
+                  />
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white" />
+                </form>
+                {showSuggestions && searchSuggestions.length > 0 && (
+                  <div className="absolute top-full mt-2 w-full rounded-2xl border border-white/20 bg-[#5c3d8a] shadow-xl z-50">
+                    {searchSuggestions.map((suggestion, idx) => (
+                      <button
+                        key={idx}
+                        className="w-full px-4 py-3 text-left hover:bg-white/10 first:rounded-t-2xl last:rounded-b-2xl"
+                        onClick={() => {
+                          if (suggestion.type === "category") {
+                            navigate(`/category/${suggestion.value}`);
+                          } else {
+                            navigate(`/product/${suggestion.value}`);
+                          }
+                          setShowSuggestions(false);
+                          setSearchTerm("");
+                        }}
+                      >
+                        <div className="text-sm font-semibold">{suggestion.label}</div>
+                        <div className="text-xs text-white/70">{suggestion.type === "category" ? "Category" : "Product"}</div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <button
+                className="rounded-full border border-white/40 p-3 text-white hover:bg-white/10 relative"
+                aria-label="Wishlist"
+                onClick={handleWishlistNav}
+              >
+                <Heart className="h-4 w-4" />
+              </button>
+              <button
+                className="rounded-full border border-white/40 p-3 text-white hover:bg-white/10 relative"
+                aria-label="Cart"
+                onClick={() => requireAuth("/cart")}
+              >
+                <ShoppingCart className="h-4 w-4" />
+                {itemCount > 0 && (
+                  <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-secondary text-xs font-bold flex items-center justify-center text-foreground">
+                    {itemCount}
+                  </span>
+                )}
+              </button>
+              <Button className="rounded-full bg-white/90 px-6 py-2 font-display text-base tracking-[0.1em] text-[#5c3d8a]" onClick={() => navigate("/auth")}>
+                Login
+              </Button>
+              <ThemeToggle />
+            </div>
           </div>
         </header>
 
         <section className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="rounded-[56px] border border-white/20 bg-[var(--gradient-hero)] p-10 shadow-[var(--shadow-soft)] backdrop-blur dark:border-white/5 dark:shadow-[var(--shadow-strong)]">
-            <p className="text-sm uppercase tracking-[0.9em] text-muted-foreground">Custom Upperwear Studio</p>
-            <h1 className="mt-6 text-4xl font-black leading-tight text-foreground sm:text-5xl lg:text-6xl">
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-muted-foreground">Custom Upperwear Studio</p>
+            <h1 className="mt-6 font-display text-4xl leading-tight text-foreground sm:text-5xl lg:text-6xl">
               Build your <span className="text-primary">signature</span> drop. Hoodies, tees, sweatshirts crafted for India.
             </h1>
             <p className="mt-4 max-w-2xl text-lg text-muted-foreground">
@@ -181,14 +281,14 @@ const Home = () => {
 
             <div className="mt-8 flex flex-wrap gap-4">
               <Button
-                className="rounded-full bg-foreground px-8 py-6 text-sm font-semibold uppercase tracking-[0.4em] text-background"
-                onClick={() => handleProtectedAction(`/product/${activeHero.id}`)}
+                className="rounded-full bg-foreground px-8 py-6 text-sm font-semibold uppercase tracking-[0.18em] text-background"
+                onClick={() => requireAuth(`/product/${activeHero.id}`)}
               >
                 Buy now
               </Button>
               <Button
                 variant="outline"
-                className="rounded-full border-foreground px-8 py-6 text-sm font-semibold uppercase tracking-[0.4em]"
+                className="rounded-full border-foreground px-8 py-6 text-sm font-semibold uppercase tracking-[0.18em]"
                 onClick={() => document.getElementById("custom")?.scrollIntoView({ behavior: "smooth" })}
               >
                 Custom flow
@@ -198,19 +298,19 @@ const Home = () => {
             <div className="mt-10 flex flex-wrap gap-6">
               <div className="flex items-center gap-3">
                 <Star className="h-6 w-6 text-secondary" />
-                <p className="text-sm uppercase tracking-[0.4em] text-muted-foreground">
+                <p className="font-display text-base tracking-[0.18em] text-muted-foreground">
                   4.9/5<br />Community rated
                 </p>
               </div>
               <div className="flex items-center gap-3">
                 <Flame className="h-6 w-6 text-secondary" />
-                <p className="text-sm uppercase tracking-[0.4em] text-muted-foreground">
+                <p className="font-display text-base tracking-[0.18em] text-muted-foreground">
                   48h<br />Production
                 </p>
               </div>
               <div className="flex items-center gap-3">
                 <Waves className="h-6 w-6 text-secondary" />
-                <p className="text-sm uppercase tracking-[0.4em] text-muted-foreground">
+                <p className="font-display text-base tracking-[0.18em] text-muted-foreground">
                   Zero<br />Cracking ink
                 </p>
               </div>
@@ -218,59 +318,146 @@ const Home = () => {
           </div>
 
           <div className="rounded-[56px] border border-white/15 bg-[var(--card)]/90 p-8 shadow-[var(--shadow-soft)] backdrop-blur dark:border-white/5">
-            <div className="flex items-center justify-between text-xs uppercase tracking-[0.5em] text-muted-foreground">
+            <div className="flex items-center justify-between text-xs uppercase tracking-[0.25em] text-muted-foreground">
               <span>Top drops</span>
-              <span>{heroIndex + 1} / {heroProducts.length}</span>
+              <span>
+                {heroIndex + 1} / {heroSlides.length}
+              </span>
             </div>
-            <div className="mt-6 overflow-hidden rounded-[32px] bg-[var(--gradient-card)] p-4 shadow-inner">
-              <img src={activeHero.image} alt={activeHero.name} className="h-72 w-full rounded-[28px] object-cover object-top" />
+            <div className="relative mt-6 overflow-hidden rounded-[32px] bg-[var(--gradient-card)] p-4 shadow-inner">
+              <button
+                className="absolute left-6 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/70 p-2 text-foreground shadow-lg hover:bg-white"
+                onClick={handleHeroPrev}
+                aria-label="Previous product"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </button>
+              <button
+                className="absolute right-6 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/70 p-2 text-foreground shadow-lg hover:bg-white"
+                onClick={handleHeroNext}
+                aria-label="Next product"
+              >
+                <ArrowRight className="h-5 w-5" />
+              </button>
+              <img
+                key={heroSlideKey}
+                src={activeHero.gallery[0]}
+                alt={activeHero.name}
+                loading="eager"
+                className="hero-slide h-72 w-full cursor-pointer rounded-[28px] object-cover object-top"
+                onClick={() => navigate(`/product/${activeHero.id}`)}
+              />
             </div>
             <div className="mt-6">
-              <p className="text-xs uppercase tracking-[0.5em] text-muted-foreground">{activeHero.category}</p>
+              <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">{activeHero.category}</p>
               <h3 className="text-2xl font-semibold">{activeHero.name}</h3>
-              <p className="mt-2 text-sm text-muted-foreground">{activeHero.description}</p>
+              <p className="mt-2 text-sm text-muted-foreground">{heroDescriptions[activeHero.category] ?? "Tailored for everyday legends."}</p>
             </div>
             <div className="mt-6 flex gap-2">
-              {heroProducts.map((_, index) => (
-                <button key={index} className={`h-1 flex-1 rounded-full ${index === heroIndex ? "bg-foreground" : "bg-muted"}`} onClick={() => setHeroIndex(index)} />
+              {heroSlides.map((_, index) => (
+                <button
+                  key={index}
+                  className={`h-1 flex-1 rounded-full ${index === heroIndex ? "bg-foreground" : "bg-muted"}`}
+                  onClick={() => setHeroIndex(index)}
+                  aria-label={`Go to slide ${index + 1}`}
+                />
               ))}
             </div>
           </div>
         </section>
 
-        <section id="catalogue" className="space-y-6">
+        <section id="catalogue" className="space-y-12">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="text-xs uppercase tracking-[0.6em] text-muted-foreground">Top products</p>
-              <h2 className="text-4xl font-black">Layer up in AXNO</h2>
+              <p className="font-display text-sm uppercase tracking-[0.22em] text-muted-foreground">Top products</p>
+              <h2 className="font-display text-4xl">Layer up in AXNO</h2>
             </div>
-            <Button variant="ghost" className="gap-2 text-xs font-semibold uppercase tracking-[0.4em]" onClick={() => navigate("/wishlist")}>
-              Wishlist <ArrowRight className="h-4 w-4" />
-            </Button>
           </div>
 
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {catalogue.map((product) => (
-              <ProductCard
-                key={product.id}
-                id={product.id}
-                name={product.name}
-                category={product.category}
-                price={product.price}
-                originalPrice={product.original}
-                image={product.image}
-                accent={product.accent}
-                onView={() => navigate(`/product/${product.id}`)}
-                onAdd={() => handleProtectedAction(`/product/${product.id}`)}
-                onWishlist={() => navigate("/wishlist")}
-              />
-            ))}
+          <div className="space-y-16">
+            {productTypes.map((type) => {
+              const typeProducts = allProducts.filter((p) => p.category === type.key);
+              const menProducts = typeProducts.filter((p) => p.audience === "men").slice(0, 6);
+              const womenProducts = typeProducts.filter((p) => p.audience === "women").slice(0, 6);
+              const kidsProducts = typeProducts.filter((p) => p.audience === "kids").slice(0, 6);
+              
+              return (
+                <div key={type.key} id={`${type.key.toLowerCase()}-section`} className="space-y-6">
+                  <div className="flex flex-wrap items-end justify-between gap-4">
+                    <div>
+                      <p className="font-display text-2xl uppercase tracking-[0.16em] text-muted-foreground">{type.label}</p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <Button
+                        variant="outline"
+                        className="font-display rounded-full border-foreground px-4 py-2 text-sm tracking-[0.12em]"
+                        onClick={() => {
+                          window.scrollTo({ top: 0, behavior: "smooth" });
+                          navigate(`/category/${type.route}?filter=men`);
+                        }}
+                      >
+                        Men
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="font-display rounded-full border-foreground px-4 py-2 text-sm tracking-[0.12em]"
+                        onClick={() => {
+                          window.scrollTo({ top: 0, behavior: "smooth" });
+                          navigate(`/category/${type.route}?filter=women`);
+                        }}
+                      >
+                        Women
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="font-display rounded-full border-foreground px-4 py-2 text-sm tracking-[0.12em]"
+                        onClick={() => {
+                          window.scrollTo({ top: 0, behavior: "smooth" });
+                          navigate(`/category/${type.route}?filter=kids`);
+                        }}
+                      >
+                        Kids
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    {typeProducts.slice(0, 6).map((product) => (
+                      <ProductCard
+                        key={product.id}
+                        id={product.id}
+                        name={product.name}
+                        category={product.category}
+                        price={product.price}
+                        originalPrice={product.original}
+                        image={product.gallery[0]}
+                        accent={product.accent}
+                        onView={() => navigate(`/product/${product.id}`)}
+                        onAdd={() => handleProtectedAction(`/product/${product.id}`)}
+                        onWishlist={() => handleWishlistNav()}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex justify-center">
+                    <Button
+                      variant="outline"
+                      className="font-display rounded-full border-foreground px-8 py-3 tracking-[0.12em]"
+                      onClick={() => {
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                        navigate(`/category/${type.route}`);
+                      }}
+                    >
+                      View All {type.label}
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </section>
 
         <section id="custom" className="grid gap-8 rounded-[56px] border border-white/15 bg-gradient-to-r from-[var(--card)] via-[var(--muted)] to-[var(--card)] p-10 shadow-[var(--shadow-soft)] lg:grid-cols-2">
           <div className="space-y-6">
-            <p className="text-xs uppercase tracking-[0.7em] text-muted-foreground">Custom studio</p>
+            <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Custom studio</p>
             <h2 className="text-4xl font-black">Upload, confirm, conquer.</h2>
             <p className="text-muted-foreground">
               Start with our templates or drop your own artwork. Checkout collects your inspiration, Pinterest links or AI prompts. We ping you on WhatsApp within 12 hours to align colours, placements, and fit. Satisfaction over everything.
@@ -293,7 +480,7 @@ const Home = () => {
 
           <div className="rounded-[40px] border border-white/15 bg-[var(--gradient-card)] p-8 shadow-[var(--shadow-soft)]">
             <div className="space-y-4">
-              <p className="text-xs uppercase tracking-[0.6em] text-muted-foreground">Why AXNO</p>
+              <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Why AXNO</p>
               <ul className="space-y-3 text-sm text-muted-foreground">
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="text-primary" /> Eco pigment + puff + reflective inks.
@@ -321,15 +508,21 @@ const Home = () => {
                 <p className="text-xs uppercase tracking-[0.6em] text-muted-foreground">Wishlist</p>
                 <h3 className="text-2xl font-bold">Save & sync designs</h3>
               </div>
-              <Button variant="outline" className="rounded-full border-foreground px-6 py-2 text-xs font-semibold uppercase tracking-[0.4em]" onClick={() => handleProtectedAction("/wishlist")}>
+              <Button variant="outline" className="rounded-full border-foreground px-6 py-2 text-xs font-semibold uppercase tracking-[0.4em]" onClick={handleWishlistNav}>
                 View all
               </Button>
             </div>
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               {wishlistPicks.map((pick) => (
                 <div key={pick.id} className="rounded-[28px] border border-white/20 bg-background/70 p-4 shadow-inner backdrop-blur">
-                  <img src={pick.image} alt={pick.title} className="h-40 w-full rounded-2xl object-cover" />
-                  <p className="mt-3 font-semibold">{pick.title}</p>
+                  <img
+                    src={pick.gallery[0]}
+                    alt={pick.name}
+                    loading="lazy"
+                    className="h-40 w-full cursor-pointer rounded-2xl object-cover"
+                    onClick={() => navigate(`/product/${pick.id}`)}
+                  />
+                  <p className="mt-3 font-semibold">{pick.name}</p>
                   <Button variant="ghost" className="mt-2 w-full rounded-full border border-transparent text-xs font-semibold uppercase tracking-[0.3em]" onClick={() => handleProtectedAction(`/product/${pick.id}`)}>
                     Move to cart
                   </Button>
@@ -341,16 +534,38 @@ const Home = () => {
           <div className="rounded-[40px] border border-white/15 bg-[var(--gradient-card)] p-8 text-sm text-muted-foreground shadow-[var(--shadow-soft)]">
             <p className="text-xs uppercase tracking-[0.7em] text-muted-foreground">Saved address</p>
             <div className="mt-4 space-y-4">
-              <div className="rounded-[24px] border border-white/30 bg-background/80 p-5">
-                <p className="text-lg font-semibold text-foreground">Aarya Patel</p>
-                <p>B-902, Skye Towers</p>
-                <p>Hinjewadi, Pune 411057</p>
-                <p className="text-xs uppercase tracking-[0.4em] text-primary">Default</p>
-              </div>
-              <div className="rounded-[24px] border border-dashed border-white/40 p-5">
-                <p className="font-semibold text-foreground">Add new address</p>
-                <p>Save once, skip typing forever.</p>
-              </div>
+              {isAuthenticated ? (
+                addresses.length > 0 ? (
+                  addresses.map((addr, idx) => (
+                    <div key={idx} className="rounded-[24px] border border-white/30 bg-background/80 p-5">
+                      <p className="text-lg font-semibold text-foreground">{addr.name}</p>
+                      <p>{addr.address}</p>
+                      <p>{addr.city}, {addr.state} {addr.pincode}</p>
+                      {addr.phone && <p>Phone: {addr.phone}</p>}
+                      {addr.isDefault && <p className="text-xs uppercase tracking-[0.4em] text-primary">Default</p>}
+                    </div>
+                  ))
+                ) : (
+                  <div className="rounded-[24px] border border-dashed border-white/40 p-5">
+                    <p className="font-semibold text-foreground">No saved addresses</p>
+                    <p>Add an address to save time at checkout.</p>
+                  </div>
+                )
+              ) : (
+                <div className="rounded-[24px] border border-dashed border-white/40 p-5">
+                  <p className="font-semibold text-foreground">Login to save addresses</p>
+                  <p>Save once, skip typing forever.</p>
+                  <Button className="mt-2 rounded-full" onClick={() => navigate("/auth")}>
+                    Login
+                  </Button>
+                </div>
+              )}
+              {isAuthenticated && (
+                <div className="rounded-[24px] border border-dashed border-white/40 p-5 cursor-pointer hover:bg-white/5" onClick={() => navigate("/checkout")}>
+                  <p className="font-semibold text-foreground">Add new address</p>
+                  <p>Save once, skip typing forever.</p>
+                </div>
+              )}
             </div>
             <div className="mt-6 rounded-[24px] bg-background/70 p-5">
               <p className="text-xs uppercase tracking-[0.5em] text-muted-foreground">Payment ready</p>
@@ -385,11 +600,6 @@ const Home = () => {
 
         <footer className="py-10 text-center text-xs uppercase tracking-[0.5em] text-muted-foreground">
           © {new Date().getFullYear()} AXNO — Own The Look
-          <div className="mt-2 flex justify-center gap-4 text-[10px] text-muted-foreground">
-            <span>Hoodies @₹1099 (MRP 1999)</span>
-            <span>Tees @₹599 (MRP 1099)</span>
-            <span>Sweatshirts @₹999 (MRP 1799)</span>
-          </div>
         </footer>
       </div>
     </div>

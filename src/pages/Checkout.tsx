@@ -32,15 +32,19 @@ const cartItems = [
 
 const Checkout = () => {
   const [selectedAddress, setSelectedAddress] = useState("default");
-  const [designFile, setDesignFile] = useState<File | null>(null);
+  const [designFile, setDesignFile] = useState(null);
   const [notes, setNotes] = useState("");
   const navigate = useNavigate();
-  const { openAuth } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   const subtotal = cartItems.reduce((acc, item) => acc + item.price, 0);
 
   const handlePlaceOrder = () => {
-    openAuth(() => navigate("/payment"));
+    if (!isAuthenticated) {
+      navigate(`/auth?redirect=${encodeURIComponent("/checkout")}`);
+      return;
+    }
+    navigate("/payment");
   };
 
   return (
@@ -85,7 +89,7 @@ const Checkout = () => {
                 </div>
               </div>
               <label className="mt-4 block cursor-pointer rounded-[24px] border border-primary/40 bg-background/80 p-6 text-center">
-                <Input type="file" accept=".psd,.pdf,.png,.jpg,.jpeg" className="hidden" onChange={(event) => setDesignFile(event.target.files?.[0] ?? null)} />
+                <Input type="file" accept=".psd,.pdf,.png,.jpg,.jpeg" className="hidden" onChange={(event) => setDesignFile(event.target.files?.[0] || null)} />
                 <p className="text-sm font-semibold">{designFile ? designFile.name : "Drag & drop or click to upload"}</p>
               </label>
               <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Add any specific placement instructions, Pantone codes, or links to references." className="mt-4 min-h-[120px]" />

@@ -12,7 +12,9 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import { ThemeProvider } from "./contexts/theme-context";
 import { AuthProvider } from "./contexts/auth-context";
-import AuthDialog from "./components/AuthDialog";
+import { CartProvider } from "./contexts/cart-context";
+import Cart from "./pages/Cart";
+import Category from "./pages/Category";
 
 const queryClient = new QueryClient();
 
@@ -23,19 +25,22 @@ const App = () => (
       <Sonner />
       <ThemeProvider>
         <AuthProvider>
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/product/:id" element={<Product />} />
-              <Route path="/checkout" element={<Checkout />} />
-              <Route path="/payment" element={<Payment />} />
-              <Route path="/wishlist" element={<Wishlist />} />
-              <Route path="/auth" element={<Auth />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-          <AuthDialog />
+          <CartProvider>
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/product/:id" element={<Product />} />
+                <Route path="/category/:category" element={<Category />} />
+                <Route path="/cart" element={<Cart />} />
+                <Route path="/checkout" element={<Checkout />} />
+                <Route path="/payment" element={<Payment />} />
+                <Route path="/wishlist" element={<Wishlist />} />
+                <Route path="/auth" element={<Auth />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </CartProvider>
         </AuthProvider>
       </ThemeProvider>
     </TooltipProvider>

@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Trash2, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -24,10 +25,20 @@ const wishlistItems = [
 
 const Wishlist = () => {
   const navigate = useNavigate();
-  const { openAuth } = useAuth();
+  const { isAuthenticated } = useAuth();
 
-  const handleMoveToCart = (id: string) => {
-    openAuth(() => navigate(`/product/${id}`));
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate(`/auth?redirect=${encodeURIComponent("/wishlist")}`);
+    }
+  }, [isAuthenticated, navigate]);
+
+  const handleMoveToCart = (id) => {
+    if (isAuthenticated) {
+      navigate(`/product/${id}`);
+    } else {
+      navigate(`/auth?redirect=${encodeURIComponent(`/product/${id}`)}`);
+    }
   };
 
   return (
