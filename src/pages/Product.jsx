@@ -22,9 +22,40 @@ const Product = () => {
   const related = allProducts.filter((item) => item.audience === product.audience && item.id !== product.id).slice(0, 3);
   const [size, setSize] = useState("M");
   const [imageIndex, setImageIndex] = useState(0);
+  const [pincode, setPincode] = useState("");
+  const [pincodeValid, setPincodeValid] = useState(null); // null = not checked, true = valid, false = invalid
+  const [deliveryEstimate, setDeliveryEstimate] = useState("");
   const galleryLength = product.gallery.length || 1;
   const currentImage = product.gallery[imageIndex % galleryLength] || product.gallery[0];
   const touchStartX = useRef(null);
+
+  // Ahmedabad and Gandhinagar pincode ranges
+  const isValidPincode = (pin) => {
+    const pincodeNum = parseInt(pin);
+    if (isNaN(pincodeNum) || pin.length !== 6) return false;
+    // Ahmedabad: 380001-380061
+    // Gandhinagar: 382001-382481
+    return (pincodeNum >= 380001 && pincodeNum <= 380061) || 
+           (pincodeNum >= 382001 && pincodeNum <= 382481);
+  };
+
+  const handlePincodeChange = (e) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+    setPincode(value);
+    
+    if (value.length === 6) {
+      if (isValidPincode(value)) {
+        setPincodeValid(true);
+        setDeliveryEstimate("Delivery in 7-8 days");
+      } else {
+        setPincodeValid(false);
+        setDeliveryEstimate("");
+      }
+    } else {
+      setPincodeValid(null);
+      setDeliveryEstimate("");
+    }
+  };
 
   const handleProtected = (destination) => {
     if (isAuthenticated) {
@@ -32,6 +63,25 @@ const Product = () => {
     } else {
       navigate(`/auth?redirect=${encodeURIComponent(destination)}`);
     }
+  };
+
+  const handleBuyNow = () => {
+    if (!isAuthenticated) {
+      navigate(`/auth?redirect=${encodeURIComponent(`/product/${product.id}`)}`);
+      return;
+    }
+    // Add product to cart first
+    addItem({
+      id: product.id,
+      name: product.name,
+      category: product.category,
+      price: product.price,
+      original: product.original,
+      image: product.gallery[0],
+      size,
+    });
+    // Navigate to checkout
+    navigate("/checkout");
   };
 
   useEffect(() => {
@@ -205,10 +255,38 @@ const Product = () => {
               </div>
             </div>
 
+            <div>
+              <p className="font-display text-xs uppercase tracking-[0.6em] text-muted-foreground">Check Delivery</p>
+              <div className="mt-4 space-y-3">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={pincode}
+                    onChange={handlePincodeChange}
+                    placeholder="Enter pincode"
+                    maxLength={6}
+                    className="flex-1 rounded-full border border-white/20 bg-background/70 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+                {pincodeValid === true && deliveryEstimate && (
+                  <div className="rounded-full bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-800 px-4 py-2">
+                    <p className="text-sm font-semibold text-green-800 dark:text-green-200">✓ {deliveryEstimate}</p>
+                  </div>
+                )}
+                {pincodeValid === false && (
+                  <div className="rounded-full bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-800 px-4 py-2">
+                    <p className="text-sm font-semibold text-red-800 dark:text-red-200">
+                      We currently deliver only to Ahmedabad and Gandhinagar. Please contact us on WhatsApp for orders outside these areas.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
             <div className="rounded-[24px] sm:rounded-[28px] lg:rounded-[32px] border border-dashed border-primary/40 bg-primary/5 p-4 sm:p-6">
               <p className="text-xs sm:text-sm font-semibold text-primary">Customise this drop</p>
               <p className="text-xs sm:text-sm text-muted-foreground mt-2">
-                Want your own art? Continue with AXNO design or upload your concept at checkout. You can attach AI prompts, PSDs, or references there. We confirm on WhatsApp within 12 hours to deliver exactly what you want.
+                Want your own art? Continue with Looklyn design or upload your concept at checkout. You can attach AI prompts, PSDs, or references there. We confirm on WhatsApp within 12 hours to deliver exactly what you want.
               </p>
               <Button variant="outline" className="mt-3 sm:mt-4 rounded-full border-primary text-primary hover:bg-primary/10 text-xs sm:text-sm" onClick={() => navigate("/checkout")}>
                 Upload later at checkout
@@ -219,7 +297,7 @@ const Product = () => {
               <Button className="flex-1 rounded-full bg-foreground px-6 sm:px-8 py-4 sm:py-6 text-xs sm:text-sm font-semibold uppercase tracking-[0.4em] text-background" onClick={handleAddToCart}>
                 Add to cart
               </Button>
-              <Button variant="outline" className="flex-1 rounded-full border-foreground px-6 sm:px-8 py-4 sm:py-6 text-xs sm:text-sm font-semibold uppercase tracking-[0.4em]" onClick={() => handleProtected("/checkout")}>
+              <Button variant="outline" className="flex-1 rounded-full border-foreground px-6 sm:px-8 py-4 sm:py-6 text-xs sm:text-sm font-semibold uppercase tracking-[0.4em]" onClick={handleBuyNow}>
                 Buy now
               </Button>
             </div>

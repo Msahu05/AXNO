@@ -32,7 +32,7 @@
 
 3. **Create Database User**
    - Go to "Database Access" → "Add New Database User"
-   - Username: `axno-admin` (or any name)
+   - Username: `looklyn-admin` (or any name)
    - Password: Generate a strong password (save it!)
    - Database User Privileges: "Atlas admin"
    - Click "Add User"
@@ -49,12 +49,12 @@
    - Copy the connection string
    - It looks like: `mongodb+srv://username:password@cluster.mongodb.net/?retryWrites=true&w=majority`
    - Replace `<password>` with your database user password
-   - Add database name: `mongodb+srv://username:password@cluster.mongodb.net/axno?retryWrites=true&w=majority`
+   - Add database name: `mongodb+srv://username:password@cluster.mongodb.net/looklyn?retryWrites=true&w=majority`
 
 6. **Update Your .env File**
    - Create `server/.env` file:
    ```env
-   MONGODB_URI=mongodb+srv://axno-admin:YOUR_PASSWORD@cluster0.xxxxx.mongodb.net/axno?retryWrites=true&w=majority
+   MONGODB_URI=mongodb+srv://looklyn-admin:YOUR_PASSWORD@cluster0.xxxxx.mongodb.net/looklyn?retryWrites=true&w=majority
    JWT_SECRET=your-super-secret-jwt-key-change-this-in-production-use-random-string
    PORT=3001
    ```
@@ -133,7 +133,7 @@
 ### Development (Local)
 **`server/.env`**:
 ```env
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/axno?retryWrites=true&w=majority
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/looklyn?retryWrites=true&w=majority
 JWT_SECRET=dev-secret-key-change-in-production
 PORT=3001
 ```
@@ -146,7 +146,7 @@ VITE_API_URL=http://localhost:3001/api
 ### Production (Cloud)
 **Backend (Railway/Render)**:
 ```env
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/axno?retryWrites=true&w=majority
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/looklyn?retryWrites=true&w=majority
 JWT_SECRET=super-secure-random-string-min-32-chars
 NODE_ENV=production
 ```

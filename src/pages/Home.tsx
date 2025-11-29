@@ -194,7 +194,7 @@ const Home = () => {
       <div className="flex w-full flex-col gap-16 px-6 pb-12 sm:px-10 lg:px-16">
         <header className="sticky top-0 z-40 rounded-[48px] border border-transparent bg-[#5c3d8a] px-6 py-4 text-white shadow-[0_20px_60px_rgba(92,61,138,0.35)] backdrop-blur dark:bg-[#120c1b]">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="font-display text-2xl uppercase tracking-[0.18em]">AXNO - Own The Look</div>
+            <div className="font-display text-2xl uppercase tracking-[0.18em]">Looklyn - Own The Look</div>
             <nav className="flex flex-1 items-center justify-center gap-5 font-display text-lg tracking-[0.06em]">
               <button className="hover:text-secondary">Home</button>
               <button className="hover:text-secondary" onClick={() => document.getElementById("catalogue")?.scrollIntoView({ behavior: "smooth" })}>
@@ -370,7 +370,7 @@ const Home = () => {
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="font-display text-sm uppercase tracking-[0.22em] text-muted-foreground">Top products</p>
-              <h2 className="font-display text-4xl">Layer up in AXNO</h2>
+              <h2 className="font-display text-4xl">Layer up in Looklyn</h2>
             </div>
           </div>
 
@@ -480,7 +480,7 @@ const Home = () => {
 
           <div className="rounded-[40px] border border-white/15 bg-[var(--gradient-card)] p-8 shadow-[var(--shadow-soft)]">
             <div className="space-y-4">
-              <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Why AXNO</p>
+              <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Why Looklyn</p>
               <ul className="space-y-3 text-sm text-muted-foreground">
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="text-primary" /> Eco pigment + puff + reflective inks.
@@ -599,7 +599,7 @@ const Home = () => {
         </section>
 
         <footer className="py-10 text-center text-xs uppercase tracking-[0.5em] text-muted-foreground">
-          © {new Date().getFullYear()} AXNO — Own The Look
+          © {new Date().getFullYear()} Looklyn — Own The Look
         </footer>
       </div>
     </div>

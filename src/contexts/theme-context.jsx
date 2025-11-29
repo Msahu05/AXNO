@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
 const ThemeContext = createContext(undefined);
 
-const THEME_KEY = 'axno-theme';
+const THEME_KEY = 'looklyn-theme';
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {

@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSearchParams } from "react-router-dom";
-import { ArrowLeft, User, Mail, Phone, MapPin, Save, Edit2 } from "lucide-react";
+import { ArrowLeft, User, Mail, Phone, MapPin, Save, Edit2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +15,46 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+
+// Indian cities and states data
+const INDIAN_STATES = [
+  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
+  "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
+  "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram",
+  "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana",
+  "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal"
+];
+
+const INDIAN_CITIES = {
+  "Andhra Pradesh": ["Visakhapatnam", "Vijayawada", "Guntur", "Nellore", "Kurnool"],
+  "Arunachal Pradesh": ["Itanagar", "Naharlagun", "Pasighat", "Tawang"],
+  "Assam": ["Guwahati", "Silchar", "Dibrugarh", "Jorhat", "Nagaon"],
+  "Bihar": ["Patna", "Gaya", "Bhagalpur", "Muzaffarpur", "Purnia"],
+  "Chhattisgarh": ["Raipur", "Bhilai", "Bilaspur", "Korba", "Durg"],
+  "Goa": ["Panaji", "Margao", "Vasco da Gama", "Mapusa"],
+  "Gujarat": ["Ahmedabad", "Surat", "Vadodara", "Rajkot", "Bhavnagar", "Jamnagar", "Gandhinagar"],
+  "Haryana": ["Faridabad", "Gurgaon", "Panipat", "Ambala", "Yamunanagar"],
+  "Himachal Pradesh": ["Shimla", "Mandi", "Solan", "Dharamshala"],
+  "Jharkhand": ["Ranchi", "Jamshedpur", "Dhanbad", "Bokaro", "Hazaribagh"],
+  "Karnataka": ["Bangalore", "Mysore", "Hubli", "Mangalore", "Belgaum", "Gulbarga"],
+  "Kerala": ["Kochi", "Thiruvananthapuram", "Kozhikode", "Thrissur", "Kollam"],
+  "Madhya Pradesh": ["Indore", "Bhopal", "Gwalior", "Jabalpur", "Ujjain"],
+  "Maharashtra": ["Mumbai", "Pune", "Nagpur", "Nashik", "Aurangabad", "Solapur"],
+  "Manipur": ["Imphal", "Thoubal", "Bishnupur"],
+  "Meghalaya": ["Shillong", "Tura", "Jowai"],
+  "Mizoram": ["Aizawl", "Lunglei", "Champhai"],
+  "Nagaland": ["Kohima", "Dimapur", "Mokokchung"],
+  "Odisha": ["Bhubaneswar", "Cuttack", "Rourkela", "Berhampur"],
+  "Punjab": ["Ludhiana", "Amritsar", "Jalandhar", "Patiala", "Bathinda"],
+  "Rajasthan": ["Jaipur", "Jodhpur", "Kota", "Bikaner", "Ajmer", "Udaipur"],
+  "Sikkim": ["Gangtok", "Namchi", "Mangan"],
+  "Tamil Nadu": ["Chennai", "Coimbatore", "Madurai", "Tiruchirappalli", "Salem"],
+  "Telangana": ["Hyderabad", "Warangal", "Nizamabad", "Karimnagar"],
+  "Tripura": ["Agartala", "Udaipur", "Dharmanagar"],
+  "Uttar Pradesh": ["Lucknow", "Kanpur", "Agra", "Varanasi", "Allahabad", "Meerut"],
+  "Uttarakhand": ["Dehradun", "Haridwar", "Roorkee", "Haldwani"],
+  "West Bengal": ["Kolkata", "Howrah", "Durgapur", "Asansol", "Siliguri"]
+};
 
 const Account = () => {
   const navigate = useNavigate();
@@ -340,6 +380,91 @@ const Account = () => {
 
 const AddressForm = ({ address, onSave, onCancel, loading }) => {
   const [formData, setFormData] = useState(address);
+  const [citySuggestions, setCitySuggestions] = useState([]);
+  const [stateSuggestions, setStateSuggestions] = useState([]);
+  const [showCitySuggestions, setShowCitySuggestions] = useState(false);
+  const [showStateSuggestions, setShowStateSuggestions] = useState(false);
+  const [loadingPincode, setLoadingPincode] = useState(false);
+
+  // Fetch city and state from pincode
+  const fetchPincodeDetails = async (pincode) => {
+    if (pincode.length !== 6 || !/^\d{6}$/.test(pincode)) {
+      return;
+    }
+
+    setLoadingPincode(true);
+    try {
+      const response = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
+      const data = await response.json();
+      
+      if (data && data[0] && data[0].Status === "Success" && data[0].PostOffice && data[0].PostOffice.length > 0) {
+        const postOffice = data[0].PostOffice[0];
+        // Only auto-fill if fields are empty
+        if (!formData.city) {
+          setFormData({ ...formData, city: postOffice.District || postOffice.Name || "" });
+        }
+        if (!formData.state) {
+          setFormData({ ...formData, state: postOffice.State || "" });
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching pincode details:", error);
+    } finally {
+      setLoadingPincode(false);
+    }
+  };
+
+  const handlePincodeChange = (e) => {
+    const value = e.target.value.replace(/\D/g, "").slice(0, 6);
+    setFormData({ ...formData, pincode: value });
+    if (value.length === 6) {
+      fetchPincodeDetails(value);
+    }
+  };
+
+  const handleCityChange = (e) => {
+    const value = e.target.value;
+    setFormData({ ...formData, city: value });
+    if (value.length > 0) {
+      const filtered = Object.values(INDIAN_CITIES)
+        .flat()
+        .filter(c => c.toLowerCase().includes(value.toLowerCase()))
+        .slice(0, 5);
+      setCitySuggestions(filtered);
+      setShowCitySuggestions(true);
+    } else {
+      setShowCitySuggestions(false);
+    }
+  };
+
+  const handleStateChange = (e) => {
+    const value = e.target.value;
+    setFormData({ ...formData, state: value });
+    if (value.length > 0) {
+      const filtered = INDIAN_STATES.filter(s => s.toLowerCase().includes(value.toLowerCase())).slice(0, 5);
+      setStateSuggestions(filtered);
+      setShowStateSuggestions(true);
+    } else {
+      setShowStateSuggestions(false);
+    }
+  };
+
+  const selectCity = (selectedCity) => {
+    setFormData({ ...formData, city: selectedCity });
+    setShowCitySuggestions(false);
+    // Find state for the city
+    for (const [stateName, cities] of Object.entries(INDIAN_CITIES)) {
+      if (cities.includes(selectedCity)) {
+        setFormData({ ...formData, city: selectedCity, state: stateName });
+        break;
+      }
+    }
+  };
+
+  const selectState = (selectedState) => {
+    setFormData({ ...formData, state: selectedState });
+    setShowStateSuggestions(false);
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -370,36 +495,69 @@ const AddressForm = ({ address, onSave, onCancel, loading }) => {
             required
           />
         </div>
+        <div className="relative">
+          <Label>
+            Pincode {loadingPincode && <Loader2 className="inline h-3 w-3 animate-spin ml-2" />}
+          </Label>
+          <Input
+            value={formData.pincode}
+            onChange={handlePincodeChange}
+            placeholder="Pincode"
+            maxLength={6}
+            required
+          />
+        </div>
         <div className="grid grid-cols-2 gap-4">
-          <div>
+          <div className="relative">
             <Label>City</Label>
             <Input
               value={formData.city}
-              onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+              onChange={handleCityChange}
+              onFocus={() => formData.city && setShowCitySuggestions(true)}
+              onBlur={() => setTimeout(() => setShowCitySuggestions(false), 200)}
               placeholder="City"
               required
             />
+            {showCitySuggestions && citySuggestions.length > 0 && (
+              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-40 overflow-auto">
+                {citySuggestions.map((suggestion, idx) => (
+                  <div
+                    key={idx}
+                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                    onClick={() => selectCity(suggestion)}
+                  >
+                    {suggestion}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-          <div>
+          <div className="relative">
             <Label>State</Label>
             <Input
               value={formData.state}
-              onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+              onChange={handleStateChange}
+              onFocus={() => formData.state && setShowStateSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowStateSuggestions(false), 200)}
               placeholder="State"
               required
             />
+            {showStateSuggestions && stateSuggestions.length > 0 && (
+              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-40 overflow-auto">
+                {stateSuggestions.map((suggestion, idx) => (
+                  <div
+                    key={idx}
+                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                    onClick={() => selectState(suggestion)}
+                  >
+                    {suggestion}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label>Pincode</Label>
-            <Input
-              value={formData.pincode}
-              onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
-              placeholder="Pincode"
-              required
-            />
-          </div>
+        <div>
           <div>
             <Label>Phone</Label>
             <Input

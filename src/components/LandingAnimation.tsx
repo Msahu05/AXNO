@@ -28,7 +28,7 @@ const LandingAnimation = () => {
         <div className="landing-glow" />
         <div className="text-center">
           <p className="text-sm uppercase tracking-[0.8em] text-muted-foreground">Own The Look</p>
-          <p className="text-6xl font-black tracking-[0.3em] text-foreground">AXNO</p>
+          <p className="text-6xl font-black tracking-[0.3em] text-foreground">Looklyn</p>
         </div>
       </div>
     </div>

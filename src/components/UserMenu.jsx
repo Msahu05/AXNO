@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, LogOut, Settings, MapPin, Mail, Phone, Edit } from "lucide-react";
+import { User, LogOut, Settings, MapPin, Mail, Phone, Edit, Package } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import {
   DropdownMenu,
@@ -76,6 +76,16 @@ const UserMenu = () => {
         >
           <MapPin className="mr-2 h-4 w-4" />
           My Addresses
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          className="cursor-pointer font-display text-sm focus:bg-white/10 focus:text-white"
+          onClick={() => {
+            setOpen(false);
+            navigate("/orders");
+          }}
+        >
+          <Package className="mr-2 h-4 w-4" />
+          My Orders
         </DropdownMenuItem>
         <DropdownMenuSeparator className="bg-white/20" />
         <DropdownMenuItem

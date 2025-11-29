@@ -39,10 +39,20 @@ const Category = () => {
   const displayName = category?.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || 'Hoodies';
 
   const filteredProducts = useMemo(() => {
+    // First, try to get products for the specific category
     let products = allProducts.filter((p) => p.category === categoryName);
+    
+    // If filtering by audience, filter the category products
     if (audienceFilter !== "all") {
       products = products.filter((p) => p.audience === audienceFilter);
+      
+      // If no products found for this category+audience combo, 
+      // show products from that audience across all categories
+      if (products.length === 0) {
+        products = allProducts.filter((p) => p.audience === audienceFilter);
+      }
     }
+    
     return products;
   }, [categoryName, audienceFilter]);
 

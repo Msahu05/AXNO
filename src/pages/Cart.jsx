@@ -36,16 +36,16 @@ const Cart = () => {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(124,90,255,0.1),_transparent_65%)]">
-      <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-6">
+      <div className="px-2 sm:px-4 lg:px-6 pb-4 sm:pb-8 lg:pb-12 pt-4 sm:pt-6">
         <Header />
       </div>
-      <div className="px-4 py-10">
-        <div className="mx-auto max-w-6xl space-y-8">
-        <div className="flex items-center gap-4">
-          <button className="flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.4em] transition-all duration-200 bg-transparent hover:bg-purple-200 hover:shadow-sm active:bg-purple-300" onClick={() => navigate("/")}>
-            <ArrowLeft className="h-4 w-4" /> Back
+      <div className="px-2 sm:px-4 lg:px-6 py-6 sm:py-10">
+        <div className="mx-auto max-w-6xl space-y-6 sm:space-y-8">
+        <div className="flex items-center gap-2 sm:gap-4">
+          <button className="flex items-center gap-1 sm:gap-2 rounded-full px-2 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.3em] sm:tracking-[0.4em] transition-all duration-200 bg-transparent hover:bg-purple-200 hover:shadow-sm active:bg-purple-300" onClick={() => navigate("/")}>
+            <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4" /> <span className="hidden sm:inline">Back</span>
           </button>
-          <h1 className="text-3xl font-black">Shopping Cart</h1>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-black">Shopping Cart</h1>
         </div>
 
         <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">

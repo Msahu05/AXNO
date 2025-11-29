@@ -21,7 +21,7 @@ Your website is ready for deployment. Payment integration can be added later as 
 
 **Backend (`server/.env`):**
 ```env
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/axno?retryWrites=true&w=majority
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/looklyn?retryWrites=true&w=majority
 JWT_SECRET=your-super-secure-random-string-min-32-characters
 PORT=3001
 NODE_ENV=production

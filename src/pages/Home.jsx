@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, CheckCircle2, Flame, PhoneCall, ShieldHalf, Star
 import LandingAnimation from "@/components/LandingAnimation";
 import Header from "@/components/Header";
 import ProductCard from "@/components/ProductCard";
+import Logo from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/auth-context";
 import { useWishlist } from "@/contexts/wishlist-context";
@@ -41,6 +42,7 @@ const Home = () => {
   const { isAuthenticated, loading: authLoading } = useAuth();
   const { addItem: addToWishlist, isInWishlist } = useWishlist();
   const [heroIndex, setHeroIndex] = useState(0);
+  const [activeFilters, setActiveFilters] = useState({});
 
   const productTypes = [
     { key: "Hoodie", label: "Hoodies", route: "hoodies" },
@@ -125,6 +127,10 @@ const Home = () => {
       <LandingAnimation />
       <div className="flex w-full flex-col gap-8 sm:gap-12 lg:gap-16 px-4 sm:px-6 pb-8 sm:pb-12 lg:px-16">
         <Header />
+        {/* Brand Name and Tagline - Home Page Only */}
+        <div className="flex flex-col items-center justify-center mt-4 sm:mt-6 lg:mt-8">
+          <Logo size="default" showTagline={true} inlineTagline={false} className="text-foreground" />
+        </div>
 
         <section className="grid gap-6 sm:gap-8 lg:gap-10 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="order-2 lg:order-1 rounded-[32px] sm:rounded-[40px] lg:rounded-[56px] border border-white/20 bg-[var(--gradient-hero)] p-6 sm:p-8 lg:p-10 shadow-[var(--shadow-soft)] backdrop-blur dark:border-white/5 dark:shadow-[var(--shadow-strong)]">
@@ -227,7 +233,7 @@ const Home = () => {
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="font-display text-xs sm:text-sm uppercase tracking-[0.22em] text-muted-foreground">Top products</p>
-              <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl">Layer up in AXNO</h2>
+              <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl">Layer up in Looklyn</h2>
             </div>
           </div>
 
@@ -238,59 +244,104 @@ const Home = () => {
               const womenProducts = typeProducts.filter((p) => p.audience === "women").slice(0, 6);
               const kidsProducts = typeProducts.filter((p) => p.audience === "kids").slice(0, 6);
               
+              const activeFilter = activeFilters[type.key] || null;
+              
+              // If no filter is selected, show all products from this category (mixed from all audiences)
+              let displayProducts;
+              if (!activeFilter) {
+                displayProducts = typeProducts.slice(0, 6);
+              } else {
+                // Get products for the selected audience in this category
+                displayProducts = activeFilter === "men" 
+                  ? menProducts 
+                  : activeFilter === "women" 
+                  ? womenProducts 
+                  : kidsProducts;
+                
+                // If no products found for this category+audience, show products from that audience across all categories
+                if (displayProducts.length === 0) {
+                  displayProducts = allProducts
+                    .filter((p) => p.audience === activeFilter)
+                    .slice(0, 6);
+                }
+              }
+              
+              const handleFilterChange = (filter) => {
+                // If clicking the same filter, deselect it (show all)
+                if (activeFilter === filter) {
+                  setActiveFilters(prev => {
+                    const newFilters = { ...prev };
+                    delete newFilters[type.key];
+                    return newFilters;
+                  });
+                } else {
+                  setActiveFilters(prev => ({ ...prev, [type.key]: filter }));
+                }
+              };
+              
               return (
                 <div key={type.key} id={`${type.key.toLowerCase()}-section`} className="space-y-6">
                   <div className="flex flex-wrap items-center justify-between gap-4 bg-primary/20 dark:bg-primary/30 px-4 sm:px-6 py-3 sm:py-4 rounded-[20px] sm:rounded-[24px] border border-primary/30">
                     <p className="font-display text-2xl uppercase tracking-[0.16em] text-foreground">{type.label}</p>
                     <div className="flex flex-wrap items-center gap-3">
                       <Button
-                        variant="outline"
-                        className="font-display rounded-full border-foreground bg-primary/15 dark:bg-primary/25 hover:bg-primary/25 dark:hover:bg-primary/35 px-4 py-2 text-sm tracking-[0.12em] font-semibold"
-                        onClick={() => {
-                          window.scrollTo({ top: 0, behavior: "smooth" });
-                          navigate(`/category/${type.route}?filter=men`);
-                        }}
+                        variant={activeFilter === "men" ? "default" : "outline"}
+                        className={`font-display rounded-full border-foreground px-4 py-2 text-sm tracking-[0.12em] font-semibold ${
+                          activeFilter === "men" 
+                            ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                            : "bg-primary/15 dark:bg-primary/25 hover:bg-primary/25 dark:hover:bg-primary/35"
+                        }`}
+                        onClick={() => handleFilterChange("men")}
                       >
                         Men
                       </Button>
                       <Button
-                        variant="outline"
-                        className="font-display rounded-full border-foreground bg-primary/15 dark:bg-primary/25 hover:bg-primary/25 dark:hover:bg-primary/35 px-4 py-2 text-sm tracking-[0.12em] font-semibold"
-                        onClick={() => {
-                          window.scrollTo({ top: 0, behavior: "smooth" });
-                          navigate(`/category/${type.route}?filter=women`);
-                        }}
+                        variant={activeFilter === "women" ? "default" : "outline"}
+                        className={`font-display rounded-full border-foreground px-4 py-2 text-sm tracking-[0.12em] font-semibold ${
+                          activeFilter === "women" 
+                            ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                            : "bg-primary/15 dark:bg-primary/25 hover:bg-primary/25 dark:hover:bg-primary/35"
+                        }`}
+                        onClick={() => handleFilterChange("women")}
                       >
                         Women
                       </Button>
                       <Button
-                        variant="outline"
-                        className="font-display rounded-full border-foreground bg-primary/15 dark:bg-primary/25 hover:bg-primary/25 dark:hover:bg-primary/35 px-4 py-2 text-sm tracking-[0.12em] font-semibold"
-                        onClick={() => {
-                          window.scrollTo({ top: 0, behavior: "smooth" });
-                          navigate(`/category/${type.route}?filter=kids`);
-                        }}
+                        variant={activeFilter === "kids" ? "default" : "outline"}
+                        className={`font-display rounded-full border-foreground px-4 py-2 text-sm tracking-[0.12em] font-semibold ${
+                          activeFilter === "kids" 
+                            ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                            : "bg-primary/15 dark:bg-primary/25 hover:bg-primary/25 dark:hover:bg-primary/35"
+                        }`}
+                        onClick={() => handleFilterChange("kids")}
                       >
                         Kids
                       </Button>
                     </div>
                   </div>
                   <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                    {typeProducts.slice(0, 6).map((product) => (
-                      <ProductCard
-                        key={product.id}
-                        id={product.id}
-                        name={product.name}
-                        category={product.category}
-                        price={product.price}
-                        originalPrice={product.original}
-                        image={product.gallery[0]}
-                        accent={product.accent}
-                        onView={() => navigate(`/product/${product.id}`)}
-                        onAdd={() => handleProtectedAction(`/product/${product.id}`)}
-                        onWishlist={() => handleAddToWishlist(product.id)}
-                      />
-                    ))}
+                    {displayProducts.length > 0 ? (
+                      displayProducts.map((product) => (
+                        <ProductCard
+                          key={product.id}
+                          id={product.id}
+                          name={product.name}
+                          category={product.category}
+                          price={product.price}
+                          originalPrice={product.original}
+                          image={product.gallery[0]}
+                          accent={product.accent}
+                          onView={() => navigate(`/product/${product.id}`)}
+                          onAdd={() => handleProtectedAction(`/product/${product.id}`)}
+                          onWishlist={() => handleAddToWishlist(product.id)}
+                        />
+                      ))
+                    ) : (
+                      <div className="col-span-full text-center py-12 text-muted-foreground">
+                        <p className="text-lg">No {activeFilter} products available in this category.</p>
+                        <p className="text-sm mt-2">Check back soon for new arrivals!</p>
+                      </div>
+                    )}
                   </div>
                   <div className="flex justify-center">
                     <Button
@@ -337,7 +388,7 @@ const Home = () => {
 
           <div className="rounded-[28px] sm:rounded-[32px] lg:rounded-[40px] border border-white/15 bg-[var(--gradient-card)] p-4 sm:p-6 lg:p-8 xl:p-10 shadow-[var(--shadow-soft)]">
             <div className="space-y-3 sm:space-y-4 lg:space-y-5">
-              <p className="font-display text-xs sm:text-sm uppercase tracking-[0.22em] text-muted-foreground">Why AXNO</p>
+              <p className="font-display text-xs sm:text-sm uppercase tracking-[0.22em] text-muted-foreground">Why Looklyn</p>
               <ul className="space-y-2 sm:space-y-3 lg:space-y-4 text-xs sm:text-sm lg:text-base text-muted-foreground">
                 <li className="flex items-start gap-2 sm:gap-3">
                   <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-primary flex-shrink-0 mt-0.5" /> <span>Eco pigment + puff + reflective inks.</span>
@@ -379,6 +430,9 @@ const Home = () => {
             </div>
             <div className="flex flex-row gap-3 sm:gap-4 w-full lg:w-auto lg:flex-shrink-0">
               <Button className="rounded-full bg-[#25D366] px-3 sm:px-5 py-3 sm:py-4 text-xs sm:text-sm font-semibold uppercase tracking-[0.4em] text-white shadow-lg w-auto" onClick={() => window.open("https://wa.me/918734884862", "_blank")}>
+                <svg className="mr-2 h-4 w-4" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                </svg>
                 WhatsApp
               </Button>
               <Button variant="ghost" className="rounded-full border border-foreground px-3 sm:px-5 py-3 sm:py-4 text-xs sm:text-sm font-semibold uppercase tracking-[0.4em] w-auto" onClick={() => window.open("tel:+918734884862", "_self")}>
@@ -388,8 +442,8 @@ const Home = () => {
           </div>
         </section>
 
-        <footer className="font-display py-10 text-center text-xs uppercase tracking-[0.5em] text-muted-foreground">
-          © {new Date().getFullYear()} AXNO — Own The Look
+        <footer className="py-10 text-center text-sm sm:text-base uppercase tracking-[0.5em] text-muted-foreground font-normal">
+          © {new Date().getFullYear()} Looklyn — Own The Look
         </footer>
       </div>
     </div>

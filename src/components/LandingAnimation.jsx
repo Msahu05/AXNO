@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useThemeMode } from "@/contexts/theme-context";
+import Logo from "@/components/Logo";
 
 let landingPlayed = false;
 
@@ -10,7 +11,7 @@ const LandingAnimation = () => {
   useEffect(() => {
     if (landingPlayed) return;
     landingPlayed = true;
-    const timeout = window.setTimeout(() => setIsVisible(false), 3600);
+    const timeout = window.setTimeout(() => setIsVisible(false), 1500);
     return () => window.clearTimeout(timeout);
   }, []);
 
@@ -26,9 +27,24 @@ const LandingAnimation = () => {
           />
         ))}
         <div className="landing-glow" />
-        <div className="text-center">
-          <p className="text-sm uppercase tracking-[0.8em] text-muted-foreground">Own The Look</p>
-          <p className="text-6xl font-black tracking-[0.3em] text-foreground">AXNO</p>
+        <div className="text-center relative z-10 flex items-center justify-center">
+          {/* Logo Image - centered in circle */}
+          <img 
+            src="/logo.png" 
+            alt="LOOKLYN Logo" 
+            className="max-w-[200px] sm:max-w-[250px] lg:max-w-[300px] h-auto object-contain"
+            style={{ marginLeft: '0.3rem' }}
+            onError={(e) => {
+              // Fallback if image doesn't exist - show text logo
+              e.target.style.display = 'none';
+              const fallback = e.target.nextElementSibling;
+              if (fallback) fallback.style.display = 'block';
+            }}
+          />
+          {/* Fallback text logo if image not found */}
+          <div className="hidden">
+            <Logo size="large" showTagline={true} className="text-foreground" />
+          </div>
         </div>
       </div>
     </div>
@@ -36,4 +52,3 @@ const LandingAnimation = () => {
 };
 
 export default LandingAnimation;
-

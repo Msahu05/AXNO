@@ -24,13 +24,13 @@
    - Remove the `<` and `>` brackets
    - Use the password you created for the database user
    
-   **B. Add `/axno`** before the `?`
+   **B. Add `/looklyn`** before the `?`
    - Change: `...mongodb.net/?retryWrites...`
-   - To: `...mongodb.net/axno?retryWrites...`
+   - To: `...mongodb.net/looklyn?retryWrites...`
    
    **C. Paste it** in `server/.env` as:
    ```env
-   MONGODB_URI=mongodb+srv://username:YourActualPassword@cluster0.xxxxx.mongodb.net/axno?retryWrites=true&w=majority
+   MONGODB_URI=mongodb+srv://username:YourActualPassword@cluster0.xxxxx.mongodb.net/looklyn?retryWrites=true&w=majority
    ```
 
 4. **Generate JWT Secret:**
@@ -57,7 +57,7 @@
 
 3. **If you see errors:**
    - ❌ Check password (no `<` or `>`)
-   - ❌ Check `/axno` is before `?`
+   - ❌ Check `/looklyn` is before `?`
    - ❌ Check IP whitelist in Atlas
 
 ---
@@ -79,17 +79,17 @@
 
 **Before (from Atlas):**
 ```
-mongodb+srv://axno-admin:<password>@cluster0.abc123.mongodb.net/?retryWrites=true&w=majority
+mongodb+srv://looklyn-admin:<password>@cluster0.abc123.mongodb.net/?retryWrites=true&w=majority
 ```
 
 **After (in server/.env):**
 ```env
-MONGODB_URI=mongodb+srv://axno-admin:MyPassword123@cluster0.abc123.mongodb.net/axno?retryWrites=true&w=majority
+MONGODB_URI=mongodb+srv://looklyn-admin:MyPassword123@cluster0.abc123.mongodb.net/looklyn?retryWrites=true&w=majority
 ```
 
 **Changes made:**
 - ✅ Removed `<` and `>` around password
-- ✅ Added `/axno` before `?`
+- ✅ Added `/looklyn` before `?`
 
 ---
 

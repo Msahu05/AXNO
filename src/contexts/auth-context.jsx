@@ -61,11 +61,31 @@ export const AuthProvider = ({ children }) => {
 
   const signup = async (credentials) => {
     try {
-      const response = await authAPI.signup(credentials.name, credentials.email, credentials.password);
+      const response = await authAPI.signup(credentials.name, credentials.email, credentials.password, credentials.phone);
       localStorage.setItem('authToken', response.token);
       setUser(response.user);
       setIsAuthenticated(true);
-      return { success: true };
+      return { success: true, user: response.user };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  };
+
+  const googleLogin = async (googleId, email, name, image) => {
+    try {
+      const response = await authAPI.googleSignIn(googleId, email, name, image);
+      // Store token temporarily but don't set authenticated yet if phone is missing
+      localStorage.setItem('authToken', response.token);
+      // Only set authenticated if phone number exists
+      if (response.user?.phone && response.user.phone !== '') {
+        setUser(response.user);
+        setIsAuthenticated(true);
+      } else {
+        // Store user data temporarily without setting authenticated
+        setUser(response.user);
+        setIsAuthenticated(false);
+      }
+      return { success: true, user: response.user, token: response.token };
     } catch (error) {
       return { success: false, error: error.message };
     }
@@ -81,6 +101,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const userData = await authAPI.getCurrentUser();
       setUser(userData);
+      setIsAuthenticated(true);
       return userData;
     } catch (error) {
       logout();
@@ -97,6 +118,7 @@ export const AuthProvider = ({ children }) => {
       verifyOtp,
       login,
       signup,
+      googleLogin,
       logout,
       refreshUser,
     }),

@@ -18,7 +18,7 @@ const savedAddresses = [
   {
     id: "studio",
     label: "Studio",
-    name: "AXNO Studio",
+    name: "Looklyn Studio",
     line1: "48 Sunrise Arcade",
     city: "Indiranagar, Bengaluru",
     pin: "560038",

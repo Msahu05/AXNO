@@ -57,9 +57,9 @@ VITE_API_URL=http://localhost:3001/api
 
 ### Backend (server/.env)
 ```
-MONGODB_URI=mongodb://localhost:27017/axno
+MONGODB_URI=mongodb://localhost:27017/looklyn
 # OR for MongoDB Atlas:
-# MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/axno
+# MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/looklyn
 
 JWT_SECRET=your-super-secret-jwt-key-change-this
 PORT=3001
@@ -77,7 +77,7 @@ PORT=3001
 ### Option 2: Local MongoDB
 1. Download from https://www.mongodb.com/try/download/community
 2. Install and start MongoDB
-3. Use `mongodb://localhost:27017/axno` in `.env`
+3. Use `mongodb://localhost:27017/looklyn` in `.env`
 
 ## 🐛 Troubleshooting
 

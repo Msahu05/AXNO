@@ -198,7 +198,97 @@ export const menProducts = createProducts(menTemplates, 20, "men");
 export const womenProducts = createProducts(womenTemplates, 20, "women");
 export const kidsProducts = createProducts(kidsTemplates, 20, "kids");
 
-export const allProducts = [...menProducts, ...womenProducts, ...kidsProducts];
+// Helper function to detect category from product name
+const detectCategory = (name) => {
+  const lowerName = name.toLowerCase();
+  if (lowerName.includes("hoodie")) return "Hoodie";
+  if (lowerName.includes("sweatshirt")) return "Sweatshirt";
+  if (lowerName.includes("t-shirt") || lowerName.includes("tee") || lowerName.includes("tshirt")) return "T-Shirt";
+  return "Hoodie"; // Default fallback
+};
+
+// Helper function to detect audience from product name
+const detectAudience = (name) => {
+  const lowerName = name.toLowerCase();
+  if (lowerName.includes("men") || lowerName.includes("men's")) return "men";
+  if (lowerName.includes("women") || lowerName.includes("women's")) return "women";
+  if (lowerName.includes("kids") || lowerName.includes("kid's") || lowerName.includes("children")) return "kids";
+  return "men"; // Default fallback
+};
+
+// Helper function to generate unique ID
+const generateId = (name, audience, category) => {
+  const timestamp = Date.now();
+  const random = Math.floor(Math.random() * 1000);
+  const cleanName = name.toLowerCase().replace(/[^a-z0-9]/g, "-").substring(0, 20);
+  return `${audience}-${category.toLowerCase()}-${cleanName}-${timestamp}-${random}`;
+};
+
+// Manual products array - Add your custom products here!
+// You can add products manually or use the addProduct() helper function below
+const manualProducts = [
+  // Example 1: Product with external image URL (Unsplash, etc.)
+  // {
+  //   id: "men-hoodie-custom-001",
+  //   name: "Men's Premium Black Hoodie",
+  //   category: "Hoodie",
+  //   audience: "men",
+  //   price: 1299,
+  //   original: 2199,
+  //   accent: "linear-gradient(135deg,#000000,#333333)",
+  //   gallery: [
+  //     "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1000&q=80",
+  //   ],
+  // },
+  
+  // Example 2: Product with LOCAL images (stored in public/products/ folder)
+  // Step 1: Copy your images to public/products/ folder (e.g., men-hoodie-001.jpg)
+  // Step 2: Reference them using /products/filename.jpg
+  // {
+  //   id: "men-hoodie-local-001",
+  //   name: "Men's Custom Hoodie",
+  //   category: "Hoodie",
+  //   audience: "men",
+  //   price: 1299,
+  //   original: 2199,
+  //   accent: "linear-gradient(135deg,#000000,#333333)",
+  //   gallery: [
+  //     "/products/men-hoodie-001.jpg",      // Local image from public/products/
+  //     "/products/men-hoodie-002.jpg",      // Local image from public/products/
+  //     "/products/men-hoodie-003.jpg",      // Local image from public/products/
+  //   ],
+  // },
+];
+
+// Helper function to add a product with auto-detection
+// Usage: addProduct({ name: "Men's Premium Hoodie", price: 1099, original: 1999, gallery: [...] })
+export const addProduct = (productData) => {
+  const category = productData.category || detectCategory(productData.name);
+  const audience = productData.audience || detectAudience(productData.name);
+  const id = productData.id || generateId(productData.name, audience, category);
+  
+  const newProduct = {
+    id,
+    name: productData.name,
+    category,
+    audience,
+    price: productData.price,
+    original: productData.original,
+    accent: productData.accent || "linear-gradient(135deg,#5c3d8a,#7a5bff)",
+    gallery: productData.gallery || [],
+  };
+  
+  manualProducts.push(newProduct);
+  return newProduct;
+};
+
+// Combine all products
+export const allProducts = [
+  ...menProducts, 
+  ...womenProducts, 
+  ...kidsProducts,
+  ...manualProducts
+];
 
 export const findProductById = (id) => allProducts.find((product) => product.id === id);
 

@@ -75,7 +75,7 @@ const Payment = () => {
   amount: totalInPaise,
   currency: "INR",
   order_id,
-  name: "AXNO",
+  name: "Looklyn",
   description: "Own The Look",
   handler: (response) => verifyPayment(response),
   theme: { color: "#6c42ff" },
@@ -87,7 +87,7 @@ const Payment = () => {
         <div className="rounded-[32px] border border-white/20 bg-background/70 p-6">
           <p className="text-xs uppercase tracking-[0.6em] text-muted-foreground">Security</p>
           <p className="mt-2 flex items-center gap-2">
-            <ShieldCheck className="text-primary" /> Razorpay is PCI-DSS compliant. AXNO never stores card numbers. UPI + Wallets available for instant settlement.
+            <ShieldCheck className="text-primary" /> Razorpay is PCI-DSS compliant. Looklyn never stores card numbers. UPI + Wallets available for instant settlement.
           </p>
           <Button className="mt-6 rounded-full bg-foreground px-8 py-4 text-xs font-semibold uppercase tracking-[0.4em] text-background" onClick={() => navigate("/")}>
             Back to home

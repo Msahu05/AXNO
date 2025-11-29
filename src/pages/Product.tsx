@@ -171,7 +171,7 @@ const Product = () => {
             <div className="rounded-[32px] border border-dashed border-primary/40 bg-primary/5 p-6">
               <p className="text-sm font-semibold text-primary">Customise this drop</p>
               <p className="text-sm text-muted-foreground">
-                Want your own art? Continue with AXNO design or upload your concept at checkout. You can attach AI prompts, PSDs, or references there. We confirm on WhatsApp within 12 hours to deliver exactly what you want.
+                Want your own art? Continue with Looklyn design or upload your concept at checkout. You can attach AI prompts, PSDs, or references there. We confirm on WhatsApp within 12 hours to deliver exactly what you want.
               </p>
               <Button variant="outline" className="mt-4 rounded-full border-primary text-primary hover:bg-primary/10" onClick={() => navigate("/checkout")}>
                 Upload later at checkout

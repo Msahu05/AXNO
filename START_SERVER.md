@@ -29,7 +29,7 @@ The server will still start, but authentication won't work. You need MongoDB:
 4. Get your connection string
 5. Create `server/.env` file:
    ```env
-   MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/axno
+   MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/looklyn
    JWT_SECRET=your-secret-key-here
    PORT=3001
    ```
@@ -39,7 +39,7 @@ The server will still start, but authentication won't work. You need MongoDB:
 2. Install and start MongoDB service
 3. Create `server/.env` file:
    ```env
-   MONGODB_URI=mongodb://localhost:27017/axno
+   MONGODB_URI=mongodb://localhost:27017/looklyn
    JWT_SECRET=your-secret-key-here
    PORT=3001
    ```

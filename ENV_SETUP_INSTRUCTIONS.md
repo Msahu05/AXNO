@@ -32,13 +32,13 @@
    ```
    To:
    ```
-   ...mongodb.net/axno?retryWrites...
+   ...mongodb.net/looklyn?retryWrites...
    ```
-   (Add `/axno` before the `?`)
+   (Add `/looklyn` before the `?`)
 
 5. **Final format should be:**
    ```env
-   MONGODB_URI=mongodb+srv://axno-admin:YourActualPassword123@cluster0.xxxxx.mongodb.net/axno?retryWrites=true&w=majority
+   MONGODB_URI=mongodb+srv://looklyn-admin:YourActualPassword123@cluster0.xxxxx.mongodb.net/looklyn?retryWrites=true&w=majority
    ```
 
 6. **Generate JWT Secret:**
@@ -77,7 +77,7 @@
 
 3. **If you see an error:**
    - ❌ Check your password (no `<` or `>` brackets)
-   - ❌ Check database name is `/axno` before `?`
+   - ❌ Check database name is `/looklyn` before `?`
    - ❌ Check IP whitelist in Atlas (should be 0.0.0.0/0)
    - ❌ Check connection string format
 
@@ -101,7 +101,7 @@
 
 ### `server/.env`:
 ```env
-MONGODB_URI=mongodb+srv://axno-admin:MySecurePassword123@cluster0.abc123.mongodb.net/axno?retryWrites=true&w=majority
+MONGODB_URI=mongodb+srv://looklyn-admin:MySecurePassword123@cluster0.abc123.mongodb.net/looklyn?retryWrites=true&w=majority
 JWT_SECRET=a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6
 PORT=3001
 ```
@@ -128,7 +128,7 @@ VITE_API_URL=http://localhost:3001/api
 ### Error: "Invalid connection string"
 - **Fix:** Check the format:
   - Should start with `mongodb+srv://`
-  - Should have `/axno` before `?`
+  - Should have `/looklyn` before `?`
   - Should not have spaces
   - Should have `?retryWrites=true&w=majority` at the end
 
@@ -143,7 +143,7 @@ VITE_API_URL=http://localhost:3001/api
 
 - [ ] `server/.env` file created with correct `MONGODB_URI`
 - [ ] Password replaced (no `<` or `>` brackets)
-- [ ] Database name `/axno` added before `?`
+- [ ] Database name `/looklyn` added before `?`
 - [ ] `JWT_SECRET` set to a random string
 - [ ] Root `.env` has `VITE_API_URL=http://localhost:3001/api`
 - [ ] Backend server shows `✅ MongoDB connected`

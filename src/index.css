@@ -4,7 +4,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* AXNO Design Tokens */
+/* Looklyn Design Tokens */
 @layer base {
   :root {
     --background: 270 50% 97%;

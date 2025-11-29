@@ -25,7 +25,7 @@ const AuthDialog = () => {
       <DialogContent className="max-w-md rounded-3xl border-none bg-gradient-to-b from-background via-background to-muted p-8 shadow-2xl">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-foreground">
-            {mode === "login" ? "Log in to AXNO" : "Create your AXNO account"}
+            {mode === "login" ? "Log in to Looklyn" : "Create your Looklyn account"}
           </DialogTitle>
           <DialogDescription className="text-muted-foreground">
             Access your wishlist, saved addresses, and checkout faster.

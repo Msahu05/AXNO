@@ -19,7 +19,7 @@
 
 3. **Create Database User**:
    - Go to "Database Access" → "Add New Database User"
-   - Username: `axno-admin`
+   - Username: `looklyn-admin`
    - Password: Click "Autogenerate Secure Password" (SAVE THIS!)
    - Privileges: "Atlas admin"
    - Click "Add User"
@@ -34,12 +34,12 @@
    - Choose "Connect your application"
    - Copy the connection string
    - Replace `<password>` with your database user password
-   - Add database name: Change `/?retryWrites...` to `/axno?retryWrites...`
+   - Add database name: Change `/?retryWrites...` to `/looklyn?retryWrites...`
 
 6. **Update `.env` file**:
    - Create `server/.env`:
    ```env
-   MONGODB_URI=mongodb+srv://axno-admin:YOUR_PASSWORD@cluster0.xxxxx.mongodb.net/axno?retryWrites=true&w=majority
+   MONGODB_URI=mongodb+srv://looklyn-admin:YOUR_PASSWORD@cluster0.xxxxx.mongodb.net/looklyn?retryWrites=true&w=majority
    JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
    PORT=3001
    ```
@@ -62,14 +62,14 @@
 Create a `.env` file in the `server` directory:
 
 ```env
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/axno?retryWrites=true&w=majority
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/looklyn?retryWrites=true&w=majority
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 PORT=3001
 ```
 
 For local MongoDB:
 ```env
-MONGODB_URI=mongodb://localhost:27017/axno
+MONGODB_URI=mongodb://localhost:27017/looklyn
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 PORT=3001
 ```

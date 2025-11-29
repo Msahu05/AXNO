@@ -32,7 +32,7 @@ const Auth = () => {
         </button>
         <div>
           <p className="text-xs uppercase tracking-[0.6em] text-muted-foreground">{mode === "login" ? "Welcome back" : "Create account"}</p>
-          <h1 className="text-3xl font-black">AXNO</h1>
+          <h1 className="text-3xl font-black">Looklyn</h1>
         </div>
         <form className="space-y-4" onSubmit={handleSubmit}>
           {mode === "signup" && (
