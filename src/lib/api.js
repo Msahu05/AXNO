@@ -348,5 +348,90 @@ export const adminAPI = {
       method: 'POST',
     });
   },
+
+  createProduct: async (formData) => {
+    return apiCallWithFiles('/admin/products', formData, {
+      method: 'POST',
+    });
+  },
+
+  updateProduct: async (productId, formData) => {
+    return apiCallWithFiles(`/admin/products/${productId}`, formData, {
+      method: 'PUT',
+    });
+  },
+
+  deleteProduct: async (productId) => {
+    return apiCall(`/admin/products/${productId}`, {
+      method: 'DELETE',
+    });
+  },
 };
+
+// Products API (Public)
+export const productsAPI = {
+  getAll: async (filters = {}) => {
+    const queryParams = new URLSearchParams();
+    if (filters.category) queryParams.append('category', filters.category);
+    if (filters.audience) queryParams.append('audience', filters.audience);
+    if (filters.search) queryParams.append('search', filters.search);
+    if (filters.page) queryParams.append('page', filters.page);
+    if (filters.limit) queryParams.append('limit', filters.limit);
+    
+    const query = queryParams.toString();
+    return apiCall(`/products${query ? '?' + query : ''}`);
+  },
+
+  getById: async (id) => {
+    return apiCall(`/products/${id}`);
+  },
+};
+
+// Size Charts API
+export const sizeChartsAPI = {
+  getByCategory: async (category) => {
+    return apiCall(`/size-charts/${category}`);
+  },
+};
+
+// Admin Size Charts API
+export const adminSizeChartsAPI = {
+  getAll: async () => {
+    return apiCall('/admin/size-charts');
+  },
+
+  save: async (sizeChartData) => {
+    return apiCall('/admin/size-charts', {
+      method: 'POST',
+      body: JSON.stringify(sizeChartData),
+    });
+  },
+
+  delete: async (category) => {
+    return apiCall(`/admin/size-charts/${category}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+// Helper function to get full image URL
+export function getImageUrl(imagePath) {
+  if (!imagePath) return 'https://via.placeholder.com/500';
+  // If already a full URL, return as is
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    return imagePath;
+  }
+  // If starts with /uploads, prepend server base URL
+  if (imagePath.startsWith('/uploads/')) {
+    const SERVER_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+    return `${SERVER_BASE_URL}${imagePath}`;
+  }
+  // If just a filename, assume it's in uploads
+  if (!imagePath.startsWith('/')) {
+    const SERVER_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+    return `${SERVER_BASE_URL}/uploads/${imagePath}`;
+  }
+  const SERVER_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+  return `${SERVER_BASE_URL}${imagePath}`;
+}
 

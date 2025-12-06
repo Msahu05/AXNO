@@ -1,16 +1,42 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, ArrowRight, Heart, Star, Sparkles, Wand2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Heart, Star, Sparkles, Wand2, X, Menu, Camera, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import Header from "@/components/Header";
 import ProductReviews from "@/components/ProductReviews";
 import { useAuth } from "@/contexts/auth-context";
 import { useCart } from "@/contexts/cart-context";
 import { useWishlist } from "@/contexts/wishlist-context";
-import { allProducts, findProductById } from "@/data/products";
-import { toast } from "@/hooks/use-toast";
+import { productsAPI, getImageUrl, sizeChartsAPI } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 const sizes = ["S", "M", "L", "XL"];
+
+// Default size guide data (fallback)
+const defaultSizeGuideData = {
+  inches: {
+    S: { chest: 46, toFitChest: 38, shoulder: 24, length: 26.5 },
+    M: { chest: 48, toFitChest: 40, shoulder: 25, length: 27.5 },
+    L: { chest: 50, toFitChest: 42, shoulder: 26, length: 28.5 },
+    XL: { chest: 52, toFitChest: 44, shoulder: 27, length: 29 },
+    XXL: { chest: 54, toFitChest: 46, shoulder: 28, length: 29.5 },
+    XXXL: { chest: 56, toFitChest: 48, shoulder: 29, length: 30 },
+  },
+  cms: {
+    S: { chest: 117, toFitChest: 97, shoulder: 61, length: 67 },
+    M: { chest: 122, toFitChest: 102, shoulder: 64, length: 70 },
+    L: { chest: 127, toFitChest: 107, shoulder: 66, length: 72 },
+    XL: { chest: 132, toFitChest: 112, shoulder: 69, length: 74 },
+    XXL: { chest: 137, toFitChest: 117, shoulder: 71, length: 75 },
+    XXXL: { chest: 142, toFitChest: 122, shoulder: 74, length: 76 },
+  },
+};
 
 const Product = () => {
   const { id } = useParams();
@@ -18,23 +44,149 @@ const Product = () => {
   const { isAuthenticated } = useAuth();
   const { addItem } = useCart();
   const { addItem: addToWishlist, isInWishlist, removeItem: removeFromWishlist } = useWishlist();
-  const product = findProductById(id || '') || allProducts[0];
-  const related = allProducts.filter((item) => item.audience === product.audience && item.id !== product.id).slice(0, 3);
+  const { toast } = useToast();
+  const [product, setProduct] = useState(null);
+  const [related, setRelated] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [size, setSize] = useState("M");
   const [imageIndex, setImageIndex] = useState(0);
   const [pincode, setPincode] = useState("");
-  const [pincodeValid, setPincodeValid] = useState(null); // null = not checked, true = valid, false = invalid
+  const [pincodeValid, setPincodeValid] = useState(null);
   const [deliveryEstimate, setDeliveryEstimate] = useState("");
-  const galleryLength = product.gallery.length || 1;
-  const currentImage = product.gallery[imageIndex % galleryLength] || product.gallery[0];
+  const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
+  const [sizeUnit, setSizeUnit] = useState("inches");
+  const [sizeGuideData, setSizeGuideData] = useState(defaultSizeGuideData);
+  const [fitDescription, setFitDescription] = useState('Oversized Fit');
+  const [fitDetails, setFitDetails] = useState('Falls loosely on the body');
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [selectedColor, setSelectedColor] = useState(0);
   const touchStartX = useRef(null);
+
+  // Load product from API
+  useEffect(() => {
+    const loadProduct = async () => {
+      if (!id || id === 'undefined' || id === 'null') {
+        toast({
+          title: 'Error',
+          description: 'Invalid product ID',
+          variant: 'destructive',
+        });
+        navigate('/');
+        return;
+      }
+      
+      try {
+        setLoading(true);
+        const productData = await productsAPI.getById(id);
+        setProduct(productData);
+        
+        // Load size chart for this product category
+        if (productData.category) {
+          try {
+            const sizeChart = await sizeChartsAPI.getByCategory(productData.category);
+            if (sizeChart.measurements) {
+              setSizeGuideData(sizeChart.measurements);
+            }
+            if (sizeChart.fitDescription) {
+              setFitDescription(sizeChart.fitDescription);
+            }
+            if (sizeChart.fitDetails) {
+              setFitDetails(sizeChart.fitDetails);
+            }
+          } catch (error) {
+            console.warn('Error loading size chart, using defaults:', error);
+          }
+        }
+        
+        // Load related products
+        if (productData.audience) {
+          const relatedData = await productsAPI.getAll({ 
+            audience: productData.audience, 
+            limit: 4 
+          });
+          const filtered = relatedData.products.filter(item => item.id !== id).slice(0, 3);
+          setRelated(filtered);
+        }
+      } catch (error) {
+        console.error('Error loading product:', error);
+        toast({
+          title: 'Error',
+          description: error.message || 'Failed to load product. Please try again.',
+          variant: 'destructive',
+        });
+        navigate('/');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProduct();
+  }, [id, navigate, toast]);
+
+  const galleryLength = product?.gallery?.length || 1;
+  const currentImage = getImageUrl(product?.gallery?.[imageIndex % galleryLength] || product?.gallery?.[0] || '');
+
+  // Helper functions - MUST be before early returns
+  const showNextImage = () => setImageIndex((prev) => (prev + 1) % (product?.gallery?.length || 1));
+  const showPrevImage = () => setImageIndex((prev) => {
+    const length = product?.gallery?.length || 1;
+    return (prev - 1 + length) % length;
+  });
+
+  const handleTouchStart = (event) => {
+    touchStartX.current = event.touches[0]?.clientX || null;
+  };
+
+  const handleTouchEnd = (event) => {
+    if (touchStartX.current === null) return;
+    const diff = event.changedTouches[0]?.clientX - touchStartX.current;
+    touchStartX.current = null;
+    if (!diff || Math.abs(diff) < 40) return;
+    if (diff > 0) {
+      showPrevImage();
+    } else {
+      showNextImage();
+    }
+  };
+
+  // Reset image index when product changes - MUST be before early returns
+  useEffect(() => {
+    if (product?.id) {
+      setImageIndex(0);
+    }
+  }, [product?.id]);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [id]);
+
+  // Early returns AFTER all hooks
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading product...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <p className="text-xl font-semibold mb-2">Product not found</p>
+          <Button onClick={() => navigate('/')}>Go Home</Button>
+        </div>
+      </div>
+    );
+  }
 
   // Ahmedabad and Gandhinagar pincode ranges
   const isValidPincode = (pin) => {
     const pincodeNum = parseInt(pin);
     if (isNaN(pincodeNum) || pin.length !== 6) return false;
-    // Ahmedabad: 380001-380061
-    // Gandhinagar: 382001-382481
     return (pincodeNum >= 380001 && pincodeNum <= 380061) || 
            (pincodeNum >= 382001 && pincodeNum <= 382481);
   };
@@ -57,59 +209,23 @@ const Product = () => {
     }
   };
 
-  const handleProtected = (destination) => {
-    if (isAuthenticated) {
-      navigate(destination);
-    } else {
-      navigate(`/auth?redirect=${encodeURIComponent(destination)}`);
-    }
-  };
-
   const handleBuyNow = () => {
+    if (!product) return;
     if (!isAuthenticated) {
       navigate(`/auth?redirect=${encodeURIComponent(`/product/${product.id}`)}`);
       return;
     }
-    // Add product to cart first
     addItem({
       id: product.id,
       name: product.name,
       category: product.category,
       price: product.price,
       original: product.original,
-      image: product.gallery[0],
+      image: getImageUrl(product.gallery?.[0]),
       size,
     });
-    // Navigate to checkout
     navigate("/checkout");
   };
-
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [id]);
-
-  const showNextImage = () => setImageIndex((prev) => (prev + 1) % galleryLength);
-  const showPrevImage = () => setImageIndex((prev) => (prev - 1 + galleryLength) % galleryLength);
-
-  const handleTouchStart = (event) => {
-    touchStartX.current = event.touches[0]?.clientX || null;
-  };
-
-  const handleTouchEnd = (event) => {
-    if (touchStartX.current === null) return;
-    const diff = event.changedTouches[0]?.clientX - touchStartX.current;
-    touchStartX.current = null;
-    if (!diff || Math.abs(diff) < 40) return;
-    if (diff > 0) {
-      showPrevImage();
-    } else {
-      showNextImage();
-    }
-  };
-
-  useEffect(() => {
-    setImageIndex(0);
-  }, [product.id]);
 
   const handleAddToCart = () => {
     if (!isAuthenticated) {
@@ -122,7 +238,7 @@ const Product = () => {
       category: product.category,
       price: product.price,
       original: product.original,
-      image: product.gallery[0],
+      image: getImageUrl(product.gallery?.[0]),
       size,
     });
     toast({
@@ -149,7 +265,7 @@ const Product = () => {
         category: product.category,
         price: product.price,
         original: product.original,
-        image: product.gallery[0],
+        image: getImageUrl(product.gallery?.[0]),
       });
       toast({
         title: "Added to wishlist",
@@ -158,194 +274,463 @@ const Product = () => {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(124,90,255,0.1),_transparent_65%)]">
-      <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-6">
-        <Header />
-      </div>
-      <div className="px-4 sm:px-6">
-        <div className="mx-auto max-w-6xl space-y-6 sm:space-y-8 lg:space-y-10 rounded-[32px] sm:rounded-[40px] lg:rounded-[56px] border border-white/10 bg-[var(--card)]/90 p-4 sm:p-6 lg:p-8 shadow-[var(--shadow-soft)] mt-4 sm:mt-6">
-        <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-4">
-          <button className="flex items-center gap-2 rounded-full px-3 sm:px-4 py-2 text-xs font-semibold uppercase tracking-[0.4em] transition-all duration-200 bg-transparent hover:bg-purple-200 hover:shadow-sm active:bg-purple-300" onClick={() => navigate(-1)}>
-            <ArrowLeft className="h-4 w-4" /> <span className="hidden sm:inline">Back</span>
-          </button>
-          <p className="text-xs uppercase tracking-[0.6em] text-muted-foreground hidden sm:block">Product details</p>
-        </div>
+  // Get color options from product
+  const colorOptions = product.colorOptions || [];
+  const defaultColors = [
+    { name: 'Brown', hexCode: '#8B4513' },
+    { name: 'Beige', hexCode: '#F5F5DC' },
+    { name: 'Black', hexCode: '#000000' }
+  ];
 
-        <div className="grid gap-6 sm:gap-8 lg:gap-10 lg:grid-cols-2">
-          <div className="space-y-4 sm:space-y-6">
+  return (
+    <div className="min-h-screen bg-gray-50 relative overflow-hidden">
+      {/* Subtle background pattern */}
+      <div className="absolute inset-0 opacity-5">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.03) 10px, rgba(0,0,0,0.03) 20px)`
+        }}></div>
+      </div>
+
+      {/* Minimal Header */}
+      <div className="relative z-10 px-6 py-4 border-b border-gray-200 bg-white/80 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <button 
+            onClick={() => navigate(-1)}
+            className="text-sm uppercase tracking-wider text-gray-600 hover:text-gray-900"
+          >
+            CONTACT
+          </button>
+          <div className="text-2xl font-serif italic text-gray-900">Mimosa</div>
+          <button className="text-gray-600 hover:text-gray-900">
+            <Menu className="h-6 w-6" />
+          </button>
+        </div>
+      </div>
+
+      {/* Navigation Breadcrumb */}
+      <div className="relative z-10 px-6 py-3 bg-white/50 backdrop-blur-sm border-b border-gray-100">
+        <div className="max-w-7xl mx-auto">
+          <button 
+            onClick={() => navigate('/')}
+            className="text-xs uppercase tracking-wider text-gray-500 hover:text-gray-900 flex items-center gap-2"
+          >
+            COLLECTIONS <ChevronRight className="h-3 w-3" /> {product.category.toUpperCase()}S
+          </button>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="relative z-10 max-w-7xl mx-auto px-6 py-8">
+        <div className="grid lg:grid-cols-2 gap-12 items-start">
+          {/* Left Side - Product Info */}
+          <div className="space-y-6">
+            {/* Product Title */}
+            <div>
+              <h1 className="text-4xl lg:text-5xl font-serif font-light text-gray-900 mb-4 leading-tight">
+                {product.name}
+              </h1>
+              
+              {/* Color Swatches */}
+              {colorOptions.length > 0 ? (
+                <div className="flex items-center gap-3 mb-6">
+                  {colorOptions.map((color, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setSelectedColor(index)}
+                      className={`w-8 h-8 rounded-full border-2 transition-all ${
+                        selectedColor === index ? 'border-gray-900 scale-110' : 'border-gray-300'
+                      }`}
+                      style={{ backgroundColor: color.hexCode || defaultColors[index]?.hexCode || '#8B4513' }}
+                      title={color.name || defaultColors[index]?.name}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 mb-6">
+                  {defaultColors.map((color, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setSelectedColor(index)}
+                      className={`w-8 h-8 rounded-full border-2 transition-all ${
+                        selectedColor === index ? 'border-gray-900 scale-110' : 'border-gray-300'
+                      }`}
+                      style={{ backgroundColor: color.hexCode }}
+                      title={color.name}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* Description */}
+              <p className="text-gray-600 leading-relaxed mb-4">
+                {product.description || "If you need added protection from the elements, our timeless full-length trench coat is perfect for you. Classic single-breasted style with front gun flaps also includes a removable hood for the most inclement weather."}
+              </p>
+
+              {/* Details Link */}
+              <button
+                onClick={() => setDetailsOpen(true)}
+                className="text-sm uppercase tracking-wider text-amber-700 underline underline-offset-4 hover:text-amber-900 transition-colors"
+              >
+                DETAILS
+              </button>
+            </div>
+
+            {/* Price */}
+            <div className="flex items-baseline gap-4 pt-4 border-t border-gray-200">
+              <span className="text-3xl font-light text-gray-900">₹{product.price}</span>
+              {product.original && product.original > product.price && (
+                <span className="text-xl text-gray-400 line-through">₹{product.original}</span>
+              )}
+            </div>
+
+            {/* Size Selection */}
+            <div className="pt-4 border-t border-gray-200">
+              <p className="text-xs uppercase tracking-wider text-gray-500 mb-4">SIZE</p>
+              <div className="flex flex-wrap gap-3">
+                {sizes.map((item) => (
+                  <button
+                    key={item}
+                    onClick={() => setSize(item)}
+                    className={`px-6 py-2 border-2 text-sm uppercase tracking-wider transition-all ${
+                      item === size
+                        ? "border-gray-900 bg-gray-900 text-white"
+                        : "border-gray-300 text-gray-700 hover:border-gray-900"
+                    }`}
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setSizeGuideOpen(true)}
+                className="mt-4 text-xs uppercase tracking-wider text-gray-500 underline underline-offset-4 hover:text-gray-900"
+              >
+                Size Guide
+              </button>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="pt-4 border-t border-gray-200 space-y-3">
+              <Button
+                onClick={handleAddToCart}
+                className="w-full bg-gray-900 text-white hover:bg-gray-800 rounded-none py-6 text-sm uppercase tracking-wider"
+              >
+                Add to Cart
+              </Button>
+              <Button
+                onClick={handleBuyNow}
+                variant="outline"
+                className="w-full border-2 border-gray-900 text-gray-900 hover:bg-gray-50 rounded-none py-6 text-sm uppercase tracking-wider"
+              >
+                Buy Now
+              </Button>
+            </div>
+          </div>
+
+          {/* Right Side - Product Images */}
+          <div className="relative">
             <div
-              className="relative rounded-[24px] sm:rounded-[32px] lg:rounded-[40px] border border-white/15 bg-[var(--gradient-card)] p-4 sm:p-6 lg:p-10 shadow-[var(--shadow-soft)]"
+              className="relative aspect-[3/4] bg-white"
               onTouchStart={handleTouchStart}
               onTouchEnd={handleTouchEnd}
             >
-              <button
-                className="absolute left-2 sm:left-4 lg:left-6 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/80 p-1.5 sm:p-2 text-foreground shadow-lg hover:bg-white transition-colors"
-                onClick={showPrevImage}
-                aria-label="Previous image"
-              >
-                <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
-              </button>
-              <button
-                className="absolute right-2 sm:right-4 lg:right-6 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/80 p-1.5 sm:p-2 text-foreground shadow-lg hover:bg-white transition-colors"
-                onClick={showNextImage}
-                aria-label="Next image"
-              >
-                <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
-              </button>
               <img
                 key={currentImage}
                 src={currentImage}
                 alt={product.name}
                 loading="eager"
-                className="gallery-slide h-[280px] sm:h-[350px] lg:h-[420px] w-full rounded-[20px] sm:rounded-[24px] lg:rounded-[32px] object-cover object-center"
-                style={{ objectFit: "cover", width: "100%", height: "100%" }}
+                className="w-full h-full object-cover"
               />
-              <button 
-                className={`absolute right-4 sm:right-6 lg:right-8 top-4 sm:top-6 lg:top-8 rounded-full bg-background/70 p-2 sm:p-3 backdrop-blur transition-colors ${
-                  isInWishlist(product.id) ? "text-primary fill-primary" : "text-foreground"
-                }`}
-                onClick={handleToggleWishlist}
+              
+              {/* Navigation Arrows */}
+              <button
+                onClick={showPrevImage}
+                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg transition-all"
+                aria-label="Previous image"
               >
-                <Heart className={`h-4 w-4 sm:h-5 sm:w-5 ${isInWishlist(product.id) ? "fill-current" : ""}`} />
+                <ArrowLeft className="h-5 w-5" />
+              </button>
+              <button
+                onClick={showNextImage}
+                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg transition-all"
+                aria-label="Next image"
+              >
+                <ArrowRight className="h-5 w-5" />
+              </button>
+
+              {/* Wishlist Button */}
+              <button
+                onClick={handleToggleWishlist}
+                className={`absolute top-4 right-4 p-2 rounded-full bg-white/80 hover:bg-white transition-all ${
+                  isInWishlist(product.id) ? "text-red-500" : "text-gray-600"
+                }`}
+              >
+                <Heart className={`h-5 w-5 ${isInWishlist(product.id) ? "fill-current" : ""}`} />
+              </button>
+
+              {/* Camera Icon (AR/Try-on) */}
+              <button className="absolute bottom-4 left-4 p-3 rounded-full bg-white/80 hover:bg-white shadow-lg transition-all">
+                <Camera className="h-5 w-5 text-gray-700" />
               </button>
             </div>
-            <div className="grid grid-cols-5 gap-2 sm:gap-3">
-              {product.gallery.map((photo, index) => (
-                <button
-                  key={photo}
-                  className={`overflow-hidden rounded-xl sm:rounded-2xl border-2 ${index === imageIndex ? "border-primary" : "border-transparent"} focus:outline-none`}
-                  onClick={() => setImageIndex(index)}
-                  aria-label={`View image ${index + 1}`}
-                >
-                  <img src={photo} alt={`${product.name} ${index + 1}`} loading="lazy" className="h-12 sm:h-16 lg:h-20 w-full object-cover" style={{ objectFit: "cover", width: "100%", height: "100%" }} />
-                </button>
-              ))}
-            </div>
-          </div>
 
-          <div className="space-y-4 sm:space-y-6">
-            <div>
-              <p className="text-xs uppercase tracking-[0.6em] text-muted-foreground">{product.type}</p>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black mt-1">{product.name}</h1>
-              <p className="mt-2 text-sm sm:text-base text-muted-foreground">Built with ultra-soft 320 GSM fleece, double needle stitching, and reinforced drop shoulder panels.</p>
-            </div>
-
-            <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-              {[...Array(5)].map((_, index) => (
-                <Star key={index} className="h-3 w-3 sm:h-4 sm:w-4 fill-secondary text-secondary" />
-              ))}
-              <span className="font-semibold text-foreground">4.9 · 212 reviews</span>
-            </div>
-
-            <div className="flex flex-wrap items-baseline gap-3 sm:gap-4">
-              <p className="text-3xl sm:text-4xl lg:text-5xl font-black">₹{product.price}</p>
-              <p className="text-xl sm:text-2xl text-muted-foreground line-through">₹{product.original}</p>
-              <p className="text-xs sm:text-sm font-semibold uppercase tracking-[0.3em] text-secondary">India pricing</p>
-            </div>
-
-            <div>
-              <p className="font-display text-xs uppercase tracking-[0.6em] text-muted-foreground">Select size</p>
-              <div className="mt-4 flex flex-wrap gap-3">
-                {sizes.map((item) => (
-                  <button key={item} className={`rounded-full px-6 py-3 text-sm font-semibold uppercase tracking-[0.3em] ${item === size ? "bg-foreground text-background" : "bg-muted text-foreground"}`} onClick={() => setSize(item)}>
-                    {item}
+            {/* Thumbnail Gallery */}
+            {product.gallery && product.gallery.length > 1 && (
+              <div className="grid grid-cols-5 gap-2 mt-4">
+                {product.gallery.map((photo, index) => (
+                  <button
+                    key={photo}
+                    onClick={() => setImageIndex(index)}
+                    className={`aspect-square overflow-hidden border-2 transition-all ${
+                      index === imageIndex ? "border-gray-900" : "border-transparent"
+                    }`}
+                  >
+                    <img
+                      src={getImageUrl(photo)}
+                      alt={`${product.name} ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
                   </button>
                 ))}
               </div>
-            </div>
+            )}
+          </div>
+        </div>
 
-            <div>
-              <p className="font-display text-xs uppercase tracking-[0.6em] text-muted-foreground">Check Delivery</p>
-              <div className="mt-4 space-y-3">
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={pincode}
-                    onChange={handlePincodeChange}
-                    placeholder="Enter pincode"
-                    maxLength={6}
-                    className="flex-1 rounded-full border border-white/20 bg-background/70 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
+        {/* Reviews Section */}
+        <div className="mt-16 pt-8 border-t border-gray-200">
+          <ProductReviews productId={product.id} />
+        </div>
+
+        {/* Related Products */}
+        {related.length > 0 && (
+          <div className="mt-16 pt-8 border-t border-gray-200">
+            <h2 className="text-2xl font-serif font-light mb-8">Related Products</h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+              {related.map((item) => (
+                <div
+                  key={item.id}
+                  onClick={() => navigate(`/product/${item.id}`)}
+                  className="cursor-pointer group"
+                >
+                  <div className="aspect-[3/4] bg-white mb-3 overflow-hidden">
+                    <img
+                      src={getImageUrl(item.gallery?.[0])}
+                      alt={item.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                  <p className="text-xs uppercase tracking-wider text-gray-500 mb-1">{item.category}</p>
+                  <h3 className="font-serif text-gray-900 mb-2">{item.name}</h3>
+                  <p className="text-gray-700">₹{item.price}</p>
                 </div>
-                {pincodeValid === true && deliveryEstimate && (
-                  <div className="rounded-full bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-800 px-4 py-2">
-                    <p className="text-sm font-semibold text-green-800 dark:text-green-200">✓ {deliveryEstimate}</p>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Details Sidebar */}
+      {detailsOpen && (
+        <div className="fixed inset-0 z-50 flex">
+          <div
+            className="flex-1 bg-black/20 backdrop-blur-sm"
+            onClick={() => setDetailsOpen(false)}
+          />
+          <div className="w-full max-w-md bg-white shadow-2xl overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-2xl font-serif font-light">{product.name.toUpperCase()}</h2>
+              <button
+                onClick={() => setDetailsOpen(false)}
+                className="text-gray-500 hover:text-gray-900"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-8">
+              <div>
+                <h3 className="text-3xl font-serif font-light mb-6">Product Details</h3>
+                
+                {/* Color Swatches */}
+                {colorOptions.length > 0 ? (
+                  <div className="flex items-center gap-3 mb-6">
+                    {colorOptions.map((color, index) => (
+                      <div
+                        key={index}
+                        className="w-8 h-8 rounded-full border border-gray-300"
+                        style={{ backgroundColor: color.hexCode || defaultColors[index]?.hexCode || '#8B4513' }}
+                        title={color.name || defaultColors[index]?.name}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3 mb-6">
+                    {defaultColors.map((color, index) => (
+                      <div
+                        key={index}
+                        className="w-8 h-8 rounded-full border border-gray-300"
+                        style={{ backgroundColor: color.hexCode }}
+                        title={color.name}
+                      />
+                    ))}
                   </div>
                 )}
-                {pincodeValid === false && (
-                  <div className="rounded-full bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-800 px-4 py-2">
-                    <p className="text-sm font-semibold text-red-800 dark:text-red-200">
-                      We currently deliver only to Ahmedabad and Gandhinagar. Please contact us on WhatsApp for orders outside these areas.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
 
-            <div className="rounded-[24px] sm:rounded-[28px] lg:rounded-[32px] border border-dashed border-primary/40 bg-primary/5 p-4 sm:p-6">
-              <p className="text-xs sm:text-sm font-semibold text-primary">Customise this drop</p>
-              <p className="text-xs sm:text-sm text-muted-foreground mt-2">
-                Want your own art? Continue with Looklyn design or upload your concept at checkout. You can attach AI prompts, PSDs, or references there. We confirm on WhatsApp within 12 hours to deliver exactly what you want.
-              </p>
-              <Button variant="outline" className="mt-3 sm:mt-4 rounded-full border-primary text-primary hover:bg-primary/10 text-xs sm:text-sm" onClick={() => navigate("/checkout")}>
-                Upload later at checkout
-              </Button>
-            </div>
+                {/* Size Info */}
+                <div className="mb-6">
+                  <p className="text-xs uppercase tracking-wider text-gray-500 mb-2">SIZE</p>
+                  <p className="text-sm text-gray-700">
+                    The model is 177cm/5'10" and wears a size {size}.
+                  </p>
+                </div>
 
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-              <Button className="flex-1 rounded-full bg-foreground px-6 sm:px-8 py-4 sm:py-6 text-xs sm:text-sm font-semibold uppercase tracking-[0.4em] text-background" onClick={handleAddToCart}>
-                Add to cart
-              </Button>
-              <Button variant="outline" className="flex-1 rounded-full border-foreground px-6 sm:px-8 py-4 sm:py-6 text-xs sm:text-sm font-semibold uppercase tracking-[0.4em]" onClick={handleBuyNow}>
-                Buy now
-              </Button>
-            </div>
+                {/* Composition */}
+                <div className="mb-6">
+                  <p className="text-xs uppercase tracking-wider text-gray-500 mb-2">COMPOSITION</p>
+                  <p className="text-sm text-gray-700">
+                    Shell, Lining: Polyester 100%
+                  </p>
+                </div>
 
-            <div className="rounded-[20px] sm:rounded-[24px] lg:rounded-[28px] border border-white/20 bg-background/70 p-4 sm:p-6">
-              <p className="font-display text-xs uppercase tracking-[0.6em] text-muted-foreground">Custom assurance</p>
-              <div className="mt-3 space-y-2 text-xs sm:text-sm text-muted-foreground">
-                <p className="flex items-center gap-2">
-                  <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" /> WhatsApp confirmation in 12 hours.
-                </p>
-                <p className="flex items-center gap-2">
-                  <Wand2 className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" /> Free mockups until you approve.
-                </p>
+                {/* Assistance */}
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-gray-500 mb-4">NEED ASSISTANCE?</p>
+                  <Button
+                    onClick={() => {
+                      window.open('https://wa.me/919876543210', '_blank');
+                    }}
+                    className="w-full bg-amber-700 hover:bg-amber-800 text-white rounded-none py-6 text-sm uppercase tracking-wider"
+                  >
+                    CONTACT US
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
         </div>
+      )}
 
-        <div className="mt-8 sm:mt-10">
-          <div className="flex items-center justify-between gap-4 mb-6">
-            <h2 className="text-2xl sm:text-3xl font-black">Related products</h2>
-            <Button variant="ghost" className="text-xs font-semibold uppercase tracking-[0.4em] flex-shrink-0" onClick={() => navigate("/")}>
-              View all
+      {/* Size Guide Modal */}
+      <Dialog open={sizeGuideOpen} onOpenChange={setSizeGuideOpen}>
+        <DialogContent className="sm:max-w-[600px] rounded-2xl p-0 overflow-hidden">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-2xl font-serif font-light">Size Guide</DialogTitle>
+              <button
+                onClick={() => setSizeGuideOpen(false)}
+                className="rounded-full p-1.5 hover:bg-gray-100 transition-colors"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5 text-gray-500" />
+              </button>
+            </div>
+          </DialogHeader>
+          
+          <div className="px-6 py-4">
+            <div className="mb-6">
+              <p className="text-base font-semibold text-gray-900 mb-1">{fitDescription}</p>
+              <p className="text-sm text-gray-600">{fitDetails}</p>
+            </div>
+
+            <div className="flex items-center gap-2 mb-6">
+              <button
+                onClick={() => setSizeUnit("inches")}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  sizeUnit === "inches"
+                    ? "bg-gray-900 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                Inches
+              </button>
+              <button
+                onClick={() => setSizeUnit("cms")}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  sizeUnit === "cms"
+                    ? "bg-gray-900 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                Cms
+              </button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b-2 border-gray-200">
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-900">Size</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-900">Chest</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-900">To Fit Chest</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-900">Shoulder</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-900">Length</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(sizeGuideData[sizeUnit] || {}).map(([sizeKey, measurements]) => (
+                    <tr
+                      key={sizeKey}
+                      className={`border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
+                        size === sizeKey ? "bg-gray-50" : ""
+                      }`}
+                      onClick={() => {
+                        if (sizes.includes(sizeKey)) {
+                          setSize(sizeKey);
+                        }
+                      }}
+                    >
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="radio"
+                            name="size-guide"
+                            checked={size === sizeKey}
+                            onChange={() => {
+                              if (sizes.includes(sizeKey)) {
+                                setSize(sizeKey);
+                              }
+                            }}
+                            className="w-4 h-4 text-gray-900 focus:ring-gray-900"
+                            disabled={!sizes.includes(sizeKey)}
+                          />
+                          <span className="text-sm font-medium text-gray-900">{sizeKey}</span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-sm text-gray-600">{measurements.chest}</td>
+                      <td className="py-3 px-4 text-sm text-gray-600">{measurements.toFitChest}</td>
+                      <td className="py-3 px-4 text-sm text-gray-600">{measurements.shoulder}</td>
+                      <td className="py-3 px-4 text-sm text-gray-600">{measurements.length}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="px-6 py-4 border-t border-gray-200 flex gap-3">
+            <Button
+              variant="outline"
+              className="flex-1 border-2 border-gray-900 text-gray-900 hover:bg-gray-50 rounded-none"
+              onClick={() => {
+                handleAddToCart();
+                setSizeGuideOpen(false);
+              }}
+            >
+              Add to Cart
+            </Button>
+            <Button
+              className="flex-1 bg-gray-900 text-white hover:bg-gray-800 rounded-none"
+              onClick={() => {
+                handleBuyNow();
+                setSizeGuideOpen(false);
+              }}
+            >
+              Buy Now
             </Button>
           </div>
-          <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 hide-scrollbar snap-x snap-mandatory" style={{ WebkitOverflowScrolling: 'touch' }}>
-            {related.map((item) => (
-              <div key={item.id} className="flex-shrink-0 w-[45%] sm:w-[180px] lg:w-[200px] snap-start rounded-[16px] sm:rounded-[20px] border border-white/15 bg-background/80 p-2 sm:p-3 shadow-inner hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate(`/product/${item.id}`)}>
-                <img
-                  src={item.gallery[0]}
-                  alt={item.name}
-                  loading="lazy"
-                  className="h-36 sm:h-40 lg:h-44 w-full rounded-lg sm:rounded-xl object-cover mb-2"
-                />
-                <p className="text-[10px] sm:text-xs uppercase tracking-[0.3em] text-muted-foreground truncate">{item.category}</p>
-                <h3 className="text-xs sm:text-sm font-semibold truncate mt-1">{item.name}</h3>
-                <div className="flex items-baseline gap-1 mt-1">
-                  <p className="text-xs sm:text-sm font-bold">₹{item.price}</p>
-                  <p className="text-[10px] text-muted-foreground line-through">₹{item.original}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <ProductReviews productId={product.id} />
-        </div>
-      </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
-import { adminAPI } from '@/lib/api';
+import { adminAPI, adminSizeChartsAPI } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,10 +23,11 @@ import {
   ShoppingBag,
   Plus,
   Edit,
-  User
+  User,
+  Ruler
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { allProducts } from '@/data/products';
+import SizeChartsEditor from '@/components/SizeChartsEditor';
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -38,6 +39,7 @@ const Admin = () => {
   const [orders, setOrders] = useState([]);
   const [users, setUsers] = useState([]);
   const [products, setProducts] = useState([]);
+  const [sizeCharts, setSizeCharts] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [statusFilter, setStatusFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -101,6 +103,8 @@ const Admin = () => {
       fetchUsers();
     } else if (activeTab === 'products') {
       fetchProducts();
+    } else if (activeTab === 'size-charts') {
+      fetchSizeCharts();
     }
   }, [isAuthenticated, user, statusFilter, page, userPage, activeTab, checkingAdmin, authLoading]);
 
@@ -157,8 +161,8 @@ const Admin = () => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      // Import products directly from the products file instead of API
-      setProducts(allProducts || []);
+      const response = await adminAPI.getProducts();
+      setProducts(response.products || []);
     } catch (error) {
       console.error('Error loading products:', error);
       toast({
@@ -167,6 +171,24 @@ const Admin = () => {
         variant: 'destructive',
       });
       setProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchSizeCharts = async () => {
+    try {
+      setLoading(true);
+      const response = await adminSizeChartsAPI.getAll();
+      setSizeCharts(response.sizeCharts || []);
+    } catch (error) {
+      console.error('Error fetching size charts:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load size charts',
+        variant: 'destructive',
+      });
+      setSizeCharts([]);
     } finally {
       setLoading(false);
     }
@@ -434,6 +456,10 @@ const Admin = () => {
               <ShoppingBag className="h-4 w-4" />
               Products
             </TabsTrigger>
+            <TabsTrigger value="size-charts" className="flex items-center gap-2">
+              <Ruler className="h-4 w-4" />
+              Size Charts
+            </TabsTrigger>
           </TabsList>
 
           {/* Orders Tab */}
@@ -658,13 +684,31 @@ const Admin = () => {
           <TabsContent value="products" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>All Products</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>All Products</CardTitle>
+                  <Button
+                    onClick={() => navigate('/admin/products/new')}
+                    className="flex items-center gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Product
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 {loading ? (
                   <div className="text-center py-8">Loading products...</div>
                 ) : products.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">No products found</div>
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 mb-4">No products found</p>
+                    <Button
+                      onClick={() => navigate('/admin/products/new')}
+                      className="flex items-center gap-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add Your First Product
+                    </Button>
+                  </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {products.map((product, index) => (
@@ -699,6 +743,11 @@ const Admin = () => {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Size Charts Tab */}
+          <TabsContent value="size-charts" className="space-y-6">
+            <SizeChartsEditor sizeCharts={sizeCharts} onRefresh={fetchSizeCharts} />
           </TabsContent>
         </Tabs>
 

@@ -274,37 +274,79 @@ const Auth = () => {
       <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-6">
         <Header />
       </div>
-      <div className="flex items-center justify-center px-4 py-10">
-        <div className="w-full max-w-md space-y-6 rounded-[36px] border border-white/15 bg-[var(--card)]/95 p-8 shadow-[var(--shadow-soft)]">
-        <button className="flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.4em] transition-all duration-200 bg-transparent hover:bg-purple-200 hover:shadow-sm active:bg-purple-300" onClick={() => navigate("/")}>
-          <ArrowLeft className="h-4 w-4" /> Back
-        </button>
-        <div>
-          <p className="text-xs uppercase tracking-[0.6em] text-muted-foreground">
-            {mode === "login" || mode === "login-otp" ? "Welcome back" : 
-             mode === "signup" || mode === "signup-otp" ? "Create account" :
-             mode === "forgot-password" ? "Reset password" :
-             "Authentication"}
-          </p>
-          <h1 className="text-3xl font-black">Looklyn</h1>
-        </div>
-        <form className="space-y-4" onSubmit={handleSubmit}>
+      <div className="flex items-center justify-center px-4 py-8 sm:py-12">
+        <div className="w-full max-w-[360px] auth-card">
+          <button 
+            className="flex items-center gap-1.5 text-sm text-[#8b8794] hover:text-[#2f2540] transition-colors mb-4 focus:outline-none focus:ring-2 focus:ring-[#7b51f5] focus:ring-offset-2 rounded-md px-1" 
+            onClick={() => navigate("/")}
+          >
+            <ArrowLeft className="h-3.5 w-3.5" /> 
+            <span>Back</span>
+          </button>
+          <div 
+            className="w-full bg-white rounded-[24px] border border-[rgba(47,37,64,0.08)] shadow-[0_8px_20px_rgba(47,37,64,0.06)]"
+            style={{ padding: '32px' }}
+          >
+          {/* Header Section */}
+          <div className="text-center mb-6">
+            <h1 className="font-heading text-h1 text-[#2f2540] mb-2">
+              {mode === "login" || mode === "login-otp" ? "Welcome back" : 
+               mode === "signup" || mode === "signup-otp" ? "Create account" :
+               mode === "forgot-password" ? "Reset password" :
+               "Authentication"}
+            </h1>
+            {(mode === "login" || mode === "login-otp") && (
+              <p className="text-body text-[#8b8794] font-normal">
+                Sign in to continue to Looklyn
+              </p>
+            )}
+          </div>
+
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            <style>{`
+              .auth-card {
+                width: 100% !important;
+                max-width: 360px !important;
+                margin: 0 auto !important;
+                display: flex !important;
+                flex-direction: column !important;
+              }
+              .auth-card > div {
+                width: 100% !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+              }
+              @media (max-width: 640px) {
+                .auth-card {
+                  max-width: 90% !important;
+                }
+                .auth-card > div {
+                  padding: 28px 24px !important;
+                }
+                .auth-card input,
+                .auth-card button[type="submit"] {
+                  min-height: 48px;
+                }
+              }
+            `}</style>
           {mode === "signup" && (
-            <div>
-              <label className="text-sm font-medium">Full name</label>
+            <div className="space-y-1.5">
+              <label className="text-[0.85rem] font-medium text-[#6f6791] dark:text-[#87819a]" style={{ lineHeight: '1.45' }}>Full name</label>
               <Input 
                 value={form.name} 
                 onChange={(event) => setForm({ ...form, name: event.target.value })} 
                 placeholder="Aarya Patel" 
                 required 
+                className="border-[#efe8ff] dark:border-[#4a4a5a] rounded-[12px] px-[18px] h-auto focus-visible:ring-2 focus-visible:ring-[#8d73e8] focus-visible:ring-offset-1 focus-visible:border-[#8d73e8] transition-all duration-[200ms]"
+                style={{ borderWidth: '1px', paddingTop: '12px', paddingBottom: '14px' }}
               />
             </div>
           )}
           
           {/* Email Input - for all modes except reset-password (which has its own page) */}
           {mode !== "reset-password" && (
-            <div>
-              <label className="text-sm font-medium">Email</label>
+            <div className="space-y-1.5">
+              <label className="text-[0.85rem] font-medium text-[#6f6791] dark:text-[#87819a]" style={{ lineHeight: '1.45' }}>Email</label>
               <Input 
                 type="email" 
                 value={form.email} 
@@ -312,14 +354,16 @@ const Auth = () => {
                 placeholder="you@email.com" 
                 required
                 autoComplete="email"
+                className="border-[#efe8ff] dark:border-[#4a4a5a] rounded-[12px] px-[18px] h-auto focus-visible:ring-2 focus-visible:ring-[#8d73e8] focus-visible:ring-offset-1 focus-visible:border-[#8d73e8] transition-all duration-[200ms]"
+                style={{ borderWidth: '1px', paddingTop: '12px', paddingBottom: '14px' }}
               />
             </div>
           )}
 
           {/* Phone Number Input - required for signup */}
           {(mode === "signup" || mode === "signup-otp") && (
-            <div>
-              <label className="text-sm font-medium">Phone Number <span className="text-red-500">*</span></label>
+            <div className="space-y-1.5">
+              <label className="text-[0.85rem] font-medium text-[#6f6791] dark:text-[#87819a]" style={{ lineHeight: '1.45' }}>Phone Number <span className="text-red-500">*</span></label>
               <Input 
                 type="tel" 
                 value={form.phone} 
@@ -327,15 +371,17 @@ const Auth = () => {
                 placeholder="+91 9876543210" 
                 required
                 autoComplete="tel"
+                className="border-[#efe8ff] dark:border-[#4a4a5a] rounded-[12px] px-[18px] h-auto focus-visible:ring-2 focus-visible:ring-[#8d73e8] focus-visible:ring-offset-1 focus-visible:border-[#8d73e8] transition-all duration-[200ms]"
+                style={{ borderWidth: '1px', paddingTop: '12px', paddingBottom: '14px' }}
               />
-              <p className="text-xs text-muted-foreground mt-1">Required for WhatsApp order confirmations</p>
+              <p className="text-xs text-[#87819a] dark:text-[#6f6791] mt-1" style={{ lineHeight: '1.45' }}>Required for WhatsApp order confirmations</p>
             </div>
           )}
 
           {/* Password Input - only for password-based auth */}
           {(mode === "login" || mode === "signup") && (
-            <div>
-              <label className="text-sm font-medium">Password</label>
+            <div className="space-y-1.5">
+              <label className="text-[0.85rem] font-medium text-[#6f6791] dark:text-[#87819a]" style={{ lineHeight: '1.45' }}>Password</label>
               <div className="relative">
                 <Input 
                   type={showPassword ? "text" : "password"} 
@@ -344,14 +390,16 @@ const Auth = () => {
                   placeholder="••••••••" 
                   required
                   autoComplete={mode === "login" ? "current-password" : "new-password"}
-                  className="pr-10"
+                  className="border-[#efe8ff] dark:border-[#4a4a5a] rounded-[12px] px-[18px] pr-12 h-auto focus-visible:ring-2 focus-visible:ring-[#8d73e8] focus-visible:ring-offset-1 focus-visible:border-[#8d73e8] transition-all duration-[200ms]"
+                  style={{ borderWidth: '1px', paddingTop: '12px', paddingBottom: '14px' }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[#b8aee0] dark:text-[#9d8aea] hover:text-[#8d73e8] dark:hover:text-[#b59bff] transition-colors duration-[200ms] focus:outline-none focus:ring-2 focus:ring-[#8d73e8] focus:ring-offset-1 rounded-md p-1"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
             </div>
@@ -359,8 +407,8 @@ const Auth = () => {
 
           {/* OTP Input for OTP modes */}
           {(mode === "login-otp" || mode === "signup-otp") && otpSent && (
-            <div>
-              <label className="text-sm font-medium">OTP Code</label>
+            <div className="space-y-1.5">
+              <label className="text-[0.85rem] font-medium text-[#6f6791] dark:text-[#87819a]" style={{ lineHeight: '1.45' }}>OTP Code</label>
               <Input 
                 type="text" 
                 value={form.otp} 
@@ -368,87 +416,116 @@ const Auth = () => {
                 placeholder="Enter 6-digit OTP" 
                 maxLength={6}
                 required 
+                className="border-[#efe8ff] dark:border-[#4a4a5a] rounded-[12px] px-[18px] h-auto focus-visible:ring-2 focus-visible:ring-[#8d73e8] focus-visible:ring-offset-1 focus-visible:border-[#8d73e8] transition-all duration-[200ms]"
+                style={{ borderWidth: '1px', paddingTop: '12px', paddingBottom: '14px' }}
               />
             </div>
           )}
 
-          {/* Auth Method Toggle */}
-          {(mode === "login" || mode === "login-otp") && (
-            <div className="flex items-center justify-between">
-              <div className="flex gap-2">
+          {/* Auth Method Toggle - Compact Pill Tab Bar */}
+          {((mode === "login" || mode === "login-otp") || (mode === "signup" || mode === "signup-otp")) && (
+            <div className="flex flex-col gap-4" style={{ marginTop: '20px', marginBottom: '24px' }}>
+              <div className="tab-buttons flex gap-2 justify-center w-full sm:w-auto">
                 <button
                   type="button"
                   onClick={() => {
-                    setMode("login");
-                    setAuthMethod("password");
-                    setOtpSent(false);
-                    setForm({ ...form, otp: "" });
+                    if (mode === "login-otp") {
+                      setMode("login");
+                      setAuthMethod("password");
+                      setOtpSent(false);
+                      setForm({ ...form, otp: "" });
+                    } else if (mode === "signup-otp") {
+                      setMode("signup");
+                      setAuthMethod("password");
+                      setOtpSent(false);
+                      setForm({ ...form, otp: "" });
+                    }
                   }}
-                  className={`text-xs px-3 py-1 rounded-full ${mode === "login" ? "bg-primary text-white" : "bg-gray-200 text-gray-700"}`}
+                  className={`text-xs font-bold px-4 py-2 rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#8d73e8] focus:ring-offset-2 ${
+                    (mode === "login" || mode === "signup") 
+                      ? "bg-[#9d8aea] shadow-sm" 
+                      : "bg-white dark:bg-[#2a2538] border-2 border-[#9d8aea] dark:border-[#b59bff] hover:bg-[#f0eaff] dark:hover:bg-[#3a3448]"
+                  }`}
+                  style={{
+                    minHeight: '36px',
+                    color: (mode === "login" || mode === "signup") ? '#2a2a3a' : '#2a2a3a',
+                    fontWeight: (mode === "login" || mode === "signup") ? '700' : '600'
+                  }}
+                  aria-label="Switch to password authentication"
                 >
                   Password
                 </button>
                 <button
                   type="button"
                   onClick={() => {
-                    setMode("login-otp");
-                    setAuthMethod("otp");
-                    setOtpSent(false);
-                    setForm({ ...form, password: "", otp: "" });
+                    if (mode === "login") {
+                      setMode("login-otp");
+                      setAuthMethod("otp");
+                      setOtpSent(false);
+                      setForm({ ...form, password: "", otp: "" });
+                    } else if (mode === "signup") {
+                      setMode("signup-otp");
+                      setAuthMethod("otp");
+                      setOtpSent(false);
+                      setForm({ ...form, password: "", otp: "" });
+                    }
                   }}
-                  className={`text-xs px-3 py-1 rounded-full ${mode === "login-otp" ? "bg-primary text-white" : "bg-gray-200 text-gray-700"}`}
+                  className={`text-xs font-bold px-4 py-2 rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#8d73e8] focus:ring-offset-2 ${
+                    (mode === "login-otp" || mode === "signup-otp") 
+                      ? "bg-[#9d8aea] shadow-sm" 
+                      : "bg-white dark:bg-[#2a2538] border-2 border-[#9d8aea] dark:border-[#b59bff] hover:bg-[#f0eaff] dark:hover:bg-[#3a3448]"
+                  }`}
+                  style={{
+                    minHeight: '36px',
+                    color: (mode === "login-otp" || mode === "signup-otp") ? '#2a2a3a' : '#2a2a3a',
+                    fontWeight: (mode === "login-otp" || mode === "signup-otp") ? '700' : '600'
+                  }}
+                  aria-label="Switch to OTP authentication"
                 >
                   OTP
                 </button>
               </div>
               {mode === "login" && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMode("forgot-password");
-                    setOtpSent(false);
-                  }}
-                  className="text-sm text-primary hover:underline"
-                >
-                  Forgot password?
-                </button>
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode("forgot-password");
+                      setOtpSent(false);
+                    }}
+                    className="text-sm text-[#87819a] dark:text-[#87819a] hover:text-[#8d73e8] dark:hover:text-[#9d8aea] transition-colors duration-[200ms] focus:outline-none focus:ring-2 focus:ring-[#8d73e8] focus:ring-offset-1 rounded-md px-1"
+                    style={{ lineHeight: '1.45' }}
+                  >
+                    Forgot password?
+                  </button>
+                </div>
               )}
             </div>
           )}
 
-          {(mode === "signup" || mode === "signup-otp") && (
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setMode("signup");
-                  setAuthMethod("password");
-                  setOtpSent(false);
-                  setForm({ ...form, otp: "" });
-                }}
-                className={`text-xs px-3 py-1 rounded-full ${mode === "signup" ? "bg-primary text-white" : "bg-gray-200 text-gray-700"}`}
-              >
-                Password
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setMode("signup-otp");
-                  setAuthMethod("otp");
-                  setOtpSent(false);
-                  setForm({ ...form, password: "", otp: "" });
-                }}
-                className={`text-xs px-3 py-1 rounded-full ${mode === "signup-otp" ? "bg-primary text-white" : "bg-gray-200 text-gray-700"}`}
-              >
-                OTP
-              </button>
-            </div>
-          )}
-
+          {/* Login CTA Button */}
+          <div style={{ marginTop: '8px' }}>
           <Button 
             type="submit"
-            className="w-full rounded-full bg-foreground py-4 text-xs font-semibold uppercase tracking-[0.4em] text-background"
+            className="w-full rounded-[20px] text-small font-body font-medium tracking-[0.5px] text-white transition-all duration-[200ms] focus:outline-none focus:ring-2 focus:ring-[#3a2c57] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              background: 'linear-gradient(180deg, #3a2c57 0%, #4a3a6a 100%)',
+              boxShadow: '0 8px 20px rgba(58, 44, 87, 0.12)',
+              height: '48px',
+              maxWidth: '100%',
+              margin: '0 auto'
+            }}
             disabled={loading}
+            onMouseEnter={(e) => {
+              if (!loading) {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 12px 24px rgba(58, 44, 87, 0.18)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 8px 20px rgba(58, 44, 87, 0.12)';
+            }}
           >
             {loading ? (
               <>
@@ -465,59 +542,85 @@ const Auth = () => {
               "Submit"
             )}
           </Button>
+          </div>
 
           {/* Google Sign-In Button */}
           {(mode === "login" || mode === "login-otp" || mode === "signup" || mode === "signup-otp") && !otpSent && (
-            <div className="space-y-3">
+            <div className="space-y-4" style={{ marginTop: '32px' }}>
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
+                  <span className="w-full border-t border-[#ebe5ff] dark:border-[#4a4a5a]" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-[var(--card)] px-2 text-muted-foreground">Or continue with</span>
+                  <span 
+                    className="px-2 text-[#87819a] dark:text-[#6f6791]"
+                    style={{
+                      background: 'linear-gradient(135deg, #ffffff 0%, #f7f3ff 100%)',
+                      lineHeight: '1.45'
+                    }}
+                  >
+                    Or continue with
+                  </span>
                 </div>
               </div>
-              <div id="google-signin-button" className="w-full flex justify-center"></div>
+              <div 
+                id="google-signin-button" 
+                className="w-full flex justify-center rounded-[20px] overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.02]"
+                style={{ minHeight: '44px' }}
+              ></div>
             </div>
           )}
         </form>
-        <p className="text-center text-sm text-muted-foreground">
+        <p 
+          className="text-center text-sm text-[#6f6791] dark:text-[#87819a] mt-6"
+          style={{ lineHeight: '1.45' }}
+        >
           {(mode === "login" || mode === "login-otp") ? (
             <>
               New here?{" "}
-              <button className="font-semibold text-primary" onClick={() => {
-                setMode("signup");
-                setAuthMethod("password");
-                setOtpSent(false);
-                setForm({ ...form, otp: "" });
-              }}>
+              <button 
+                className="font-semibold text-[#8d73e8] dark:text-[#b59bff] hover:text-[#6e46c7] dark:hover:text-[#9d8aea] transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#8d73e8] focus:ring-offset-1 rounded-md px-1 hover:underline" 
+                onClick={() => {
+                  setMode("signup");
+                  setAuthMethod("password");
+                  setOtpSent(false);
+                  setForm({ ...form, otp: "" });
+                }}
+              >
                 Create account
               </button>
             </>
           ) : (mode === "signup" || mode === "signup-otp") ? (
             <>
               Already have an account?{" "}
-              <button className="font-semibold text-primary" onClick={() => {
-                setMode("login");
-                setAuthMethod("password");
-                setOtpSent(false);
-                setForm({ ...form, otp: "" });
-              }}>
+              <button 
+                className="font-semibold text-[#8d73e8] dark:text-[#b59bff] hover:text-[#6e46c7] dark:hover:text-[#9d8aea] transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#8d73e8] focus:ring-offset-1 rounded-md px-1 hover:underline" 
+                onClick={() => {
+                  setMode("login");
+                  setAuthMethod("password");
+                  setOtpSent(false);
+                  setForm({ ...form, otp: "" });
+                }}
+              >
                 Log in
               </button>
             </>
           ) : mode === "forgot-password" ? (
             <>
               Remember your password?{" "}
-              <button className="font-semibold text-primary" onClick={() => {
-                setMode("login");
-                setOtpSent(false);
-              }}>
+              <button 
+                className="font-semibold text-[#8d73e8] dark:text-[#b59bff] hover:text-[#6e46c7] dark:hover:text-[#9d8aea] transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#8d73e8] focus:ring-offset-1 rounded-md px-1 hover:underline" 
+                onClick={() => {
+                  setMode("login");
+                  setOtpSent(false);
+                }}
+              >
                 Log in
               </button>
             </>
           ) : null}
         </p>
+        </div>
         </div>
       </div>
 
@@ -601,7 +704,7 @@ const Auth = () => {
             </div>
             <Button
               type="submit"
-              className="w-full"
+              className="w-full rounded-[20px]"
               disabled={loading}
             >
               {loading ? (

@@ -41,24 +41,22 @@ const UserMenu = () => {
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <button
-          className="rounded-full border border-white/40 p-2.5 text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/50"
+          className="rounded-[12px] bg-[#7b51f5] hover:bg-[#6a46d0] text-white px-4 py-2 font-body font-medium tracking-[0.5px] text-sm transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#7b51f5] focus:ring-offset-2 focus:ring-offset-[#1a1a1a]"
           aria-label="User menu"
         >
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-sm font-semibold">
-            {getInitials(user.name)}
-          </div>
+          {getInitials(user.name)}
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56 rounded-2xl border border-white/20 bg-[#5c3d8a] text-white shadow-xl">
-        <DropdownMenuLabel className="font-display">
+      <DropdownMenuContent align="end" className="w-56 rounded-2xl border border-[rgba(47,37,64,0.08)] dark:border-white/20 bg-white dark:bg-[#2a2538] text-[#2f2540] dark:text-white shadow-xl">
+        <DropdownMenuLabel className="font-body">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-semibold leading-none">{user.name}</p>
-            <p className="text-xs font-normal text-white/70">{user.email}</p>
+            <p className="text-sm font-semibold leading-none text-[#2f2540] dark:text-white">{user.name}</p>
+            <p className="text-xs font-normal text-[#8b8794] dark:text-white/70">{user.email}</p>
           </div>
         </DropdownMenuLabel>
-        <DropdownMenuSeparator className="bg-white/20" />
+        <DropdownMenuSeparator className="bg-[rgba(47,37,64,0.08)] dark:bg-white/20" />
         <DropdownMenuItem
-          className="cursor-pointer font-display text-sm focus:bg-white/10 focus:text-white"
+          className="cursor-pointer font-body text-sm text-[#2f2540] dark:text-white focus:bg-[#f6f1f8] dark:focus:bg-white/10"
           onClick={() => {
             setOpen(false);
             navigate("/account");
@@ -68,7 +66,7 @@ const UserMenu = () => {
           Manage Account
         </DropdownMenuItem>
         <DropdownMenuItem
-          className="cursor-pointer font-display text-sm focus:bg-white/10 focus:text-white"
+          className="cursor-pointer font-body text-sm text-[#2f2540] dark:text-white focus:bg-[#f6f1f8] dark:focus:bg-white/10"
           onClick={() => {
             setOpen(false);
             navigate("/account?tab=addresses");
@@ -78,7 +76,7 @@ const UserMenu = () => {
           My Addresses
         </DropdownMenuItem>
         <DropdownMenuItem
-          className="cursor-pointer font-display text-sm focus:bg-white/10 focus:text-white"
+          className="cursor-pointer font-body text-sm text-[#2f2540] dark:text-white focus:bg-[#f6f1f8] dark:focus:bg-white/10"
           onClick={() => {
             setOpen(false);
             navigate("/orders");
@@ -87,9 +85,9 @@ const UserMenu = () => {
           <Package className="mr-2 h-4 w-4" />
           My Orders
         </DropdownMenuItem>
-        <DropdownMenuSeparator className="bg-white/20" />
+        <DropdownMenuSeparator className="bg-[rgba(47,37,64,0.08)] dark:bg-white/20" />
         <DropdownMenuItem
-          className="cursor-pointer font-display text-sm text-red-300 focus:bg-red-500/20 focus:text-red-300"
+          className="cursor-pointer font-body text-sm text-red-600 dark:text-red-400 focus:bg-red-50 dark:focus:bg-red-500/20"
           onClick={handleLogout}
         >
           <LogOut className="mr-2 h-4 w-4" />

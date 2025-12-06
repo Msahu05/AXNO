@@ -192,6 +192,66 @@ const orderSchema = new mongoose.Schema({
 
 const Order = mongoose.model('Order', orderSchema);
 
+// Product Schema
+const productSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  description: { type: String, default: '' },
+  category: { type: String, required: true, enum: ['Hoodie', 'T-Shirt', 'Sweatshirt'] },
+  audience: { type: String, required: true, enum: ['men', 'women', 'kids'] },
+  price: { type: Number, required: true }, // Current price
+  originalPrice: { type: Number, required: true }, // Previous price
+  accent: { type: String, default: 'linear-gradient(135deg,#5c3d8a,#7a5bff)' },
+  gallery: [{
+    url: { type: String, required: true },
+    isMain: { type: Boolean, default: false }, // Main image flag
+    order: { type: Number, default: 0 } // Order in gallery
+  }],
+  colorOptions: [{
+    name: { type: String, required: true }, // Color name (e.g., "Black", "Navy Blue")
+    productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' }, // Link to other color variant
+    hexCode: { type: String, default: '' } // Color hex code for display
+  }],
+  sizes: { type: [String], default: ['S', 'M', 'L', 'XL'] },
+  stock: { type: Number, default: 0 }, // Stock quantity
+  isActive: { type: Boolean, default: true }, // Product visibility
+  tags: [{ type: String }], // Product tags for search
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
+
+productSchema.index({ category: 1, audience: 1 });
+productSchema.index({ isActive: 1 });
+productSchema.index({ name: 'text', description: 'text' });
+
+const Product = mongoose.model('Product', productSchema);
+
+// Size Chart Schema
+const sizeChartSchema = new mongoose.Schema({
+  category: { type: String, required: true, enum: ['Hoodie', 'T-Shirt', 'Sweatshirt'], unique: true },
+  fitDescription: { type: String, default: 'Oversized Fit' },
+  fitDetails: { type: String, default: 'Falls loosely on the body' },
+  measurements: {
+    inches: {
+      type: Map,
+      of: {
+        type: Map,
+        of: Number
+      }
+    },
+    cms: {
+      type: Map,
+      of: {
+        type: Map,
+        of: Number
+      }
+    }
+  },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
+
+const SizeChart = mongoose.model('SizeChart', sizeChartSchema);
+
 // Generate unique order ID
 // Generate sequential order ID in format ODR-001, ODR-002, etc.
 const generateOrderId = async () => {
@@ -2567,6 +2627,275 @@ app.get('/api/admin/stats', authenticateAdmin, async (req, res) => {
     });
   } catch (error) {
     console.error('Get admin stats error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ============================================
+// PRODUCT API ENDPOINTS
+// ============================================
+
+// Public: Get all products
+app.get('/api/products', async (req, res) => {
+  try {
+    const { category, audience, search, page = 1, limit = 50 } = req.query;
+    const query = { isActive: true };
+    
+    if (category) query.category = category;
+    if (audience) query.audience = audience;
+    if (search) {
+      query.$text = { $search: search };
+    }
+    
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const products = await Product.find(query)
+      .sort(search ? { score: { $meta: 'textScore' } } : { createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit))
+      .lean();
+    
+    // Convert _id to id for frontend compatibility
+    const formattedProducts = products.map(p => ({
+      ...p,
+      id: p._id.toString(),
+      original: p.originalPrice,
+      gallery: p.gallery.map(g => g.url || g)
+    }));
+    
+    res.json({ products: formattedProducts });
+  } catch (error) {
+    console.error('Get products error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Public: Get product by ID
+app.get('/api/products/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: 'Invalid product ID' });
+    }
+    
+    const product = await Product.findById(id).lean();
+    
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    
+    // Convert _id to id and format gallery
+    const formattedProduct = {
+      ...product,
+      id: product._id.toString(),
+      original: product.originalPrice,
+      gallery: product.gallery.map(g => g.url || g)
+    };
+    
+    res.json(formattedProduct);
+  } catch (error) {
+    console.error('Get product error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Admin: Get all products (with filters)
+app.get('/api/admin/products', authenticateAdmin, async (req, res) => {
+  try {
+    const { category, audience, search, page = 1, limit = 50 } = req.query;
+    const query = {};
+    
+    if (category) query.category = category;
+    if (audience) query.audience = audience;
+    if (search) {
+      query.$text = { $search: search };
+    }
+    
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const products = await Product.find(query)
+      .sort(search ? { score: { $meta: 'textScore' } } : { createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit))
+      .lean();
+    
+    // Convert _id to id for frontend compatibility
+    const formattedProducts = products.map(p => ({
+      ...p,
+      id: p._id.toString(),
+      original: p.originalPrice,
+      gallery: p.gallery.map(g => g.url || g)
+    }));
+    
+    res.json({ products: formattedProducts });
+  } catch (error) {
+    console.error('Get admin products error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Admin: Create product
+app.post('/api/admin/products', authenticateAdmin, upload.array('gallery', 10), async (req, res) => {
+  try {
+    const { name, description, category, audience, price, originalPrice, sizes, stock, colorOptions, tags } = req.body;
+    
+    if (!name || !category || !audience || !price || !originalPrice) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    
+    // Process gallery images
+    const gallery = [];
+    if (req.files && req.files.length > 0) {
+      req.files.forEach((file, index) => {
+        gallery.push({
+          url: `/uploads/${file.filename}`,
+          isMain: index === 0,
+          order: index
+        });
+      });
+    } else {
+      // Add placeholder if no images
+      gallery.push({
+        url: '/uploads/placeholder.jpg',
+        isMain: true,
+        order: 0
+      });
+    }
+    
+    // Parse sizes, colorOptions, tags
+    const sizesArray = sizes ? (Array.isArray(sizes) ? sizes : sizes.split(',').map(s => s.trim())) : ['S', 'M', 'L', 'XL'];
+    const tagsArray = tags ? (Array.isArray(tags) ? tags : tags.split(',').map(t => t.trim())) : [];
+    
+    let colorOptionsArray = [];
+    if (colorOptions) {
+      try {
+        colorOptionsArray = typeof colorOptions === 'string' ? JSON.parse(colorOptions) : colorOptions;
+      } catch (e) {
+        console.warn('Error parsing colorOptions:', e);
+      }
+    }
+    
+    const product = new Product({
+      name,
+      description: description || '',
+      category,
+      audience,
+      price: parseFloat(price),
+      originalPrice: parseFloat(originalPrice),
+      gallery,
+      sizes: sizesArray,
+      stock: parseInt(stock) || 0,
+      colorOptions: colorOptionsArray,
+      tags: tagsArray,
+      isActive: true
+    });
+    
+    await product.save();
+    
+    // Format response
+    const formattedProduct = {
+      ...product.toObject(),
+      id: product._id.toString(),
+      original: product.originalPrice,
+      gallery: product.gallery.map(g => g.url || g)
+    };
+    
+    res.status(201).json({
+      message: 'Product created successfully',
+      product: formattedProduct
+    });
+  } catch (error) {
+    console.error('Create product error:', error);
+    res.status(500).json({ error: error.message || 'Server error' });
+  }
+});
+
+// Admin: Update product
+app.put('/api/admin/products/:id', authenticateAdmin, upload.array('gallery', 10), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, description, category, audience, price, originalPrice, sizes, stock, colorOptions, tags } = req.body;
+    
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: 'Invalid product ID' });
+    }
+    
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    
+    // Update fields
+    if (name) product.name = name;
+    if (description !== undefined) product.description = description;
+    if (category) product.category = category;
+    if (audience) product.audience = audience;
+    if (price) product.price = parseFloat(price);
+    if (originalPrice) product.originalPrice = parseFloat(originalPrice);
+    if (sizes) {
+      product.sizes = Array.isArray(sizes) ? sizes : sizes.split(',').map(s => s.trim());
+    }
+    if (stock !== undefined) product.stock = parseInt(stock);
+    if (tags) {
+      product.tags = Array.isArray(tags) ? tags : tags.split(',').map(t => t.trim());
+    }
+    if (colorOptions) {
+      try {
+        product.colorOptions = typeof colorOptions === 'string' ? JSON.parse(colorOptions) : colorOptions;
+      } catch (e) {
+        console.warn('Error parsing colorOptions:', e);
+      }
+    }
+    
+    // Update gallery if new images uploaded
+    if (req.files && req.files.length > 0) {
+      const newGallery = req.files.map((file, index) => ({
+        url: `/uploads/${file.filename}`,
+        isMain: index === 0,
+        order: index
+      }));
+      product.gallery = newGallery;
+    }
+    
+    product.updatedAt = new Date();
+    await product.save();
+    
+    // Format response
+    const formattedProduct = {
+      ...product.toObject(),
+      id: product._id.toString(),
+      original: product.originalPrice,
+      gallery: product.gallery.map(g => g.url || g)
+    };
+    
+    res.json({
+      message: 'Product updated successfully',
+      product: formattedProduct
+    });
+  } catch (error) {
+    console.error('Update product error:', error);
+    res.status(500).json({ error: error.message || 'Server error' });
+  }
+});
+
+// Admin: Delete product
+app.delete('/api/admin/products/:id', authenticateAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: 'Invalid product ID' });
+    }
+    
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    
+    await Product.findByIdAndDelete(id);
+    
+    res.json({ message: 'Product deleted successfully' });
+  } catch (error) {
+    console.error('Delete product error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });

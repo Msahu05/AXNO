@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Serif+Text:ital@0;1&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -8,7 +8,7 @@
 @layer base {
   :root {
     --background: 270 50% 97%;
-    --foreground: 252 33% 18%;
+    --foreground: 252 25% 30%;
     --scrollbar-track: hsl(268 45% 90%);
     --scrollbar-thumb: hsl(268 67% 55%);
     --scrollbar-thumb-hover: hsl(266 78% 48%);
@@ -19,7 +19,7 @@
     --popover: 270 55% 98%;
     --popover-foreground: 252 33% 18%;
 
-    --primary: 268 67% 55%;
+    --primary: 260 60% 70%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 29 96% 64%;
@@ -40,12 +40,16 @@
 
     --radius: 1.75rem;
 
-    --gradient-hero: conic-gradient(from 90deg, hsl(270 60% 95%), hsl(260 70% 80%), hsl(270 60% 95%));
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(270 60% 97%));
+    --gradient-hero: linear-gradient(to bottom, hsl(0 0% 100%), hsl(260 50% 98%));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(260 50% 98%));
     --gradient-dark: radial-gradient(circle at 20% 20%, hsl(0 0% 12%), hsl(0 0% 0%));
 
     --shadow-soft: 0 25px 70px rgba(97, 81, 145, 0.15);
     --shadow-strong: 0 30px 70px rgba(0, 0, 0, 0.35);
+
+    /* Typography Variables */
+    --font-heading: 'Lora', 'Georgia', 'Times New Roman', serif;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
   }
 
   .dark {
@@ -58,7 +62,7 @@
     --popover: 0 0% 12%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 264 92% 62%;
+    --primary: 260 65% 68%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 29 96% 64%;
@@ -88,13 +92,329 @@
   }
 
   body {
-    @apply min-h-screen bg-background font-display text-foreground antialiased;
+    @apply min-h-screen bg-background text-foreground antialiased;
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.6;
     scrollbar-width: thin;
     scrollbar-color: var(--scrollbar-thumb) transparent;
   }
 
+  /* Premium Typography System */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+    color: inherit;
+  }
+
+  h1 {
+    font-size: clamp(32px, 5vw, 56px);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.5px;
+  }
+
+  h2 {
+    font-size: clamp(28px, 4vw, 42px);
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.5px;
+  }
+
+  h3 {
+    font-size: clamp(24px, 3.5vw, 32px);
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: -0.5px;
+  }
+
+  h4 {
+    font-size: clamp(20px, 3vw, 24px);
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: -0.5px;
+  }
+
+  h5 {
+    font-size: clamp(18px, 2.5vw, 20px);
+    font-weight: 500;
+    line-height: 1.3;
+    letter-spacing: -0.5px;
+  }
+
+  h6 {
+    font-size: clamp(16px, 2vw, 18px);
+    font-weight: 500;
+    line-height: 1.3;
+    letter-spacing: -0.5px;
+  }
+
+  p {
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  .text-small {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .text-subtitle {
+    font-size: 18px;
+    line-height: 1.5;
+  }
+
+  /* Buttons Typography */
+  button, .btn {
+    font-family: var(--font-body);
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    font-size: 14px;
+  }
+
+  /* Navigation Typography */
+  nav, .nav {
+    font-family: var(--font-body);
+    font-weight: 400;
+    letter-spacing: 0.3px;
+  }
+
+  nav a, nav button {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  /* Display Font Class */
   .font-display {
-    font-family: "DM Serif Text", serif;
+    font-family: var(--font-heading);
+  }
+
+  /* Typography Utility Classes */
+  .font-heading {
+    font-family: var(--font-heading);
+  }
+
+  .font-body {
+    font-family: var(--font-body);
+  }
+
+  /* Spacing Scale - Multiples of 4 and 8 */
+  .space-4 { margin: 4px; padding: 4px; }
+  .space-8 { margin: 8px; padding: 8px; }
+  .space-12 { margin: 12px; padding: 12px; }
+  .space-16 { margin: 16px; padding: 16px; }
+  .space-20 { margin: 20px; padding: 20px; }
+  .space-24 { margin: 24px; padding: 24px; }
+  .space-32 { margin: 32px; padding: 32px; }
+  .space-40 { margin: 40px; padding: 40px; }
+  .space-48 { margin: 48px; padding: 48px; }
+  .space-64 { margin: 64px; padding: 64px; }
+
+  /* Header text colors - dark for light mode, white for dark mode */
+  .looklyn-header:not(.dark) nav,
+  .looklyn-header:not(.dark) nav *,
+  .looklyn-header:not(.dark) button:not([class*="bg-[#8c73e6]"]),
+  .looklyn-header:not(.dark) button:not([class*="bg-[#8c73e6]"]) * {
+    color: #2a2a3a !important;
+  }
+
+  /* Dark mode - white text */
+  .dark .looklyn-header nav,
+  .dark .looklyn-header nav *,
+  .dark .looklyn-header button:not([class*="bg-[#8c73e6]"]),
+  .dark .looklyn-header button:not([class*="bg-[#8c73e6]"]) * {
+    color: white !important;
+  }
+
+  /* Force white backgrounds and dark text in dark mode for grey divs */
+  .dark div[class*="bg-white"],
+  .dark div[class*="dark:!bg-white"],
+  .dark div[class*="dark:bg-white"],
+  .dark section[class*="bg-white"],
+  .dark section[class*="dark:!bg-white"] {
+    background-color: white !important;
+  }
+
+  .dark div[class*="bg-white"] *,
+  .dark div[class*="dark:!bg-white"] *,
+  .dark section[class*="bg-white"] *,
+  .dark section[class*="dark:!bg-white"] * {
+    color: #2a2a3a !important;
+  }
+
+  /* Dark mode step boxes background */
+  .dark .step-box {
+    background-color: #2a2538 !important;
+    border-color: #4a4a5a !important;
+  }
+
+  .dark .step-title {
+    color: white !important;
+  }
+
+  .dark .step-desc {
+    color: rgba(255, 255, 255, 0.7) !important;
+  }
+
+  /* Dark mode feature cards background */
+  .dark .feature-card {
+    background: rgba(42, 37, 56, 0.6) !important;
+    border-color: #4a4a5a !important;
+    backdrop-filter: blur(6px) !important;
+  }
+
+  .dark .feature-card:hover {
+    border-color: #6a5a8a !important;
+  }
+
+  .dark .feature-title {
+    color: white !important;
+  }
+
+  .dark .feature-desc {
+    color: rgba(255, 255, 255, 0.7) !important;
+  }
+
+  /* Dark mode custom section background */
+  .dark .custom-section {
+    background-color: #1a1526 !important;
+    border-color: #3a3a4a !important;
+  }
+
+  .dark .custom-section p[class*="text-[#6f6f80]"] {
+    color: rgba(255, 255, 255, 0.7) !important;
+  }
+
+  .dark .custom-section h2 {
+    color: white !important;
+  }
+
+  .dark .custom-section p[class*="text-[#7a7590]"] {
+    color: rgba(255, 255, 255, 0.8) !important;
+  }
+
+  /* Force carousel container to show exactly 3 cards */
+  .feature-carousel-container {
+    width: 752px !important;
+    max-width: 752px !important;
+    overflow: hidden !important;
+  }
+
+  /* Dark mode support section */
+  .dark section[style*="background: rgba(255,255,255,0.55)"] {
+    background: rgba(42, 37, 56, 0.6) !important;
+    border-color: #4a4a5a !important;
+  }
+
+  .dark div[style*="background: linear-gradient(135deg, #ffffff 0%, #f9f4ff 100%)"] {
+    background: linear-gradient(135deg, #ffffff 0%, #f9f4ff 100%) !important;
+    border-color: #e8e0f6 !important;
+  }
+
+  /* WhatsApp icon pulse animation */
+  @keyframes pulse {
+    0%, 100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(0.98);
+    }
+  }
+
+  .animate-pulse-slow {
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+
+  /* Dark mode support section - force dark text */
+  .dark .support-section-content p,
+  .dark .support-section-content h3,
+  .dark .support-section-content span {
+    color: #2e2644 !important;
+  }
+
+  .dark .support-section-content p[class*="text-[#978ba7]"],
+  .dark .support-section-content p[class*="text-[#6f6a87]"],
+  .dark .support-section-content p[class*="text-[#7f7993]"],
+  .dark .support-section-content span[class*="text-[#6f6a87]"] {
+    color: #6f6a87 !important;
+  }
+
+  .dark .support-section-content button[class*="border-[#9d8aea]"],
+  .dark .support-section-content button[class*="border-[#9d8aea"] * {
+    color: #9d8aea !important;
+  }
+
+  /* Dropdown menu background - force solid color */
+  [role="menu"],
+  [data-radix-popper-content-wrapper] > div[class*="bg-[#f9f4ff]"] {
+    background-color: #f9f4ff !important;
+  }
+
+  .dark [role="menu"],
+  .dark [data-radix-popper-content-wrapper] > div[class*="bg-[#2a2538]"] {
+    background-color: #2a2538 !important;
+  }
+
+  /* Force dark text color for inactive tab buttons */
+  .auth-card .tab-buttons button:not([class*="bg-[#9d8aea]"]) {
+    color: #2a2a3a !important;
+  }
+
+  .dark .auth-card .tab-buttons button:not([class*="bg-[#9d8aea]"]) {
+    color: #b59bff !important;
+  }
+
+  /* Force dark text color for active tab buttons */
+  .auth-card .tab-buttons button[class*="bg-[#9d8aea]"] {
+    color: #2a2a3a !important;
+    font-weight: 700 !important;
+  }
+
+  .dark div[class*="bg-white"] p,
+  .dark div[class*="dark:!bg-white"] p,
+  .dark section[class*="bg-white"] p,
+  .dark section[class*="dark:!bg-white"] p {
+    color: #6f6f80 !important;
+  }
+
+  .dark div[class*="bg-white"] h1,
+  .dark div[class*="bg-white"] h2,
+  .dark div[class*="bg-white"] h3,
+  .dark div[class*="dark:!bg-white"] h1,
+  .dark div[class*="dark:!bg-white"] h2,
+  .dark div[class*="dark:!bg-white"] h3,
+  .dark section[class*="bg-white"] h1,
+  .dark section[class*="bg-white"] h2,
+  .dark section[class*="bg-white"] h3,
+  .dark section[class*="dark:!bg-white"] h1,
+  .dark section[class*="dark:!bg-white"] h2,
+  .dark section[class*="dark:!bg-white"] h3 {
+    color: #2a2a3a !important;
+  }
+
+  /* Navigation container - light purple gradient for light mode, purple for dark mode */
+  .nav-container {
+    background: linear-gradient(to right, #e8dfff, #ede5ff, #e8dfff) !important;
+    border: 1px solid #d4c5ff !important;
+    box-shadow: 0 1px 3px rgba(140, 115, 230, 0.2) !important;
+  }
+
+  .dark .nav-container {
+    background: linear-gradient(to right, #6e46c7, #8c73e6, #6e46c7) !important;
+    border: 1px solid #8c73e6 !important;
+    box-shadow: 0 1px 3px rgba(140, 115, 230, 0.4) !important;
+  }
+
+  /* Login button - dark for light mode, purple for dark mode */
+  .login-btn {
+    background-color: #1a1a2a !important;
+  }
+
+  .dark .login-btn {
+    background-color: #8c73e6 !important;
   }
 }
 
@@ -262,11 +582,16 @@
 }
 
 /* Hide scrollbar for horizontal scroll */
-.hide-scrollbar {
+.hide-scrollbar,
+.scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
+  scroll-behavior: smooth;
 }
 
-.hide-scrollbar::-webkit-scrollbar {
+.hide-scrollbar::-webkit-scrollbar,
+.scrollbar-hide::-webkit-scrollbar {
   display: none;
+  width: 0;
+  height: 0;
 }

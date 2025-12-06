@@ -58,8 +58,21 @@ export default {
         'product': 'var(--shadow-product)',
       },
       fontFamily: {
-        sans: ['Plus Jakarta Sans', 'sans-serif'],
-        display: ['"DM Serif Text"', 'serif'],
+        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'sans-serif'],
+        display: ['Lora', 'Georgia', 'Times New Roman', 'serif'],
+        heading: ['Lora', 'Georgia', 'Times New Roman', 'serif'],
+        body: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'sans-serif'],
+      },
+      fontSize: {
+        'body': ['16px', { lineHeight: '1.6' }],
+        'small': ['14px', { lineHeight: '1.5' }],
+        'subtitle': ['18px', { lineHeight: '1.5' }],
+        'h1': ['clamp(32px, 5vw, 56px)', { lineHeight: '1.15', letterSpacing: '-0.5px', fontWeight: '700' }],
+        'h2': ['clamp(28px, 4vw, 42px)', { lineHeight: '1.2', letterSpacing: '-0.5px', fontWeight: '600' }],
+        'h3': ['clamp(24px, 3.5vw, 32px)', { lineHeight: '1.25', letterSpacing: '-0.5px', fontWeight: '600' }],
+        'h4': ['clamp(20px, 3vw, 24px)', { lineHeight: '1.25', letterSpacing: '-0.5px', fontWeight: '600' }],
+        'h5': ['clamp(18px, 2.5vw, 20px)', { lineHeight: '1.3', letterSpacing: '-0.5px', fontWeight: '500' }],
+        'h6': ['clamp(16px, 2vw, 18px)', { lineHeight: '1.3', letterSpacing: '-0.5px', fontWeight: '500' }],
       },
       borderRadius: {
         lg: "var(--radius)",

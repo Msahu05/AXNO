@@ -4,7 +4,7 @@ import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
 import ProductCard from "@/components/ProductCard";
-import { allProducts } from "@/data/products";
+import { productsAPI, getImageUrl } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
 import { useWishlist } from "@/contexts/wishlist-context";
 import { toast } from "@/hooks/use-toast";
@@ -20,6 +20,30 @@ const Category = () => {
   const initialFilter = searchParams.get('filter') || 'all';
   const [audienceFilter, setAudienceFilter] = useState(initialFilter);
   const [currentPage, setCurrentPage] = useState(1);
+  const [allProducts, setAllProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Load products from API
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        setLoading(true);
+        const response = await productsAPI.getAll({ category: categoryName });
+        setAllProducts(response.products || []);
+      } catch (error) {
+        console.error('Error loading products:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load products',
+          variant: 'destructive',
+        });
+        setAllProducts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadProducts();
+  }, [categoryName]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -92,8 +116,8 @@ const Category = () => {
         name: product.name,
         category: product.category,
         price: product.price,
-        original: product.original,
-        image: product.gallery[0],
+        original: product.original || product.originalPrice,
+        image: getImageUrl(Array.isArray(product.gallery) ? product.gallery[0] : product.gallery),
       });
       toast({
         title: "Added to wishlist",
@@ -106,6 +130,17 @@ const Category = () => {
       });
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(124,90,255,0.1),_transparent_65%)]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading products...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(124,90,255,0.1),_transparent_65%)]">
@@ -150,7 +185,7 @@ const Category = () => {
                   category={product.category}
                   price={product.price}
                   originalPrice={product.original}
-                  image={product.gallery[0]}
+                  image={getImageUrl(Array.isArray(product.gallery) ? product.gallery[0] : product.gallery)}
                   accent={product.accent}
                   onView={() => navigate(`/product/${product.id}`)}
                   onAdd={() => requireAuth(`/product/${product.id}`)}

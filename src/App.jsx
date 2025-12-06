@@ -54,6 +54,8 @@ const App = () => (
                   <Route path="/tracking/:orderId" element={<Tracking />} />
                   <Route path="/admin" element={<Admin />} />
                   <Route path="/admin/orders/:orderId" element={<OrderManagement />} />
+                  {/* Specific route must come before dynamic route */}
+                  <Route path="/admin/products/new" element={<ProductManagement />} />
                   <Route path="/admin/products/:productId" element={<ProductManagement />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
