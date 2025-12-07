@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
-import { adminAPI, productsAPI } from '@/lib/api';
+import { adminAPI, productsAPI, getImageUrl } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +11,7 @@ import Header from '@/components/Header';
 
 // Separate component for new product form - no auth, no checks, just the form
 const NewProductForm = ({ navigate }) => {
+  console.log('NewProductForm component rendering');
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
   
@@ -33,20 +34,40 @@ const NewProductForm = ({ navigate }) => {
   const [galleryPreviews, setGalleryPreviews] = useState([]);
 
   const handleGalleryChange = (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length > 10) {
+    const newFiles = Array.from(e.target.files);
+    if (newFiles.length === 0) return;
+    
+    const totalFiles = galleryFiles.length + newFiles.length;
+    
+    if (totalFiles > 10) {
       toast({
         title: 'Error',
-        description: 'Maximum 10 images allowed',
+        description: `Maximum 10 images allowed. You already have ${galleryFiles.length} image(s).`,
         variant: 'destructive',
       });
+      e.target.value = '';
       return;
     }
-    setGalleryFiles(files);
     
-    // Create previews
-    const previews = files.map(file => URL.createObjectURL(file));
-    setGalleryPreviews(previews);
+    // Append new files to existing ones
+    const updatedFiles = [...galleryFiles, ...newFiles];
+    setGalleryFiles(updatedFiles);
+    
+    // Create previews for new files and append to existing previews
+    const newPreviews = newFiles.map(file => {
+      try {
+        return URL.createObjectURL(file);
+      } catch (error) {
+        console.error('Error creating object URL:', error);
+        return null;
+      }
+    }).filter(Boolean);
+    
+    setGalleryPreviews([...galleryPreviews, ...newPreviews]);
+    console.log('Gallery previews updated:', galleryPreviews.length + newPreviews.length);
+    
+    // Reset input to allow selecting more files
+    e.target.value = '';
   };
 
   const removeGalleryImage = (index) => {
@@ -102,10 +123,31 @@ const NewProductForm = ({ navigate }) => {
       });
       return;
     }
+    
+    if (!formData.sizes || formData.sizes.length === 0) {
+      toast({
+        title: 'Error',
+        description: 'At least one size must be selected',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    if (galleryFiles.length === 0) {
+      toast({
+        title: 'Error',
+        description: 'At least one product image is required',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     try {
       setSaving(true);
       console.log('Creating new product...');
+      console.log('Form Data:', formData);
+      console.log('Gallery Files:', galleryFiles.length, 'files');
+      
       const result = await adminAPI.createProduct(formData, galleryFiles);
       console.log('Product created successfully:', result);
       toast({
@@ -113,11 +155,18 @@ const NewProductForm = ({ navigate }) => {
         description: 'Product created successfully! Redirecting...',
       });
       setTimeout(() => {
-        navigate('/admin?tab=products');
+        navigate('/admin?tab=products', { replace: true });
+        // Force a page reload to refresh products list
+        window.location.href = '/admin?tab=products';
       }, 1500);
     } catch (error) {
       console.error('Failed to save product:', error);
-      const errorMessage = error.message || 'Failed to save product. Please check console for details.';
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        response: error.response
+      });
+      const errorMessage = error.message || error.response?.data?.error || 'Failed to save product. Please check console for details.';
       toast({
         title: 'Error',
         description: errorMessage,
@@ -166,32 +215,49 @@ const NewProductForm = ({ navigate }) => {
                       onChange={handleGalleryChange}
                       className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary/90"
                     />
-                    <p className="text-xs text-muted-foreground mt-1">You can upload up to 10 images</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      You can upload up to 10 images. Selected: {galleryFiles.length}/10
+                    </p>
                   </div>
                   
                   {/* Image Previews */}
                   {galleryPreviews.length > 0 && (
                     <div className="grid grid-cols-2 gap-4">
-                      {galleryPreviews.map((preview, index) => (
+                      {galleryPreviews.map((preview, index) => {
+                        if (!preview) {
+                          console.warn('Empty preview at index:', index);
+                          return null;
+                        }
+                        return (
                         <div key={index} className="relative group">
-                          <img
-                            src={preview}
-                            alt={`Preview ${index + 1}`}
-                            className="w-full h-48 object-cover rounded-lg border"
-                          />
+                          <div className="w-full h-48 rounded-lg border-2 border-border bg-secondary overflow-hidden">
+                            <img
+                              src={preview}
+                              alt={`Preview ${index + 1}`}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                console.error('Image preview error for index', index, 'URL:', preview);
+                                e.target.style.display = 'none';
+                              }}
+                              onLoad={() => {
+                                console.log('Image loaded successfully:', index);
+                              }}
+                            />
+                          </div>
                           {index === 0 && (
-                            <div className="absolute top-2 left-2 bg-primary text-white text-xs px-2 py-1 rounded">
+                            <div className="absolute top-2 left-2 bg-primary text-white text-xs px-2 py-1 rounded z-10">
                               Main
                             </div>
                           )}
                           <button
                             onClick={() => removeGalleryImage(index)}
-                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
                           >
                             <X className="h-4 w-4" />
                           </button>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                   
@@ -283,6 +349,157 @@ const NewProductForm = ({ navigate }) => {
                     />
                   </div>
                   <div>
+                    <label className="block text-sm font-medium mb-2">Available Sizes *</label>
+                    <div className="flex flex-wrap gap-2">
+                      {['XS', 'S', 'M', 'L', 'XL', 'XXL'].map((size) => (
+                        <button
+                          key={size}
+                          type="button"
+                          onClick={() => {
+                            const currentSizes = formData.sizes || [];
+                            if (currentSizes.includes(size)) {
+                              setFormData({ ...formData, sizes: currentSizes.filter(s => s !== size) });
+                            } else {
+                              setFormData({ ...formData, sizes: [...currentSizes, size] });
+                            }
+                          }}
+                          className={`px-4 py-2 rounded-md border transition-colors ${
+                            formData.sizes.includes(size)
+                              ? 'bg-primary text-primary-foreground border-primary'
+                              : 'bg-background border-border hover:border-primary'
+                          }`}
+                        >
+                          {size}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">Selected: {formData.sizes.join(', ') || 'None'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Color Options</label>
+                    {/* Color Swatches Display */}
+                    {formData.colorOptions.length > 0 && (
+                      <div className="flex gap-3 mb-4 flex-wrap">
+                        {formData.colorOptions.map((color, index) => (
+                          <div key={index} className="flex flex-col items-center gap-1">
+                            <div
+                              className="w-12 h-12 rounded-full border-2 border-border cursor-pointer hover:scale-110 transition-transform"
+                              style={{ backgroundColor: color.hex || '#000000' }}
+                              title={color.name || `Color ${index + 1}`}
+                            />
+                            {color.name && (
+                              <span className="text-xs text-muted-foreground">{color.name}</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      {formData.colorOptions.map((color, index) => (
+                        <div key={index} className="space-y-2 p-3 border rounded-lg">
+                          <div className="flex gap-2 items-center">
+                            <input
+                              type="color"
+                              value={color.hex || '#000000'}
+                              onChange={(e) => {
+                                const newColors = [...formData.colorOptions];
+                                newColors[index] = { ...color, hex: e.target.value };
+                                setFormData({ ...formData, colorOptions: newColors });
+                              }}
+                              className="w-12 h-10 rounded border"
+                            />
+                            <Input
+                              value={color.name || ''}
+                              onChange={(e) => {
+                                const newColors = [...formData.colorOptions];
+                                newColors[index] = { ...color, name: e.target.value };
+                                setFormData({ ...formData, colorOptions: newColors });
+                              }}
+                              placeholder="Color name"
+                              className="flex-1"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setFormData({
+                                  ...formData,
+                                  colorOptions: formData.colorOptions.filter((_, i) => i !== index)
+                                });
+                              }}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <Input
+                            value={color.productId || ''}
+                            onChange={(e) => {
+                              const newColors = [...formData.colorOptions];
+                              newColors[index] = { ...color, productId: e.target.value };
+                              setFormData({ ...formData, colorOptions: newColors });
+                            }}
+                            placeholder="Product ID (optional)"
+                            className="w-full"
+                          />
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setFormData({
+                            ...formData,
+                            colorOptions: [...formData.colorOptions, { name: '', hex: '#000000', productId: '' }]
+                          });
+                        }}
+                        className="w-full"
+                      >
+                        + Add Color
+                      </Button>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Tags</label>
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {formData.tags.map((tag, index) => (
+                        <span
+                          key={index}
+                          className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary rounded-full text-sm"
+                        >
+                          {tag}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFormData({
+                                ...formData,
+                                tags: formData.tags.filter((_, i) => i !== index)
+                              });
+                            }}
+                            className="hover:text-primary/80"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Add tag and press Enter"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && e.target.value.trim()) {
+                            e.preventDefault();
+                            setFormData({
+                              ...formData,
+                              tags: [...formData.tags, e.target.value.trim()]
+                            });
+                            e.target.value = '';
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div>
                     <label className="block text-sm font-medium mb-2">Stock Quantity</label>
                     <Input
                       type="number"
@@ -327,10 +544,14 @@ const NewProductForm = ({ navigate }) => {
 const ProductManagement = () => {
   const { productId } = useParams();
   const navigate = useNavigate();
-  const isNewProduct = productId === 'new';
+  
+  console.log('ProductManagement rendered, productId:', productId);
   
   // For new products, immediately return the form - NO HOOKS, NO CHECKS, NO ERRORS
-  if (isNewProduct) {
+  // This check MUST be before any other hooks
+  // Handle both 'new' and undefined (in case route doesn't match)
+  if (productId === 'new' || !productId) {
+    console.log('Rendering NewProductForm for new product');
     return <NewProductForm navigate={navigate} />;
   }
   
@@ -387,9 +608,8 @@ const ProductManagement = () => {
   }, [productId, authLoading, isAuthenticated, user]);
 
   const loadProduct = async () => {
-    // CRITICAL: Never load for new products
-    if (productId === 'new') {
-      console.warn('loadProduct should not be called for new products');
+    // CRITICAL: Never load for new or invalid products
+    if (!productId || productId === 'undefined' || productId === 'new') {
       return;
     }
     
@@ -412,7 +632,17 @@ const ProductManagement = () => {
         colorOptions: productData.colorOptions || []
       });
       if (productData.gallery && productData.gallery.length > 0) {
-        setGalleryPreviews(productData.gallery);
+        // Convert gallery URLs to proper image URLs
+        const galleryUrls = productData.gallery.map(img => {
+          if (typeof img === 'string') {
+            return getImageUrl(img);
+          } else if (img.url) {
+            return getImageUrl(img.url);
+          }
+          return getImageUrl(img);
+        });
+        console.log('Setting gallery previews from database:', galleryUrls);
+        setGalleryPreviews(galleryUrls);
       }
     } catch (error) {
       console.error('Failed to load product:', error);
@@ -602,26 +832,43 @@ const ProductManagement = () => {
                   {/* Image Previews */}
                   {galleryPreviews.length > 0 && (
                     <div className="grid grid-cols-2 gap-4">
-                      {galleryPreviews.map((preview, index) => (
+                      {galleryPreviews.map((preview, index) => {
+                        if (!preview) {
+                          console.warn('Empty preview at index:', index);
+                          return null;
+                        }
+                        // Handle both blob URLs (new uploads) and regular URLs (from database)
+                        const imageUrl = preview.startsWith('blob:') ? preview : getImageUrl(preview);
+                        return (
                         <div key={index} className="relative group">
-                          <img
-                            src={preview}
-                            alt={`Preview ${index + 1}`}
-                            className="w-full h-48 object-cover rounded-lg border"
-                          />
+                          <div className="w-full h-48 rounded-lg border-2 border-border bg-secondary overflow-hidden">
+                            <img
+                              src={imageUrl}
+                              alt={`Preview ${index + 1}`}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                console.error('Image preview error for index', index, 'URL:', imageUrl);
+                                e.target.style.display = 'none';
+                              }}
+                              onLoad={() => {
+                                console.log('Image loaded successfully:', index);
+                              }}
+                            />
+                          </div>
                           {index === 0 && (
-                            <div className="absolute top-2 left-2 bg-primary text-white text-xs px-2 py-1 rounded">
+                            <div className="absolute top-2 left-2 bg-primary text-white text-xs px-2 py-1 rounded z-10">
                               Main
                             </div>
                           )}
                           <button
                             onClick={() => removeGalleryImage(index)}
-                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
                           >
                             <X className="h-4 w-4" />
                           </button>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                   
@@ -711,6 +958,90 @@ const ProductManagement = () => {
                       value={formData.originalPrice > 0 ? `${Math.round(((formData.originalPrice - formData.price) / formData.originalPrice) * 100)}%` : '0%'}
                       disabled
                     />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Color Options</label>
+                    {/* Color Swatches Display */}
+                    {formData.colorOptions.length > 0 && (
+                      <div className="flex gap-3 mb-4 flex-wrap">
+                        {formData.colorOptions.map((color, index) => (
+                          <div key={index} className="flex flex-col items-center gap-1">
+                            <div
+                              className="w-12 h-12 rounded-full border-2 border-border cursor-pointer hover:scale-110 transition-transform"
+                              style={{ backgroundColor: color.hex || '#000000' }}
+                              title={color.name || `Color ${index + 1}`}
+                            />
+                            {color.name && (
+                              <span className="text-xs text-muted-foreground">{color.name}</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      {formData.colorOptions.map((color, index) => (
+                        <div key={index} className="space-y-2 p-3 border rounded-lg">
+                          <div className="flex gap-2 items-center">
+                            <input
+                              type="color"
+                              value={color.hex || '#000000'}
+                              onChange={(e) => {
+                                const newColors = [...formData.colorOptions];
+                                newColors[index] = { ...color, hex: e.target.value };
+                                setFormData({ ...formData, colorOptions: newColors });
+                              }}
+                              className="w-12 h-10 rounded border"
+                            />
+                            <Input
+                              value={color.name || ''}
+                              onChange={(e) => {
+                                const newColors = [...formData.colorOptions];
+                                newColors[index] = { ...color, name: e.target.value };
+                                setFormData({ ...formData, colorOptions: newColors });
+                              }}
+                              placeholder="Color name"
+                              className="flex-1"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setFormData({
+                                  ...formData,
+                                  colorOptions: formData.colorOptions.filter((_, i) => i !== index)
+                                });
+                              }}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <Input
+                            value={color.productId || ''}
+                            onChange={(e) => {
+                              const newColors = [...formData.colorOptions];
+                              newColors[index] = { ...color, productId: e.target.value };
+                              setFormData({ ...formData, colorOptions: newColors });
+                            }}
+                            placeholder="Product ID (optional)"
+                            className="w-full"
+                          />
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setFormData({
+                            ...formData,
+                            colorOptions: [...formData.colorOptions, { name: '', hex: '#000000', productId: '' }]
+                          });
+                        }}
+                        className="w-full"
+                      >
+                        + Add Color
+                      </Button>
+                    </div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Stock Quantity</label>

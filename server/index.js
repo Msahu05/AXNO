@@ -208,8 +208,9 @@ const productSchema = new mongoose.Schema({
   }],
   colorOptions: [{
     name: { type: String, required: true }, // Color name (e.g., "Black", "Navy Blue")
-    productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' }, // Link to other color variant
-    hexCode: { type: String, default: '' } // Color hex code for display
+    productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', default: null }, // Link to other color variant (optional)
+    hexCode: { type: String, default: '' }, // Color hex code for display
+    hex: { type: String, default: '' } // Alternative hex field name
   }],
   sizes: { type: [String], default: ['S', 'M', 'L', 'XL'] },
   stock: { type: Number, default: 0 }, // Stock quantity
@@ -2329,57 +2330,6 @@ app.put('/api/admin/users/:userId', authenticateAdmin, async (req, res) => {
 });
 
 // Admin: Get all products (from products.js data)
-app.get('/api/admin/products', authenticateAdmin, async (req, res) => {
-  try {
-    const fs = require('fs');
-    const path = require('path');
-    const productsPath = path.join(__dirname, '../src/data/products.js');
-    
-    if (!fs.existsSync(productsPath)) {
-      console.log('Products file not found at:', productsPath);
-      return res.json({ products: [] });
-    }
-
-    const fileContent = fs.readFileSync(productsPath, 'utf8');
-    
-    // Extract allProducts array - it's a multi-line export
-    // Look for: export const allProducts = [ ... ];
-    // The array spans multiple lines, so we need to match until the closing bracket
-    const allProductsMatch = fileContent.match(/export const allProducts = (\[[\s\S]*?\]);/);
-    
-    if (allProductsMatch && allProductsMatch[1]) {
-      try {
-        // Evaluate the array safely
-        const allProducts = eval('(' + allProductsMatch[1] + ')');
-        console.log(`Loaded ${allProducts.length} products from products.js`);
-        res.json({ products: allProducts || [] });
-      } catch (evalError) {
-        console.error('Error evaluating products array:', evalError);
-        // Fallback: return empty array
-        res.json({ products: [] });
-      }
-    } else {
-      console.log('Could not find allProducts export in products.js');
-      // Try alternative: look for the array definition without export
-      const altMatch = fileContent.match(/const allProducts = (\[[\s\S]*?\]);/);
-      if (altMatch && altMatch[1]) {
-        try {
-          const allProducts = eval('(' + altMatch[1] + ')');
-          res.json({ products: allProducts || [] });
-        } catch (evalError) {
-          console.error('Error evaluating products array (alt):', evalError);
-          res.json({ products: [] });
-        }
-      } else {
-        res.json({ products: [] });
-      }
-    }
-  } catch (error) {
-    console.error('Get admin products error:', error);
-    res.json({ products: [] });
-  }
-});
-
 // Admin: Add product to user's order manually
 app.post('/api/admin/users/:userId/add-product', authenticateAdmin, upload.array('productImage', 1), async (req, res) => {
   try {
@@ -2769,6 +2719,22 @@ app.post('/api/admin/products', authenticateAdmin, upload.array('gallery', 10), 
     if (colorOptions) {
       try {
         colorOptionsArray = typeof colorOptions === 'string' ? JSON.parse(colorOptions) : colorOptions;
+        // Clean and validate colorOptions
+        colorOptionsArray = colorOptionsArray.map(color => {
+          const cleaned = {
+            name: color.name || '',
+            hexCode: color.hex || color.hexCode || '',
+            hex: color.hex || color.hexCode || ''
+          };
+          // Handle productId - remove quotes and validate
+          if (color.productId) {
+            let productIdStr = String(color.productId).replace(/^["']+|["']+$/g, '').trim();
+            if (productIdStr && mongoose.Types.ObjectId.isValid(productIdStr)) {
+              cleaned.productId = new mongoose.Types.ObjectId(productIdStr);
+            }
+          }
+          return cleaned;
+        });
       } catch (e) {
         console.warn('Error parsing colorOptions:', e);
       }
@@ -2840,7 +2806,24 @@ app.put('/api/admin/products/:id', authenticateAdmin, upload.array('gallery', 10
     }
     if (colorOptions) {
       try {
-        product.colorOptions = typeof colorOptions === 'string' ? JSON.parse(colorOptions) : colorOptions;
+        let colorOptionsArray = typeof colorOptions === 'string' ? JSON.parse(colorOptions) : colorOptions;
+        // Clean and validate colorOptions
+        colorOptionsArray = colorOptionsArray.map(color => {
+          const cleaned = {
+            name: color.name || '',
+            hexCode: color.hex || color.hexCode || '',
+            hex: color.hex || color.hexCode || ''
+          };
+          // Handle productId - remove quotes and validate
+          if (color.productId) {
+            let productIdStr = String(color.productId).replace(/^["']+|["']+$/g, '').trim();
+            if (productIdStr && mongoose.Types.ObjectId.isValid(productIdStr)) {
+              cleaned.productId = new mongoose.Types.ObjectId(productIdStr);
+            }
+          }
+          return cleaned;
+        });
+        product.colorOptions = colorOptionsArray;
       } catch (e) {
         console.warn('Error parsing colorOptions:', e);
       }
@@ -2878,6 +2861,68 @@ app.put('/api/admin/products/:id', authenticateAdmin, upload.array('gallery', 10
 });
 
 // Admin: Delete product
+// Size Charts API Endpoints
+// Get all size charts (admin)
+app.get('/api/admin/size-charts', authenticateAdmin, async (req, res) => {
+  try {
+    const sizeCharts = await SizeChart.find({});
+    res.json(sizeCharts);
+  } catch (error) {
+    console.error('Error fetching size charts:', error);
+    res.status(500).json({ error: 'Failed to fetch size charts' });
+  }
+});
+
+// Get size chart by category (public)
+app.get('/api/size-charts/:category', async (req, res) => {
+  try {
+    const { category } = req.params;
+    const sizeChart = await SizeChart.findOne({ category });
+    if (!sizeChart) {
+      return res.status(404).json({ error: 'Size chart not found' });
+    }
+    res.json(sizeChart);
+  } catch (error) {
+    console.error('Error fetching size chart:', error);
+    res.status(500).json({ error: 'Failed to fetch size chart' });
+  }
+});
+
+// Create or update size chart (admin)
+app.post('/api/admin/size-charts', authenticateAdmin, async (req, res) => {
+  try {
+    const { category, fitDescription, fitDetails, measurements } = req.body;
+    
+    const sizeChart = await SizeChart.findOneAndUpdate(
+      { category },
+      {
+        category,
+        fitDescription,
+        fitDetails,
+        measurements
+      },
+      { upsert: true, new: true }
+    );
+    
+    res.json(sizeChart);
+  } catch (error) {
+    console.error('Error saving size chart:', error);
+    res.status(500).json({ error: 'Failed to save size chart' });
+  }
+});
+
+// Delete size chart (admin)
+app.delete('/api/admin/size-charts/:category', authenticateAdmin, async (req, res) => {
+  try {
+    const { category } = req.params;
+    await SizeChart.findOneAndDelete({ category });
+    res.json({ message: 'Size chart deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting size chart:', error);
+    res.status(500).json({ error: 'Failed to delete size chart' });
+  }
+});
+
 app.delete('/api/admin/products/:id', authenticateAdmin, async (req, res) => {
   try {
     const { id } = req.params;

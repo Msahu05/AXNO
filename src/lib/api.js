@@ -349,13 +349,81 @@ export const adminAPI = {
     });
   },
 
-  createProduct: async (formData) => {
+  createProduct: async (productData, galleryFiles = []) => {
+    const formData = new FormData();
+    
+    // Append product data
+    formData.append('name', productData.name || '');
+    formData.append('description', productData.description || '');
+    formData.append('category', productData.category || 'Hoodie');
+    formData.append('price', productData.price || 0);
+    formData.append('originalPrice', productData.originalPrice || 0);
+    formData.append('audience', productData.audience || 'men');
+    formData.append('stock', productData.stock || 0);
+    formData.append('isActive', productData.isActive !== undefined ? productData.isActive : true);
+    
+    // Append sizes array
+    if (productData.sizes && Array.isArray(productData.sizes)) {
+      formData.append('sizes', JSON.stringify(productData.sizes));
+    }
+    
+    // Append color options
+    if (productData.colorOptions && Array.isArray(productData.colorOptions)) {
+      formData.append('colorOptions', JSON.stringify(productData.colorOptions));
+    }
+    
+    // Append tags
+    if (productData.tags && Array.isArray(productData.tags)) {
+      formData.append('tags', JSON.stringify(productData.tags));
+    }
+    
+    // Append gallery files
+    if (galleryFiles && galleryFiles.length > 0) {
+      galleryFiles.forEach((file) => {
+        formData.append('gallery', file);
+      });
+    }
+    
     return apiCallWithFiles('/admin/products', formData, {
       method: 'POST',
     });
   },
 
-  updateProduct: async (productId, formData) => {
+  updateProduct: async (productId, productData, galleryFiles = []) => {
+    const formData = new FormData();
+    
+    // Append product data
+    formData.append('name', productData.name || '');
+    formData.append('description', productData.description || '');
+    formData.append('category', productData.category || 'Hoodie');
+    formData.append('price', productData.price || 0);
+    formData.append('originalPrice', productData.originalPrice || 0);
+    formData.append('audience', productData.audience || 'men');
+    formData.append('stock', productData.stock || 0);
+    formData.append('isActive', productData.isActive !== undefined ? productData.isActive : true);
+    
+    // Append sizes array
+    if (productData.sizes && Array.isArray(productData.sizes)) {
+      formData.append('sizes', JSON.stringify(productData.sizes));
+    }
+    
+    // Append color options
+    if (productData.colorOptions && Array.isArray(productData.colorOptions)) {
+      formData.append('colorOptions', JSON.stringify(productData.colorOptions));
+    }
+    
+    // Append tags
+    if (productData.tags && Array.isArray(productData.tags)) {
+      formData.append('tags', JSON.stringify(productData.tags));
+    }
+    
+    // Append gallery files (only if new files are provided)
+    if (galleryFiles && galleryFiles.length > 0) {
+      galleryFiles.forEach((file) => {
+        formData.append('gallery', file);
+      });
+    }
+    
     return apiCallWithFiles(`/admin/products/${productId}`, formData, {
       method: 'PUT',
     });

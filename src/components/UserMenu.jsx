@@ -41,13 +41,13 @@ const UserMenu = () => {
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <button
-          className="rounded-[12px] bg-[#7b51f5] hover:bg-[#6a46d0] text-white px-4 py-2 font-body font-medium tracking-[0.5px] text-sm transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#7b51f5] focus:ring-offset-2 focus:ring-offset-[#1a1a1a]"
+          className="rounded-[12px] bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 font-body font-medium tracking-[0.5px] text-sm transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-[#1a1a1a]"
           aria-label="User menu"
         >
           {getInitials(user.name)}
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56 rounded-2xl border border-[rgba(47,37,64,0.08)] dark:border-white/20 bg-white dark:bg-[#2a2538] text-[#2f2540] dark:text-white shadow-xl">
+      <DropdownMenuContent align="end" className="w-56 rounded-2xl border border-border dark:border-white/20 bg-background dark:bg-[#2a2538] text-foreground dark:text-white shadow-xl z-50">
         <DropdownMenuLabel className="font-body">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-semibold leading-none text-[#2f2540] dark:text-white">{user.name}</p>

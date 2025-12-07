@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
-import { adminAPI, adminSizeChartsAPI } from '@/lib/api';
+import { adminAPI, adminSizeChartsAPI, getImageUrl } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,9 +31,11 @@ import SizeChartsEditor from '@/components/SizeChartsEditor';
 
 const Admin = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { isAuthenticated, user, refreshUser, loading: authLoading } = useAuth();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('orders');
+  const tabFromUrl = searchParams.get('tab') || 'orders';
+  const [activeTab, setActiveTab] = useState(tabFromUrl);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
   const [orders, setOrders] = useState([]);
@@ -162,7 +164,11 @@ const Admin = () => {
     try {
       setLoading(true);
       const response = await adminAPI.getProducts();
-      setProducts(response.products || []);
+      console.log('Products API response:', response);
+      // Handle both response.products and direct array response
+      const productsList = response.products || response || [];
+      console.log('Setting products:', productsList);
+      setProducts(Array.isArray(productsList) ? productsList : []);
     } catch (error) {
       console.error('Error loading products:', error);
       toast({
@@ -687,7 +693,10 @@ const Admin = () => {
                 <div className="flex items-center justify-between">
                   <CardTitle>All Products</CardTitle>
                   <Button
-                    onClick={() => navigate('/admin/products/new')}
+                    onClick={() => {
+                      console.log('Navigating to /admin/products/new');
+                      navigate('/admin/products/new');
+                    }}
                     className="flex items-center gap-2"
                   >
                     <Plus className="h-4 w-4" />
@@ -711,16 +720,25 @@ const Admin = () => {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {products.map((product, index) => (
+                    {products.map((product, index) => {
+                      // Get the first image from gallery or use image field
+                      const productImage = product.gallery && product.gallery.length > 0
+                        ? (typeof product.gallery[0] === 'string' ? product.gallery[0] : product.gallery[0].url || product.gallery[0])
+                        : product.image || '';
+                      
+                      return (
                       <div 
-                        key={index} 
+                        key={product.id || product._id || index} 
                         className="border rounded-lg p-4 cursor-pointer hover:shadow-lg transition-shadow"
-                        onClick={() => navigate(`/admin/products/${product.id}`)}
+                        onClick={() => navigate(`/admin/products/${product.id || product._id}`)}
                       >
                         <img 
-                          src={product.gallery?.[0] || product.image || 'https://via.placeholder.com/300'} 
+                          src={getImageUrl(productImage) || 'https://via.placeholder.com/300'} 
                           alt={product.name}
                           className="w-full h-48 object-cover rounded mb-2"
+                          onError={(e) => {
+                            e.target.src = 'https://via.placeholder.com/300';
+                          }}
                         />
                         <h3 className="font-semibold">{product.name}</h3>
                         <p className="text-sm text-gray-600">{product.category} - {product.audience || 'Unisex'}</p>
@@ -731,14 +749,15 @@ const Admin = () => {
                           className="w-full mt-2"
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate(`/admin/products/${product.id}`);
+                            navigate(`/admin/products/${product.id || product._id}`);
                           }}
                         >
                           <Eye className="h-4 w-4 mr-2" />
                           Manage Product
                         </Button>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>

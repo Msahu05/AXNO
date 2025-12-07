@@ -614,7 +614,7 @@ const Checkout = () => {
                   <img src={item.image} alt={item.name} className="w-20 h-20 object-cover rounded-lg" />
                   <div className="flex-1">
                     <p className="font-semibold">{item.name}</p>
-                    <p className="text-sm text-gray-600">{item.category} · Size {item.size}</p>
+                    <p className="text-sm text-gray-600">{item.category} · Size {String(item.size).replace(/[\[\]"]/g, '').replace(/\\/g, '').trim()}</p>
                     <p className="text-sm font-semibold mt-1">₹{item.price * item.quantity}</p>
                   </div>
                 </div>

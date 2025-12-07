@@ -85,7 +85,7 @@ const CartFlyout = ({ isOpen, onClose }) => {
                       {item.name}
                     </h4>
                     <p className="text-xs text-[#8b8794] dark:text-white/70 font-body">
-                      Size: {item.size} • Qty: {item.quantity}
+                      Size: {String(item.size).replace(/[\[\]"]/g, '').replace(/\\/g, '').trim()} • Qty: {item.quantity}
                     </p>
                     <p className="text-sm font-semibold text-[#2f2540] dark:text-white mt-1 font-body">
                       ₹{item.price * item.quantity}

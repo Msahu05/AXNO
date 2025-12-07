@@ -17,11 +17,19 @@ const Category = () => {
   const { isAuthenticated } = useAuth();
   const { addItem: addToWishlist, isInWishlist } = useWishlist();
   const [searchParams] = useSearchParams();
-  const initialFilter = searchParams.get('filter') || 'all';
-  const [audienceFilter, setAudienceFilter] = useState(initialFilter);
+  const [audienceFilter, setAudienceFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [allProducts, setAllProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const categoryMap = {
+    hoodies: "Hoodie",
+    "t-shirts": "T-Shirt",
+    sweatshirts: "Sweatshirt",
+  };
+
+  const categoryName = categoryMap[category || ''] || 'Hoodie';
+  const displayName = category?.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || 'Hoodies';
 
   // Load products from API
   useEffect(() => {
@@ -29,7 +37,9 @@ const Category = () => {
       try {
         setLoading(true);
         const response = await productsAPI.getAll({ category: categoryName });
-        setAllProducts(response.products || []);
+        const products = response.products || [];
+        console.log('Loaded products:', products.length, 'for category:', categoryName);
+        setAllProducts(products);
       } catch (error) {
         console.error('Error loading products:', error);
         toast({
@@ -48,37 +58,28 @@ const Category = () => {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
     const filter = searchParams.get("filter");
-    if (filter && ["all", "men", "women", "kids"].includes(filter)) {
+    if (filter && ["men", "women", "kids"].includes(filter)) {
       setAudienceFilter(filter);
+    } else {
+      setAudienceFilter('all');
     }
   }, [searchParams]);
 
-  const categoryMap = {
-    hoodies: "Hoodie",
-    "t-shirts": "T-Shirt",
-    sweatshirts: "Sweatshirt",
-  };
-
-  const categoryName = categoryMap[category || ''] || 'Hoodie';
-  const displayName = category?.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || 'Hoodies';
-
   const filteredProducts = useMemo(() => {
-    // First, try to get products for the specific category
-    let products = allProducts.filter((p) => p.category === categoryName);
+    // API already filters by category, so allProducts contains only this category's products
+    let products = [...allProducts];
     
     // If filtering by audience, filter the category products
     if (audienceFilter !== "all") {
-      products = products.filter((p) => p.audience === audienceFilter);
-      
-      // If no products found for this category+audience combo, 
-      // show products from that audience across all categories
-      if (products.length === 0) {
-        products = allProducts.filter((p) => p.audience === audienceFilter);
-      }
+      products = products.filter((p) => {
+        const productAudience = p.audience || p.audienceType;
+        return productAudience === audienceFilter;
+      });
     }
     
+    // If "all" is selected, return all products for this category (no filtering needed)
     return products;
-  }, [categoryName, audienceFilter]);
+  }, [allProducts, audienceFilter]);
 
   const paginatedProducts = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -143,26 +144,33 @@ const Category = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(124,90,255,0.1),_transparent_65%)]">
+    <div className="min-h-screen bg-gradient-to-b from-white via-[#f8f7ff] to-white dark:from-[#0f0a1a] dark:via-[#1a1526] dark:to-[#0f0a1a]">
       <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-6">
         <Header />
       </div>
-      <div className="px-4 py-10">
+      <div className="px-4 sm:px-6 py-10">
         <div className="mx-auto max-w-7xl space-y-8">
         <div className="flex items-center gap-4">
-          <button className="flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.4em] transition-all duration-200 bg-transparent hover:bg-purple-200 hover:shadow-sm active:bg-purple-300" onClick={() => navigate(-1)}>
+          <button 
+            className="flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wider transition-all duration-200 bg-white dark:bg-[#2a2538] border border-gray-200 dark:border-white/10 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-600 text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400" 
+            onClick={() => navigate(-1)}
+          >
             <ArrowLeft className="h-4 w-4" /> Back
           </button>
-          <h1 className="text-4xl font-black">{displayName}</h1>
+          <h1 className="text-4xl font-heading font-bold text-gray-900 dark:text-white">{displayName}</h1>
         </div>
 
-        <div className="flex flex-wrap items-center gap-4 rounded-[32px] border border-white/10 bg-[var(--card)]/90 p-4 shadow-[var(--shadow-soft)]">
-          <span className="font-display text-sm uppercase tracking-[0.4em] text-muted-foreground">Filter by:</span>
+        <div className="flex flex-wrap items-center gap-4 rounded-[16px] border border-[rgba(47,37,64,0.08)] dark:border-white/10 bg-white dark:bg-[#2a2538] p-4 sm:p-6 shadow-[0_4px_16px_rgba(47,37,64,0.04)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.2)]">
+          <span className="font-body text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Filter by:</span>
           {['all', 'men', 'women', 'kids'].map((filter) => (
             <Button
               key={filter}
               variant={audienceFilter === filter ? "default" : "outline"}
-              className={`rounded-full font-display text-sm tracking-[0.2em] ${audienceFilter === filter ? "bg-foreground text-background" : ""}`}
+              className={`rounded-full font-body text-sm font-medium px-6 py-2 transition-all ${
+                audienceFilter === filter 
+                  ? "bg-primary text-primary-foreground border-primary" 
+                  : "bg-background dark:bg-[#2a2538] text-foreground dark:text-gray-300 border-border dark:border-white/20 hover:border-primary dark:hover:border-purple-500"
+              }`}
               onClick={() => setAudienceFilter(filter)}
             >
               {filter === "all" ? "All" : filter.charAt(0).toUpperCase() + filter.slice(1)}
@@ -171,12 +179,12 @@ const Category = () => {
         </div>
 
         {filteredProducts.length === 0 ? (
-          <div className="rounded-[32px] border border-white/10 bg-[var(--card)]/90 p-12 text-center">
-            <p className="text-muted-foreground">No products found in this category.</p>
+          <div className="rounded-[16px] border border-[rgba(47,37,64,0.08)] dark:border-white/10 bg-white dark:bg-[#2a2538] p-12 text-center shadow-[0_4px_16px_rgba(47,37,64,0.04)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.2)]">
+            <p className="text-gray-600 dark:text-gray-400">No products found in this category.</p>
           </div>
         ) : (
           <>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {paginatedProducts.map((product) => (
                 <ProductCard
                   key={product.id}
@@ -194,21 +202,21 @@ const Category = () => {
               ))}
             </div>
             {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-4 rounded-[32px] border border-white/10 bg-[var(--card)]/90 p-4 shadow-[var(--shadow-soft)]">
+              <div className="flex items-center justify-center gap-4 rounded-[16px] border border-[rgba(47,37,64,0.08)] dark:border-white/10 bg-white dark:bg-[#2a2538] p-4 shadow-[0_4px_16px_rgba(47,37,64,0.04)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.2)]">
                 <Button
                   variant="outline"
-                  className="rounded-full"
+                  className="rounded-full border-gray-300 dark:border-white/20"
                   onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                   disabled={currentPage === 1}
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <span className="text-sm font-semibold">
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                   Page {currentPage} of {totalPages} ({filteredProducts.length} products)
                 </span>
                 <Button
                   variant="outline"
-                  className="rounded-full"
+                  className="rounded-full border-gray-300 dark:border-white/20"
                   onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
                   disabled={currentPage === totalPages}
                 >

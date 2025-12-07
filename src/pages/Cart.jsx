@@ -55,7 +55,7 @@ const Cart = () => {
                 <img src={item.image} alt={item.name} className="h-24 w-24 rounded-2xl object-cover" />
                 <div className="flex-1">
                   <h3 className="font-semibold">{item.name}</h3>
-                  <p className="text-sm text-muted-foreground">{item.category} · Size {item.size}</p>
+                  <p className="text-sm text-muted-foreground">{item.category} · Size {String(item.size).replace(/[\[\]"]/g, '').replace(/\\/g, '').trim()}</p>
                   <div className="mt-2 flex items-center gap-4">
                     <div className="flex items-center gap-2 rounded-full border border-white/20 bg-background/50">
                       <button className="p-2 hover:bg-white/20" onClick={() => updateQuantity(item.id, item.size, item.quantity - 1)}>
