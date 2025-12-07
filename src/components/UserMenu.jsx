@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, LogOut, Settings, MapPin, Mail, Phone, Edit, Package } from "lucide-react";
+import { User, LogOut, Settings, MapPin, Mail, Phone, Edit, ShoppingCart } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import {
   DropdownMenu,
@@ -41,7 +41,7 @@ const UserMenu = () => {
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <button
-          className="rounded-[12px] bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 font-body font-medium tracking-[0.5px] text-sm transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-[#1a1a1a]"
+          className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground w-10 h-10 flex items-center justify-center font-body font-medium text-sm transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-[#1a1a1a]"
           aria-label="User menu"
         >
           {getInitials(user.name)}
@@ -69,21 +69,11 @@ const UserMenu = () => {
           className="cursor-pointer font-body text-sm text-[#2f2540] dark:text-white focus:bg-[#f6f1f8] dark:focus:bg-white/10"
           onClick={() => {
             setOpen(false);
-            navigate("/account?tab=addresses");
+            navigate("/cart");
           }}
         >
-          <MapPin className="mr-2 h-4 w-4" />
-          My Addresses
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          className="cursor-pointer font-body text-sm text-[#2f2540] dark:text-white focus:bg-[#f6f1f8] dark:focus:bg-white/10"
-          onClick={() => {
-            setOpen(false);
-            navigate("/orders");
-          }}
-        >
-          <Package className="mr-2 h-4 w-4" />
-          My Orders
+          <ShoppingCart className="mr-2 h-4 w-4" />
+          My Cart
         </DropdownMenuItem>
         <DropdownMenuSeparator className="bg-[rgba(47,37,64,0.08)] dark:bg-white/20" />
         <DropdownMenuItem

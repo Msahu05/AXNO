@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Heart, ShoppingBag, Star } from "lucide-react";
+import { Heart, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useWishlist } from "@/contexts/wishlist-context";
 import { cn } from "@/lib/utils";
@@ -38,24 +38,31 @@ export function ProductCard({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
         
-        {/* Wishlist button */}
-        <Button
-          variant="secondary"
-          size="icon"
-          className={cn(
-            "absolute right-3 top-3 h-9 w-9 rounded-full bg-background/80 backdrop-blur-sm transition-all duration-300",
-            "opacity-0 group-hover:opacity-100",
-            inWishlist && "opacity-100"
-          )}
+        {/* Wishlist icon - Always visible */}
+        <button
+          type="button"
+          className="absolute right-2 top-2 z-50 cursor-pointer p-1 rounded-full hover:bg-white/20 transition-colors"
           onClick={handleWishlistClick}
+          style={{ 
+            pointerEvents: 'auto',
+            backgroundColor: inWishlist ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255, 255, 255, 0.3)',
+            backdropFilter: 'blur(4px)'
+          }}
         >
           <Heart
             className={cn(
-              "h-4 w-4 transition-colors",
-              inWishlist ? "fill-primary text-primary" : "text-foreground"
+              "h-6 w-6 transition-all duration-300",
+              inWishlist 
+                ? "fill-red-600 text-red-600 stroke-red-600" 
+                : "fill-white text-white stroke-gray-900"
             )}
+            strokeWidth={2.5}
+            style={{ 
+              display: 'block',
+              filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8))'
+            }}
           />
-        </Button>
+        </button>
 
         {/* Quick add button */}
         <div className="absolute bottom-3 left-3 right-3 opacity-0 transition-all duration-300 group-hover:opacity-100">
@@ -85,11 +92,6 @@ export function ProductCard({
           {category}
         </p>
         <h3 className="mt-1 font-medium text-foreground line-clamp-1">{name}</h3>
-        
-        <div className="mt-2 flex items-center gap-1">
-          <Star className="h-3.5 w-3.5 fill-primary text-primary" />
-          <span className="text-sm font-medium text-foreground">{rating}</span>
-        </div>
 
         <div className="mt-2 flex items-center gap-2">
           <span className="font-semibold text-foreground">₹{price}</span>

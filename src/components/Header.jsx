@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
-import { Heart, Moon, Sun, User, Menu, X } from "lucide-react";
+import { Heart, Moon, Sun, User, Menu, X, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/auth-context";
 import { useWishlist } from "@/contexts/wishlist-context";
+import { useCart } from "@/contexts/cart-context";
 import { useThemeMode } from "@/contexts/theme-context";
 import { cn } from "@/lib/utils";
 import UserMenu from "@/components/UserMenu";
@@ -12,7 +13,7 @@ const navLinks = [
   { name: "Home", path: "/", scrollTo: null, id: "home" },
   { name: "Products", path: "/", scrollTo: "catalogue", id: "products" },
   { name: "Contact Us", path: "/", scrollTo: "support", id: "contact" },
-  { name: "My Cart", path: "/cart", scrollTo: null, id: "cart" },
+  { name: "My Orders", path: "/orders", scrollTo: null, id: "orders" },
 ];
 
 const Header = () => {
@@ -20,14 +21,15 @@ const Header = () => {
   const location = useLocation();
   const { isAuthenticated = false, user } = useAuth();
   const { itemCount: wishlistCount = 0 } = useWishlist();
+  const { itemCount: cartCount = 0 } = useCart();
   const { theme, toggleTheme } = useThemeMode();
   const [isOpen, setIsOpen] = useState(false);
   const [activeLink, setActiveLink] = useState("home");
 
   // Set default active link based on location
   useEffect(() => {
-    if (location.pathname === "/cart") {
-      setActiveLink("cart");
+    if (location.pathname === "/orders") {
+      setActiveLink("orders");
     } else if (location.pathname === "/") {
       setActiveLink("home");
     }
@@ -123,8 +125,25 @@ const Header = () => {
           <Button
             variant="ghost"
             size="icon"
+            className="relative hover:bg-accent"
+            aria-label="Cart"
+            asChild
+          >
+            <Link to="/cart">
+              <ShoppingCart className="h-5 w-5" />
+              {cartCount > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                  {cartCount > 9 ? '9+' : cartCount}
+                </span>
+              )}
+            </Link>
+          </Button>
+          {/* Theme toggle - hidden on mobile, shown in menu */}
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={toggleTheme}
-            className="hover:bg-accent"
+            className="hidden md:flex hover:bg-accent"
             aria-label="Toggle theme"
           >
             {theme === "light" ? (
@@ -184,6 +203,26 @@ const Header = () => {
                 {link.name}
               </Link>
             ))}
+            {/* Theme toggle in mobile menu */}
+            <button
+              onClick={() => {
+                toggleTheme();
+                setIsOpen(false);
+              }}
+              className="flex items-center gap-3 px-4 py-2 text-sm font-medium transition-colors rounded-lg text-muted-foreground hover:text-foreground"
+            >
+              {theme === "light" ? (
+                <>
+                  <Moon className="h-5 w-5" />
+                  <span>Dark Mode</span>
+                </>
+              ) : (
+                <>
+                  <Sun className="h-5 w-5" />
+                  <span>Light Mode</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
       )}

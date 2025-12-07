@@ -444,7 +444,7 @@ const Checkout = () => {
               </h2>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-4">First Name</label>
                   <Input
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
@@ -453,7 +453,7 @@ const Checkout = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-4">Last Name</label>
                   <Input
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
@@ -462,7 +462,7 @@ const Checkout = () => {
                   />
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-4">Email</label>
                   <Input
                     type="email"
                     value={email}
@@ -472,7 +472,7 @@ const Checkout = () => {
                   />
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-4">Phone Number</label>
                   <Input
                     value={phone}
                     onChange={handlePhoneChange}
@@ -481,7 +481,7 @@ const Checkout = () => {
                   />
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-4">Address</label>
                   <Input
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
@@ -490,7 +490,7 @@ const Checkout = () => {
                   />
                 </div>
                 <div className="col-span-2 relative">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-4">
                     Pincode {loadingPincode && <Loader2 className="inline h-3 w-3 animate-spin ml-2" />}
                   </label>
                   <Input
@@ -502,7 +502,7 @@ const Checkout = () => {
                   />
                 </div>
                 <div className="relative">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-4">City</label>
                   <Input
                     value={city}
                     onChange={handleCityChange}
@@ -526,7 +526,7 @@ const Checkout = () => {
                   )}
                 </div>
                 <div className="relative">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-4">State</label>
                   <Input
                     value={state}
                     onChange={handleStateChange}
@@ -550,7 +550,7 @@ const Checkout = () => {
                   )}
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Custom Design Instructions</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-4">Custom Design Instructions</label>
                   <Textarea
                     ref={descriptionRef}
                     value={description}
@@ -561,7 +561,7 @@ const Checkout = () => {
                   />
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Reference Links (Optional)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-4">Reference Links (Optional)</label>
                   <Input
                     value={referenceLinks}
                     onChange={(e) => setReferenceLinks(e.target.value)}
@@ -570,7 +570,7 @@ const Checkout = () => {
                   />
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Upload Design Files (Optional)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-4">Upload Design Files (Optional)</label>
                   <div className="flex items-center gap-4">
                     <Input
                       type="file"
