@@ -1,7 +1,10 @@
-import { Link } from "react-router-dom";
-import { Heart, ShoppingBag } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Heart, ShoppingBag, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useWishlist } from "@/contexts/wishlist-context";
+import { useCart } from "@/contexts/cart-context";
+import { useAuth } from "@/contexts/auth-context";
+import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
 export function ProductCard({
@@ -13,7 +16,11 @@ export function ProductCard({
   rating = 4.8,
   category,
 }) {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const { isInWishlist, addItem, removeItem } = useWishlist();
+  const { addItem: addToCart } = useCart();
+  const { toast } = useToast();
   const inWishlist = isInWishlist(id);
 
   const handleWishlistClick = (e) => {
@@ -23,6 +30,56 @@ export function ProductCard({
     } else {
       addItem({ id, name, price, image, category });
     }
+  };
+
+  const handleAddToCart = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!isAuthenticated) {
+      navigate(`/auth?redirect=${encodeURIComponent(`/product/${id}`)}`);
+      return;
+    }
+    
+    // Add with default size 'M' - user can change on product page
+    addToCart({
+      id,
+      name,
+      category,
+      price,
+      original: originalPrice,
+      image,
+      size: 'M', // Default size
+    });
+    
+    toast({
+      title: "Added to cart!",
+      description: `${name} has been added to your cart.`,
+    });
+  };
+
+  const handleBuyNow = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!isAuthenticated) {
+      navigate(`/auth?redirect=${encodeURIComponent(`/product/${id}`)}`);
+      return;
+    }
+    
+    // Add to cart first
+    addToCart({
+      id,
+      name,
+      category,
+      price,
+      original: originalPrice,
+      image,
+      size: 'M', // Default size
+    });
+    
+    // Navigate to checkout
+    navigate('/checkout');
   };
 
   return (
@@ -100,6 +157,27 @@ export function ProductCard({
               ₹{originalPrice}
             </span>
           )}
+        </div>
+
+        {/* Buy Now and Add to Cart Buttons */}
+        <div className="mt-3 flex gap-2">
+          <Button
+            onClick={handleBuyNow}
+            className="flex-1 gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
+            size="sm"
+          >
+            <ShoppingBag className="h-4 w-4" />
+            Buy Now
+          </Button>
+          <Button
+            onClick={handleAddToCart}
+            variant="outline"
+            className="flex-1 gap-2 border-primary text-primary hover:bg-primary/10"
+            size="sm"
+          >
+            <ShoppingCart className="h-4 w-4" />
+            Add to Cart
+          </Button>
         </div>
       </div>
     </Link>

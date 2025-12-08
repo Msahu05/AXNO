@@ -8,6 +8,10 @@ import { useCart } from "@/contexts/cart-context";
 import { useThemeMode } from "@/contexts/theme-context";
 import { cn } from "@/lib/utils";
 import UserMenu from "@/components/UserMenu";
+// Logo images - place your images in public folder as:
+// public/looklyn-logo-light.png and public/looklyn-logo-dark.png
+const looklynLogoLight = "/looklyn-logo-white.jpg";
+const looklynLogoDark = "/looklyn-logo-dark.jpg";
 
 const navLinks = [
   { name: "Home", path: "/", scrollTo: null, id: "home" },
@@ -74,13 +78,17 @@ const Header = () => {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-lg">
-      <nav className="container mx-auto flex h-20 items-center justify-between px-4 lg:px-8">
+      <nav className="container mx-auto flex h-20 items-center justify-between px-2 sm:px-4 lg:px-8">
         {/* Left side - Logo */}
         <Link
           to="/"
-          className="font-display text-2xl font-bold tracking-tight text-foreground"
+          className="flex items-center h-full"
         >
-          <span className="text-gradient">Looklyn</span>
+          <img
+            src={theme === "light" ? looklynLogoLight : looklynLogoDark}
+            alt="LOOKLYN"
+            className="h-20 sm:h-10 md:h-10 lg:h-20 w-auto object-contain"
+          />
         </Link>
 
         {/* Center - Navigation in rounded container */}

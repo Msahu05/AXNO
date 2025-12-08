@@ -1,5 +1,20 @@
 const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3001') + '/api';
 
+// Helper function to convert file to base64
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      resolve({
+        data: reader.result, // data:image/jpeg;base64,...
+        mimeType: file.type || 'image/jpeg'
+      });
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 // Helper function for API calls
 async function apiCall(endpoint, options = {}) {
   const token = localStorage.getItem('authToken');
@@ -326,6 +341,9 @@ export const adminAPI = {
 
   addProductToUser: async (userId, productData, imageFile) => {
     const formData = new FormData();
+    if (productData.productId) {
+      formData.append('productId', productData.productId);
+    }
     formData.append('productName', productData.name);
     formData.append('productPrice', productData.price);
     formData.append('productDescription', productData.description || '');
@@ -350,82 +368,80 @@ export const adminAPI = {
   },
 
   createProduct: async (productData, galleryFiles = []) => {
-    const formData = new FormData();
-    
-    // Append product data
-    formData.append('name', productData.name || '');
-    formData.append('description', productData.description || '');
-    formData.append('category', productData.category || 'Hoodie');
-    formData.append('price', productData.price || 0);
-    formData.append('originalPrice', productData.originalPrice || 0);
-    formData.append('audience', productData.audience || 'men');
-    formData.append('stock', productData.stock || 0);
-    formData.append('isActive', productData.isActive !== undefined ? productData.isActive : true);
-    
-    // Append sizes array
-    if (productData.sizes && Array.isArray(productData.sizes)) {
-      formData.append('sizes', JSON.stringify(productData.sizes));
-    }
-    
-    // Append color options
-    if (productData.colorOptions && Array.isArray(productData.colorOptions)) {
-      formData.append('colorOptions', JSON.stringify(productData.colorOptions));
-    }
-    
-    // Append tags
-    if (productData.tags && Array.isArray(productData.tags)) {
-      formData.append('tags', JSON.stringify(productData.tags));
-    }
-    
-    // Append gallery files
+    // Convert gallery files to base64
+    const galleryImages = [];
     if (galleryFiles && galleryFiles.length > 0) {
-      galleryFiles.forEach((file) => {
-        formData.append('gallery', file);
-      });
+      for (const file of galleryFiles) {
+        try {
+          const base64Data = await fileToBase64(file);
+          galleryImages.push(base64Data);
+        } catch (error) {
+          console.error('Error converting file to base64:', error);
+          throw new Error('Failed to process image files');
+        }
+      }
     }
     
-    return apiCallWithFiles('/admin/products', formData, {
+    // Send as JSON with base64 images
+    const payload = {
+      name: productData.name || '',
+      description: productData.description || '',
+      category: productData.category || 'Hoodie',
+      price: productData.price || 0,
+      originalPrice: productData.originalPrice || 0,
+      audience: productData.audience || 'men',
+      stock: productData.stock || 0,
+      isActive: productData.isActive !== undefined ? productData.isActive : true,
+      sizes: productData.sizes || [],
+      colorOptions: productData.colorOptions || [],
+      tags: productData.tags || [],
+      galleryImages: galleryImages
+    };
+    
+    return apiCall('/admin/products', {
       method: 'POST',
+      body: JSON.stringify(payload),
     });
   },
 
   updateProduct: async (productId, productData, galleryFiles = []) => {
-    const formData = new FormData();
-    
-    // Append product data
-    formData.append('name', productData.name || '');
-    formData.append('description', productData.description || '');
-    formData.append('category', productData.category || 'Hoodie');
-    formData.append('price', productData.price || 0);
-    formData.append('originalPrice', productData.originalPrice || 0);
-    formData.append('audience', productData.audience || 'men');
-    formData.append('stock', productData.stock || 0);
-    formData.append('isActive', productData.isActive !== undefined ? productData.isActive : true);
-    
-    // Append sizes array
-    if (productData.sizes && Array.isArray(productData.sizes)) {
-      formData.append('sizes', JSON.stringify(productData.sizes));
-    }
-    
-    // Append color options
-    if (productData.colorOptions && Array.isArray(productData.colorOptions)) {
-      formData.append('colorOptions', JSON.stringify(productData.colorOptions));
-    }
-    
-    // Append tags
-    if (productData.tags && Array.isArray(productData.tags)) {
-      formData.append('tags', JSON.stringify(productData.tags));
-    }
-    
-    // Append gallery files (only if new files are provided)
+    // Convert gallery files to base64 (only if new files are provided)
+    const galleryImages = [];
     if (galleryFiles && galleryFiles.length > 0) {
-      galleryFiles.forEach((file) => {
-        formData.append('gallery', file);
-      });
+      for (const file of galleryFiles) {
+        try {
+          const base64Data = await fileToBase64(file);
+          galleryImages.push(base64Data);
+        } catch (error) {
+          console.error('Error converting file to base64:', error);
+          throw new Error('Failed to process image files');
+        }
+      }
     }
     
-    return apiCallWithFiles(`/admin/products/${productId}`, formData, {
+    // Send as JSON with base64 images
+    const payload = {
+      name: productData.name || '',
+      description: productData.description || '',
+      category: productData.category || 'Hoodie',
+      price: productData.price || 0,
+      originalPrice: productData.originalPrice || 0,
+      audience: productData.audience || 'men',
+      stock: productData.stock || 0,
+      isActive: productData.isActive !== undefined ? productData.isActive : true,
+      sizes: productData.sizes || [],
+      colorOptions: productData.colorOptions || [],
+      tags: productData.tags || [],
+    };
+    
+    // Only include galleryImages if new files are provided
+    if (galleryImages.length > 0) {
+      payload.galleryImages = galleryImages;
+    }
+    
+    return apiCall(`/admin/products/${productId}`, {
       method: 'PUT',
+      body: JSON.stringify(payload),
     });
   },
 
@@ -485,6 +501,10 @@ export const adminSizeChartsAPI = {
 // Helper function to get full image URL
 export function getImageUrl(imagePath) {
   if (!imagePath) return 'https://via.placeholder.com/500';
+  // If it's a data URL (base64 image), return as is
+  if (imagePath.startsWith('data:image/')) {
+    return imagePath;
+  }
   // If already a full URL, return as is
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
     return imagePath;

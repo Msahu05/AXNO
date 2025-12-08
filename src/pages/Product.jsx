@@ -13,7 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { productsAPI, getImageUrl, sizeChartsAPI } from "@/lib/api";
+import { productsAPI, getImageUrl, sizeChartsAPI, reviewsAPI } from "@/lib/api";
 import { Heart, Minus, Plus, ShoppingBag, Star, Truck, Zap } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useCart } from "@/contexts/cart-context";
@@ -42,48 +42,8 @@ const Product = () => {
   const [checkingPincode, setCheckingPincode] = useState(false);
   
   // Reviews state
-  const [reviews, setReviews] = useState([
-    {
-      id: 1,
-      userName: "Rahul Sharma",
-      rating: 5,
-      comment: "Excellent quality! The material is soft and comfortable. Perfect fit and great design. Highly recommended!",
-      date: "2 days ago",
-      verified: true
-    },
-    {
-      id: 2,
-      userName: "Priya Patel",
-      rating: 4,
-      comment: "Good product, fast delivery. The color matches the images perfectly. Only minor issue is the sizing runs a bit small.",
-      date: "1 week ago",
-      verified: true
-    },
-    {
-      id: 3,
-      userName: "Amit Kumar",
-      rating: 5,
-      comment: "Amazing quality and design! Worth every penny. The fabric is premium and the fit is perfect. Will definitely order again!",
-      date: "2 weeks ago",
-      verified: true
-    },
-    {
-      id: 4,
-      userName: "Sneha Desai",
-      rating: 5,
-      comment: "Love this product! The quality exceeded my expectations. Fast shipping and great customer service.",
-      date: "3 weeks ago",
-      verified: true
-    },
-    {
-      id: 5,
-      userName: "Vikram Singh",
-      rating: 4,
-      comment: "Very satisfied with the purchase. Good value for money. The design is trendy and the material is durable.",
-      date: "1 month ago",
-      verified: true
-    }
-  ]);
+  const [reviews, setReviews] = useState([]);
+  const [loadingReviews, setLoadingReviews] = useState(false);
   const [showAddReview, setShowAddReview] = useState(false);
   const [newReview, setNewReview] = useState({
     rating: 5,
@@ -251,6 +211,12 @@ const Product = () => {
           const filtered = relatedData.products.filter(item => item.id !== id).slice(0, 4);
           setRelated(filtered);
         }
+        
+        // Load reviews for this product
+        const productId = productData.id || productData._id?.toString() || id;
+        if (productId) {
+          loadReviews(productId);
+        }
       } catch (error) {
         console.error('Error loading product:', error);
         toast({
@@ -261,6 +227,30 @@ const Product = () => {
         navigate('/');
       } finally {
         setLoading(false);
+      }
+    };
+
+    const loadReviews = async (productId) => {
+      if (!productId) return;
+      setLoadingReviews(true);
+      try {
+        const data = await reviewsAPI.getReviews(productId);
+        // Format reviews for display
+        const formattedReviews = (data.reviews || []).map(review => ({
+          id: review._id || review.id,
+          userName: review.userName || 'Anonymous',
+          rating: review.rating,
+          comment: review.comment,
+          date: new Date(review.createdAt).toLocaleDateString(),
+          verified: false, // Can be set based on order verification
+          createdAt: review.createdAt
+        }));
+        setReviews(formattedReviews);
+      } catch (error) {
+        console.error('Error loading reviews:', error);
+        setReviews([]);
+      } finally {
+        setLoadingReviews(false);
       }
     };
 
@@ -526,14 +516,14 @@ const Product = () => {
         </div>
 
             {/* Thumbnail Gallery */}
-            <div className="flex gap-2 sm:gap-3 justify-center overflow-x-auto pb-2">
+            <div className="flex gap-1.5 sm:gap-2 justify-center overflow-x-auto pb-2">
               {productImages.length > 0 ? (
                 productImages.map((image, index) => (
               <button
                     key={index}
                     onClick={() => setSelectedImage(index)}
                     className={cn(
-                      "relative h-16 w-16 sm:h-20 sm:w-20 flex-shrink-0 overflow-hidden rounded-md sm:rounded-lg border-2 transition-all cursor-pointer",
+                      "relative h-12 w-12 sm:h-14 sm:w-14 flex-shrink-0 overflow-hidden rounded-md border-2 transition-all cursor-pointer",
                       selectedImage === index
                         ? "border-primary shadow-soft"
                         : "border-border hover:border-primary/50"
@@ -550,7 +540,7 @@ const Product = () => {
               </button>
                 ))
               ) : (
-                <div className="h-16 w-16 sm:h-20 sm:w-20 flex-shrink-0 rounded-md sm:rounded-lg border-2 border-border bg-secondary flex items-center justify-center">
+                <div className="h-12 w-12 sm:h-14 sm:w-14 flex-shrink-0 rounded-md border-2 border-border bg-secondary flex items-center justify-center">
                   <span className="text-xs text-muted-foreground">No images</span>
             </div>
               )}
@@ -917,9 +907,9 @@ const Product = () => {
               const recentReviews = reviews.slice(0, 3);
               
               return (
-                <div className="grid gap-8 md:grid-cols-2">
+                <div className="flex flex-col md:flex-row gap-8">
                   {/* Rating Summary */}
-                  <div className="space-y-6 rounded-lg border border-border bg-card p-6">
+                  <div className="space-y-6 rounded-lg border border-border bg-card p-4 sm:p-6 w-full md:w-64 md:max-w-64 flex-shrink-0">
                     <div className="flex items-center gap-4">
                       <div className="text-center">
                         <div className="text-4xl font-black text-foreground">{avgRating}</div>
@@ -959,7 +949,7 @@ const Product = () => {
                   </div>
 
                   {/* Recent Reviews */}
-                  <div className="space-y-6">
+                  <div className="space-y-6 flex-1">
                     <h3 className="text-lg font-semibold text-foreground">Recent Reviews</h3>
                     
                     {recentReviews.length > 0 ? (

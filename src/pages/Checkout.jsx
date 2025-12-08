@@ -71,6 +71,7 @@ const Checkout = () => {
   const [savedAddresses, setSavedAddresses] = useState([]);
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [saveAddress, setSaveAddress] = useState(false);
+  const [isValidPincode, setIsValidPincode] = useState(true);
   const descriptionRef = useRef(null);
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
@@ -141,9 +142,35 @@ const Checkout = () => {
     }
   }, [user, selectedAddressId]);
 
+  // Validate pincode for Ahmedabad and Gandhinagar
+  // Ahmedabad pincodes start with 380 (380001-380999)
+  // Gandhinagar pincodes start with 382 (382010-382999)
+  const validatePincode = (pincode) => {
+    if (pincode.length !== 6 || !/^\d{6}$/.test(pincode)) {
+      return false;
+    }
+    
+    // Check if pincode starts with 380 (Ahmedabad) or 382 (Gandhinagar)
+    return pincode.startsWith('380') || pincode.startsWith('382');
+  };
+
   // Fetch city and state from pincode
   const fetchPincodeDetails = async (pincode) => {
     if (pincode.length !== 6 || !/^\d{6}$/.test(pincode)) {
+      setIsValidPincode(true); // Reset validation if incomplete
+      return;
+    }
+
+    // Validate pincode first
+    const isValid = validatePincode(pincode);
+    setIsValidPincode(isValid);
+    
+    if (!isValid) {
+      toast({
+        title: "Invalid Pincode",
+        description: "We currently deliver only to Ahmedabad and Gandhinagar. Please enter a valid pincode from these cities.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -153,17 +180,80 @@ const Checkout = () => {
       const data = await response.json();
       
       if (data && data[0] && data[0].Status === "Success" && data[0].PostOffice && data[0].PostOffice.length > 0) {
-        const postOffice = data[0].PostOffice[0];
-        // Only auto-fill if fields are empty
+        // Check all post offices to find Ahmedabad or Gandhinagar
+        let foundValidCity = false;
+        let validCity = "";
+        let validState = "";
+        
+        for (const postOffice of data[0].PostOffice) {
+          const district = (postOffice.District || "").toLowerCase();
+          const name = (postOffice.Name || "").toLowerCase();
+          const state = (postOffice.State || "").toLowerCase();
+          
+          // Check if it's Ahmedabad or Gandhinagar
+          if (district.includes('ahmedabad') || name.includes('ahmedabad') || 
+              (state.includes('gujarat') && (district.includes('ahmedabad') || name.includes('ahmedabad')))) {
+            foundValidCity = true;
+            validCity = postOffice.District || postOffice.Name || "Ahmedabad";
+            validState = postOffice.State || "Gujarat";
+            break;
+          }
+          
+          if (district.includes('gandhinagar') || name.includes('gandhinagar') ||
+              (state.includes('gujarat') && (district.includes('gandhinagar') || name.includes('gandhinagar')))) {
+            foundValidCity = true;
+            validCity = postOffice.District || postOffice.Name || "Gandhinagar";
+            validState = postOffice.State || "Gujarat";
+            break;
+          }
+        }
+        
+        if (!foundValidCity) {
+          setIsValidPincode(false);
+          toast({
+            title: "Invalid Location",
+            description: "We currently deliver only to Ahmedabad and Gandhinagar. Please enter a valid pincode from these cities.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        // Mark as valid and auto-fill if fields are empty
+        setIsValidPincode(true);
         if (!city) {
-          setCity(postOffice.District || postOffice.Name || "");
+          setCity(validCity);
         }
         if (!state) {
-          setState(postOffice.State || "");
+          setState(validState);
+        }
+      } else {
+        // If API fails but pincode starts with 380 or 382, assume it's valid
+        if (pincode.startsWith('380') || pincode.startsWith('382')) {
+          setIsValidPincode(true);
+          if (!city) {
+            setCity(pincode.startsWith('380') ? 'Ahmedabad' : 'Gandhinagar');
+          }
+          if (!state) {
+            setState('Gujarat');
+          }
+        } else {
+          setIsValidPincode(false);
         }
       }
     } catch (error) {
       console.error("Error fetching pincode details:", error);
+      // If API fails but pincode starts with 380 or 382, assume it's valid
+      if (pincode.startsWith('380') || pincode.startsWith('382')) {
+        setIsValidPincode(true);
+        if (!city) {
+          setCity(pincode.startsWith('380') ? 'Ahmedabad' : 'Gandhinagar');
+        }
+        if (!state) {
+          setState('Gujarat');
+        }
+      } else {
+        setIsValidPincode(false);
+      }
     } finally {
       setLoadingPincode(false);
     }
@@ -172,6 +262,10 @@ const Checkout = () => {
   const handleZipCodeChange = (e) => {
     const value = e.target.value.replace(/\D/g, "").slice(0, 6);
     setZipCode(value);
+    // Reset validation if pincode is incomplete
+    if (value.length < 6) {
+      setIsValidPincode(true);
+    }
     if (value.length === 6) {
       fetchPincodeDetails(value);
     }
@@ -236,6 +330,37 @@ const Checkout = () => {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate pincode before proceeding
+    if (!validatePincode(zipCode)) {
+      toast({
+        title: "Invalid Pincode",
+        description: "We currently deliver only to Ahmedabad and Gandhinagar. Please enter a valid pincode from these cities.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Verify pincode is valid (from API check)
+    if (!isValidPincode) {
+      toast({
+        title: "Invalid Pincode",
+        description: "We currently deliver only to Ahmedabad and Gandhinagar. Please enter a valid pincode from these cities.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Verify city is Ahmedabad or Gandhinagar (case-insensitive)
+    const cityLower = (city || "").toLowerCase();
+    if (cityLower && !cityLower.includes('ahmedabad') && !cityLower.includes('gandhinagar')) {
+      toast({
+        title: "Invalid Location",
+        description: "We currently deliver only to Ahmedabad and Gandhinagar. Please enter a valid address from these cities.",
         variant: "destructive",
       });
       return;
@@ -492,14 +617,21 @@ const Checkout = () => {
                 <div className="col-span-2 relative">
                   <label className="block text-sm font-medium text-gray-700 mb-4">
                     Pincode {loadingPincode && <Loader2 className="inline h-3 w-3 animate-spin ml-2" />}
+                    <span className="text-xs text-muted-foreground ml-2">(Ahmedabad/Gandhinagar only)</span>
                   </label>
                   <Input
                     value={zipCode}
                     onChange={handleZipCodeChange}
-                    className="w-full"
-                    placeholder="560021"
+                    className={`w-full ${!isValidPincode && zipCode.length === 6 ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                    placeholder="380001 or 382010"
                     maxLength={6}
                   />
+                  {!isValidPincode && zipCode.length === 6 && (
+                    <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                      <MapPin className="h-3 w-3" />
+                      We deliver only to Ahmedabad and Gandhinagar
+                    </p>
+                  )}
                 </div>
                 <div className="relative">
                   <label className="block text-sm font-medium text-gray-700 mb-4">City</label>

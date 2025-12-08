@@ -30,7 +30,9 @@ const PAYMENT_MODE = process.env.PAYMENT_MODE || 'test'; // 'test' or 'productio
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+// Increase body parser limit to handle base64 images (50MB)
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, 'uploads');
@@ -138,12 +140,14 @@ const orderSchema = new mongoose.Schema({
   orderId: { type: String, required: true, unique: true, index: true },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   items: [{
-    productId: { type: String, required: true },
+    productId: { type: String, default: null }, // Optional - for custom products
     name: { type: String, required: true },
     price: { type: Number, required: true },
     quantity: { type: Number, required: true },
     size: { type: String, required: true },
-    image: { type: String, required: true }
+    image: { type: String, required: true },
+    category: { type: String, default: 'Custom' },
+    audience: { type: String, default: 'Unisex' }
   }],
   shippingAddress: {
     name: { type: String, required: true },
@@ -202,7 +206,9 @@ const productSchema = new mongoose.Schema({
   originalPrice: { type: Number, required: true }, // Previous price
   accent: { type: String, default: 'linear-gradient(135deg,#5c3d8a,#7a5bff)' },
   gallery: [{
-    url: { type: String, required: true },
+    url: { type: String, default: '' }, // Keep for backward compatibility
+    data: { type: String, default: '' }, // Base64 image data
+    mimeType: { type: String, default: 'image/jpeg' }, // Image MIME type
     isMain: { type: Boolean, default: false }, // Main image flag
     order: { type: Number, default: 0 } // Order in gallery
   }],
@@ -2334,7 +2340,7 @@ app.put('/api/admin/users/:userId', authenticateAdmin, async (req, res) => {
 app.post('/api/admin/users/:userId/add-product', authenticateAdmin, upload.array('productImage', 1), async (req, res) => {
   try {
     const { userId } = req.params;
-    const { productName, productPrice, productDescription, category, audience } = req.body;
+    const { productId, productName, productPrice, productDescription, category, audience } = req.body;
 
     if (!productName || !productPrice) {
       return res.status(400).json({ error: 'Product name and price are required' });
@@ -2357,15 +2363,28 @@ app.post('/api/admin/users/:userId/add-product', authenticateAdmin, upload.array
       productImage = `/uploads/${req.files[0].filename}`;
     }
 
-    // Create order item
+    // If productId is provided, try to fetch product details
+    let productDetails = null;
+    if (productId && mongoose.Types.ObjectId.isValid(productId)) {
+      try {
+        productDetails = await Product.findById(productId);
+      } catch (error) {
+        console.error('Error fetching product:', error);
+      }
+    }
+
+    // Create order item - use product details if available, otherwise use form data
     const orderItem = {
-      name: productName,
-      price: parseFloat(productPrice),
+      productId: productId && mongoose.Types.ObjectId.isValid(productId) ? productId.toString() : null,
+      name: productDetails ? productDetails.name : productName,
+      price: productDetails ? productDetails.price : parseFloat(productPrice),
       quantity: 1,
       size: 'M', // Default size
-      image: productImage || 'https://via.placeholder.com/300',
-      category: category || 'Custom',
-      audience: audience || 'Unisex'
+      image: productImage || (productDetails && productDetails.gallery && productDetails.gallery.length > 0 
+        ? (typeof productDetails.gallery[0] === 'string' ? productDetails.gallery[0] : productDetails.gallery[0].url || productDetails.gallery[0])
+        : 'https://via.placeholder.com/300'),
+      category: productDetails ? productDetails.category : (category || 'Custom'),
+      audience: productDetails ? productDetails.audience : (audience || 'Unisex')
     };
 
     const subtotal = orderItem.price;
@@ -2604,12 +2623,17 @@ app.get('/api/products', async (req, res) => {
       .limit(parseInt(limit))
       .lean();
     
-    // Convert _id to id for frontend compatibility
+    // Convert _id to id for frontend compatibility and format gallery images
     const formattedProducts = products.map(p => ({
       ...p,
       id: p._id.toString(),
       original: p.originalPrice,
-      gallery: p.gallery.map(g => g.url || g)
+      gallery: p.gallery.map(g => {
+        if (g.data) {
+          return `data:${g.mimeType || 'image/jpeg'};base64,${g.data}`;
+        }
+        return g.url || '';
+      })
     }));
     
     res.json({ products: formattedProducts });
@@ -2634,12 +2658,17 @@ app.get('/api/products/:id', async (req, res) => {
       return res.status(404).json({ error: 'Product not found' });
     }
     
-    // Convert _id to id and format gallery
+    // Convert _id to id and format gallery images
     const formattedProduct = {
       ...product,
       id: product._id.toString(),
       original: product.originalPrice,
-      gallery: product.gallery.map(g => g.url || g)
+      gallery: product.gallery.map(g => {
+        if (g.data) {
+          return `data:${g.mimeType || 'image/jpeg'};base64,${g.data}`;
+        }
+        return g.url || '';
+      })
     };
     
     res.json(formattedProduct);
@@ -2668,12 +2697,17 @@ app.get('/api/admin/products', authenticateAdmin, async (req, res) => {
       .limit(parseInt(limit))
       .lean();
     
-    // Convert _id to id for frontend compatibility
+    // Convert _id to id for frontend compatibility and format gallery images
     const formattedProducts = products.map(p => ({
       ...p,
       id: p._id.toString(),
       original: p.originalPrice,
-      gallery: p.gallery.map(g => g.url || g)
+      gallery: p.gallery.map(g => {
+        if (g.data) {
+          return `data:${g.mimeType || 'image/jpeg'};base64,${g.data}`;
+        }
+        return g.url || '';
+      })
     }));
     
     res.json({ products: formattedProducts });
@@ -2684,31 +2718,44 @@ app.get('/api/admin/products', authenticateAdmin, async (req, res) => {
 });
 
 // Admin: Create product
-app.post('/api/admin/products', authenticateAdmin, upload.array('gallery', 10), async (req, res) => {
+app.post('/api/admin/products', authenticateAdmin, async (req, res) => {
   try {
-    const { name, description, category, audience, price, originalPrice, sizes, stock, colorOptions, tags } = req.body;
+    const { name, description, category, audience, price, originalPrice, sizes, stock, colorOptions, tags, galleryImages } = req.body;
     
     if (!name || !category || !audience || !price || !originalPrice) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
     
-    // Process gallery images
+    // Process gallery images - accept base64 images from request body
     const gallery = [];
-    if (req.files && req.files.length > 0) {
-      req.files.forEach((file, index) => {
-        gallery.push({
-          url: `/uploads/${file.filename}`,
-          isMain: index === 0,
-          order: index
-        });
+    if (galleryImages && Array.isArray(galleryImages) && galleryImages.length > 0) {
+      galleryImages.forEach((imageData, index) => {
+        // imageData should be { data: 'data:image/jpeg;base64,...', mimeType: 'image/jpeg' }
+        if (imageData.data) {
+          // Extract base64 data and mime type
+          const base64Match = imageData.data.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
+          if (base64Match) {
+            gallery.push({
+              data: base64Match[2], // Store only base64 string without data URI prefix
+              mimeType: base64Match[1] || imageData.mimeType || 'image/jpeg',
+              isMain: index === 0,
+              order: index
+            });
+          } else if (typeof imageData.data === 'string' && imageData.data.length > 0) {
+            // Already base64 without data URI prefix
+            gallery.push({
+              data: imageData.data,
+              mimeType: imageData.mimeType || 'image/jpeg',
+              isMain: index === 0,
+              order: index
+            });
+          }
+        }
       });
-    } else {
-      // Add placeholder if no images
-      gallery.push({
-        url: '/uploads/placeholder.jpg',
-        isMain: true,
-        order: 0
-      });
+    }
+    
+    if (gallery.length === 0) {
+      return res.status(400).json({ error: 'At least one product image is required' });
     }
     
     // Parse sizes, colorOptions, tags
@@ -2757,12 +2804,17 @@ app.post('/api/admin/products', authenticateAdmin, upload.array('gallery', 10), 
     
     await product.save();
     
-    // Format response
+    // Format response - return data URLs for images
     const formattedProduct = {
       ...product.toObject(),
       id: product._id.toString(),
       original: product.originalPrice,
-      gallery: product.gallery.map(g => g.url || g)
+      gallery: product.gallery.map(g => {
+        if (g.data) {
+          return `data:${g.mimeType || 'image/jpeg'};base64,${g.data}`;
+        }
+        return g.url || '';
+      })
     };
     
     res.status(201).json({
@@ -2776,10 +2828,10 @@ app.post('/api/admin/products', authenticateAdmin, upload.array('gallery', 10), 
 });
 
 // Admin: Update product
-app.put('/api/admin/products/:id', authenticateAdmin, upload.array('gallery', 10), async (req, res) => {
+app.put('/api/admin/products/:id', authenticateAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, category, audience, price, originalPrice, sizes, stock, colorOptions, tags } = req.body;
+    const { name, description, category, audience, price, originalPrice, sizes, stock, colorOptions, tags, galleryImages } = req.body;
     
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ error: 'Invalid product ID' });
@@ -2829,25 +2881,48 @@ app.put('/api/admin/products/:id', authenticateAdmin, upload.array('gallery', 10
       }
     }
     
-    // Update gallery if new images uploaded
-    if (req.files && req.files.length > 0) {
-      const newGallery = req.files.map((file, index) => ({
-        url: `/uploads/${file.filename}`,
-        isMain: index === 0,
-        order: index
-      }));
-      product.gallery = newGallery;
+    // Update gallery if new images uploaded (base64 from request body)
+    if (galleryImages && Array.isArray(galleryImages) && galleryImages.length > 0) {
+      const newGallery = [];
+      galleryImages.forEach((imageData, index) => {
+        if (imageData.data) {
+          const base64Match = imageData.data.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
+          if (base64Match) {
+            newGallery.push({
+              data: base64Match[2],
+              mimeType: base64Match[1] || imageData.mimeType || 'image/jpeg',
+              isMain: index === 0,
+              order: index
+            });
+          } else if (typeof imageData.data === 'string' && imageData.data.length > 0) {
+            newGallery.push({
+              data: imageData.data,
+              mimeType: imageData.mimeType || 'image/jpeg',
+              isMain: index === 0,
+              order: index
+            });
+          }
+        }
+      });
+      if (newGallery.length > 0) {
+        product.gallery = newGallery;
+      }
     }
     
     product.updatedAt = new Date();
     await product.save();
     
-    // Format response
+    // Format response - return data URLs for images
     const formattedProduct = {
       ...product.toObject(),
       id: product._id.toString(),
       original: product.originalPrice,
-      gallery: product.gallery.map(g => g.url || g)
+      gallery: product.gallery.map(g => {
+        if (g.data) {
+          return `data:${g.mimeType || 'image/jpeg'};base64,${g.data}`;
+        }
+        return g.url || '';
+      })
     };
     
     res.json({

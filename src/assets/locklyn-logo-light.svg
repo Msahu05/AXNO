@@ -1,0 +1,15 @@
+<svg width="200" height="80" viewBox="0 0 200 80" xmlns="http://www.w3.org/2000/svg">
+  <!-- White background -->
+  <rect width="200" height="80" fill="white"/>
+  
+  <!-- Crown above OO in LOCKLYN -->
+  <path d="M 72 20 L 78 10 L 81 14 L 84 6 L 87 14 L 90 6 L 93 14 L 96 10 L 102 20 L 102 24 L 72 24 Z" fill="black"/>
+  
+  <!-- LOCKLYN Text - Bold, sans-serif, uppercase -->
+  <text x="100" y="42" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="900" text-anchor="middle" fill="black" letter-spacing="0.05em">LOCKLYN</text>
+  
+  <!-- OWN THE LOOK tagline with lines -->
+  <line x1="25" y1="58" x2="42" y2="58" stroke="black" stroke-width="1.5"/>
+  <text x="100" y="61" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="600" text-anchor="middle" fill="black" letter-spacing="0.12em">OWN THE LOOK</text>
+  <line x1="158" y1="58" x2="175" y2="58" stroke="black" stroke-width="1.5"/>
+</svg>

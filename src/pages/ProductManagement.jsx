@@ -32,6 +32,7 @@ const NewProductForm = ({ navigate }) => {
   
   const [galleryFiles, setGalleryFiles] = useState([]);
   const [galleryPreviews, setGalleryPreviews] = useState([]);
+  const [mainImageIndex, setMainImageIndex] = useState(0);
 
   const handleGalleryChange = (e) => {
     const newFiles = Array.from(e.target.files);
@@ -75,6 +76,21 @@ const NewProductForm = ({ navigate }) => {
     const newPreviews = galleryPreviews.filter((_, i) => i !== index);
     setGalleryFiles(newFiles);
     setGalleryPreviews(newPreviews);
+    
+    // Adjust main image index if needed
+    if (index === mainImageIndex && newFiles.length > 0) {
+      setMainImageIndex(0);
+    } else if (index < mainImageIndex) {
+      setMainImageIndex(mainImageIndex - 1);
+    }
+  };
+
+  const setAsMainImage = (index) => {
+    setMainImageIndex(index);
+    toast({
+      title: 'Success',
+      description: 'Main image updated',
+    });
   };
 
   const handleSave = async () => {
@@ -148,7 +164,15 @@ const NewProductForm = ({ navigate }) => {
       console.log('Form Data:', formData);
       console.log('Gallery Files:', galleryFiles.length, 'files');
       
-      const result = await adminAPI.createProduct(formData, galleryFiles);
+      // Reorder gallery files to put main image first
+      const orderedFiles = [...galleryFiles];
+      if (mainImageIndex > 0 && orderedFiles.length > mainImageIndex) {
+        const mainFile = orderedFiles[mainImageIndex];
+        orderedFiles.splice(mainImageIndex, 1);
+        orderedFiles.unshift(mainFile);
+      }
+      
+      const result = await adminAPI.createProduct(formData, orderedFiles);
       console.log('Product created successfully:', result);
       toast({
         title: 'Success',
@@ -230,7 +254,11 @@ const NewProductForm = ({ navigate }) => {
                         }
                         return (
                         <div key={index} className="relative group">
-                          <div className="w-full h-48 rounded-lg border-2 border-border bg-secondary overflow-hidden">
+                          <div className={`w-full h-48 rounded-lg border-2 bg-secondary overflow-hidden cursor-pointer ${
+                            mainImageIndex === index ? 'border-primary border-4' : 'border-border'
+                          }`}
+                          onClick={() => setAsMainImage(index)}
+                          >
                             <img
                               src={preview}
                               alt={`Preview ${index + 1}`}
@@ -244,17 +272,33 @@ const NewProductForm = ({ navigate }) => {
                               }}
                             />
                           </div>
-                          {index === 0 && (
-                            <div className="absolute top-2 left-2 bg-primary text-white text-xs px-2 py-1 rounded z-10">
-                              Main
+                          {mainImageIndex === index && (
+                            <div className="absolute top-2 left-2 bg-primary text-white text-xs px-2 py-1 rounded z-10 font-bold">
+                              Main Image
                             </div>
                           )}
                           <button
-                            onClick={() => removeGalleryImage(index)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeGalleryImage(index);
+                            }}
                             className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                            title="Remove image"
                           >
                             <X className="h-4 w-4" />
                           </button>
+                          {mainImageIndex !== index && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setAsMainImage(index);
+                              }}
+                              className="absolute bottom-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                              title="Set as main image"
+                            >
+                              Set as Main
+                            </button>
+                          )}
                         </div>
                         );
                       })}
@@ -580,6 +624,7 @@ const ProductManagement = () => {
   
   const [galleryFiles, setGalleryFiles] = useState([]);
   const [galleryPreviews, setGalleryPreviews] = useState([]);
+  const [mainImageIndex, setMainImageIndex] = useState(0);
 
   useEffect(() => {
     // CRITICAL: Never run for new products - this should never happen due to early return, but double-check
@@ -663,20 +708,39 @@ const ProductManagement = () => {
   };
 
   const handleGalleryChange = (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length > 10) {
+    const newFiles = Array.from(e.target.files);
+    if (newFiles.length === 0) return;
+    
+    const totalFiles = galleryFiles.length + newFiles.length;
+    
+    if (totalFiles > 10) {
       toast({
         title: 'Error',
-        description: 'Maximum 10 images allowed',
+        description: `Maximum 10 images allowed. You already have ${galleryFiles.length} image(s).`,
         variant: 'destructive',
       });
+      e.target.value = '';
       return;
     }
-    setGalleryFiles(files);
     
-    // Create previews
-    const previews = files.map(file => URL.createObjectURL(file));
-    setGalleryPreviews(previews);
+    // Append new files to existing ones
+    const updatedFiles = [...galleryFiles, ...newFiles];
+    setGalleryFiles(updatedFiles);
+    
+    // Create previews for new files and append to existing previews
+    const newPreviews = newFiles.map(file => {
+      try {
+        return URL.createObjectURL(file);
+      } catch (error) {
+        console.error('Error creating object URL:', error);
+        return null;
+      }
+    }).filter(Boolean);
+    
+    setGalleryPreviews([...galleryPreviews, ...newPreviews]);
+    
+    // Reset input to allow selecting more files
+    e.target.value = '';
   };
 
   const removeGalleryImage = (index) => {
@@ -684,6 +748,21 @@ const ProductManagement = () => {
     const newPreviews = galleryPreviews.filter((_, i) => i !== index);
     setGalleryFiles(newFiles);
     setGalleryPreviews(newPreviews);
+    
+    // Adjust main image index if needed
+    if (index === mainImageIndex && newFiles.length > 0) {
+      setMainImageIndex(0);
+    } else if (index < mainImageIndex) {
+      setMainImageIndex(mainImageIndex - 1);
+    }
+  };
+
+  const setAsMainImage = (index) => {
+    setMainImageIndex(index);
+    toast({
+      title: 'Success',
+      description: 'Main image updated',
+    });
   };
 
   const handleSave = async () => {
@@ -735,8 +814,15 @@ const ProductManagement = () => {
 
     try {
       setSaving(true);
+      // Reorder gallery files to put main image first
+      const orderedFiles = [...galleryFiles];
+      if (mainImageIndex > 0 && orderedFiles.length > mainImageIndex) {
+        const mainFile = orderedFiles[mainImageIndex];
+        orderedFiles.splice(mainImageIndex, 1);
+        orderedFiles.unshift(mainFile);
+      }
       // Update existing product
-      await adminAPI.updateProduct(productId, formData, galleryFiles);
+      await adminAPI.updateProduct(productId, formData, orderedFiles);
       toast({
         title: 'Success',
         description: 'Product updated successfully',
@@ -841,7 +927,11 @@ const ProductManagement = () => {
                         const imageUrl = preview.startsWith('blob:') ? preview : getImageUrl(preview);
                         return (
                         <div key={index} className="relative group">
-                          <div className="w-full h-48 rounded-lg border-2 border-border bg-secondary overflow-hidden">
+                          <div className={`w-full h-48 rounded-lg border-2 bg-secondary overflow-hidden cursor-pointer ${
+                            mainImageIndex === index ? 'border-primary border-4' : 'border-border'
+                          }`}
+                          onClick={() => setAsMainImage(index)}
+                          >
                             <img
                               src={imageUrl}
                               alt={`Preview ${index + 1}`}
@@ -855,17 +945,33 @@ const ProductManagement = () => {
                               }}
                             />
                           </div>
-                          {index === 0 && (
-                            <div className="absolute top-2 left-2 bg-primary text-white text-xs px-2 py-1 rounded z-10">
-                              Main
+                          {mainImageIndex === index && (
+                            <div className="absolute top-2 left-2 bg-primary text-white text-xs px-2 py-1 rounded z-10 font-bold">
+                              Main Image
                             </div>
                           )}
                           <button
-                            onClick={() => removeGalleryImage(index)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeGalleryImage(index);
+                            }}
                             className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                            title="Remove image"
                           >
                             <X className="h-4 w-4" />
                           </button>
+                          {mainImageIndex !== index && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setAsMainImage(index);
+                              }}
+                              className="absolute bottom-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                              title="Set as main image"
+                            >
+                              Set as Main
+                            </button>
+                          )}
                         </div>
                         );
                       })}

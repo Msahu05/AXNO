@@ -55,6 +55,7 @@ const Admin = () => {
   // Add product to user form
   const [showAddProductForm, setShowAddProductForm] = useState(false);
   const [productForm, setProductForm] = useState({
+    productId: '',
     name: '',
     price: '',
     description: '',
@@ -287,6 +288,7 @@ const Admin = () => {
 
   const handleAddProductToUser = async (userId) => {
     try {
+      // Validate required fields
       if (!productForm.name || !productForm.price) {
         toast({
           title: 'Error',
@@ -296,6 +298,22 @@ const Admin = () => {
         return;
       }
 
+      // Validate price is a valid number
+      const price = parseFloat(productForm.price);
+      if (isNaN(price) || price <= 0) {
+        toast({
+          title: 'Error',
+          description: 'Please enter a valid price (greater than 0)',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // If productId is provided, validate it
+      if (productForm.productId && productForm.productId.trim() !== '') {
+        // ProductId validation will be done on backend
+      }
+
       await adminAPI.addProductToUser(userId, productForm, productForm.image);
       toast({
         title: 'Success',
@@ -303,6 +321,7 @@ const Admin = () => {
       });
       setShowAddProductForm(false);
       setProductForm({
+        productId: '',
         name: '',
         price: '',
         description: '',
@@ -311,11 +330,15 @@ const Admin = () => {
         image: null
       });
       fetchUsers();
+      if (selectedUser?._id === userId) {
+        handleViewUser(userId);
+      }
     } catch (error) {
       console.error('Error adding product:', error);
+      const errorMessage = error.message || error.response?.data?.error || 'Failed to add product. Please check all fields and try again.';
       toast({
         title: 'Error',
-        description: error.message || 'Failed to add product',
+        description: errorMessage,
         variant: 'destructive',
       });
     }
@@ -774,8 +797,8 @@ const Admin = () => {
         {/* User Details Modal */}
         {selectedUser && !showAddProductForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <Card className="max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <CardHeader>
+            <Card className="max-w-2xl w-full max-h-[90vh] flex flex-col">
+              <CardHeader className="flex-shrink-0">
                 <div className="flex justify-between items-start">
                   <div>
                     <CardTitle>{selectedUser.name}</CardTitle>
@@ -789,7 +812,7 @@ const Admin = () => {
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-6 overflow-y-auto flex-1">
                 <div>
                   <h3 className="font-semibold mb-2">User Information</h3>
                   <div className="bg-gray-50 p-4 rounded-lg space-y-2">
@@ -822,7 +845,7 @@ const Admin = () => {
                 {selectedUser.recentOrders && selectedUser.recentOrders.length > 0 ? (
                   <div>
                     <h3 className="font-semibold mb-2">Orders ({selectedUser.recentOrders.length})</h3>
-                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                    <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
                       {selectedUser.recentOrders.map((order) => (
                         <div key={order._id} className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg flex justify-between items-center hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer" onClick={() => {
                           setSelectedUser(null);
@@ -876,6 +899,7 @@ const Admin = () => {
                     onClick={() => {
                       setShowAddProductForm(false);
                       setProductForm({
+                        productId: '',
                         name: '',
                         price: '',
                         description: '',
@@ -890,6 +914,15 @@ const Admin = () => {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium">Product ID</label>
+                  <Input
+                    value={productForm.productId}
+                    onChange={(e) => setProductForm({ ...productForm, productId: e.target.value })}
+                    placeholder="Enter product ID (optional)"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Leave empty to create new product</p>
+                </div>
                 <div>
                   <label className="text-sm font-medium">Product Name *</label>
                   <Input

@@ -123,15 +123,15 @@ const Product = () => {
                 <Heart className="h-5 w-5" />
               </button>
             </div>
-            <div className="grid grid-cols-5 gap-3">
+            <div className="grid grid-cols-5 gap-2">
               {product.gallery.map((photo, index) => (
                 <button
                   key={photo}
-                  className={`overflow-hidden rounded-2xl border-2 ${index === imageIndex ? "border-primary" : "border-transparent"} focus:outline-none`}
+                  className={`overflow-hidden rounded-lg border-2 ${index === imageIndex ? "border-primary" : "border-transparent"} focus:outline-none`}
                   onClick={() => setImageIndex(index)}
                   aria-label={`View image ${index + 1}`}
                 >
-                  <img src={photo} alt={`${product.name} ${index + 1}`} loading="lazy" className="h-20 w-full object-cover" style={{ objectFit: "cover", width: "100%", height: "100%" }} />
+                  <img src={photo} alt={`${product.name} ${index + 1}`} loading="lazy" className="h-12 sm:h-14 w-full object-cover" style={{ objectFit: "cover", width: "100%", height: "100%" }} />
                 </button>
               ))}
             </div>

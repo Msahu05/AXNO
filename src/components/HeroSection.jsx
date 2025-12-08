@@ -1,7 +1,7 @@
 import { ArrowRight, Truck, CreditCard, Headphones } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
+import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "@/components/ui/carousel";
 import { useState, useEffect } from "react";
 import Autoplay from "embla-carousel-autoplay";
 import { productsAPI, getImageUrl } from "@/lib/api";
@@ -33,13 +33,15 @@ export function HeroSection() {
   const heroImages = heroProducts.length > 0 
     ? heroProducts.map(product => ({
         src: getImageUrl(Array.isArray(product.gallery) ? product.gallery[0] : product.gallery || product.image),
-        alt: product.name || "Fashion model"
+        alt: product.name || "Fashion model",
+        productId: product.id || product._id,
+        onClick: () => product.id ? navigate(`/product/${product.id}`) : navigate('/shop')
       }))
     : [
-        { src: "https://images.unsplash.com/photo-1581044777550-4cfa60707c03?w=600&q=80", alt: "Fashion model" },
-        { src: "https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=600&q=80", alt: "Stylish woman" },
-        { src: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&q=80", alt: "Model showcasing fashion" },
-        { src: "https://images.unsplash.com/photo-1509631179647-0177331693ae?w=600&q=80", alt: "Elegant fashion" }
+        { src: "https://images.unsplash.com/photo-1581044777550-4cfa60707c03?w=600&q=80", alt: "Fashion model", onClick: () => navigate('/shop') },
+        { src: "https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=600&q=80", alt: "Stylish woman", onClick: () => navigate('/shop') },
+        { src: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&q=80", alt: "Model showcasing fashion", onClick: () => navigate('/shop') },
+        { src: "https://images.unsplash.com/photo-1509631179647-0177331693ae?w=600&q=80", alt: "Elegant fashion", onClick: () => navigate('/shop') }
       ];
 
   return (
@@ -59,22 +61,30 @@ export function HeroSection() {
                     <Carousel
                       plugins={[plugin]}
                       opts={{ loop: true }}
-                      className="h-full w-full"
+                      className="h-full w-full relative"
                     >
                       <CarouselContent className="h-full -ml-0">
                         {heroImages.map((image, index) => (
                           <CarouselItem key={index} className="h-full pl-0">
-                            <img
-                              src={image.src}
-                              alt={image.alt}
-                              className="h-full w-full object-cover"
-                              onError={(e) => {
-                                e.target.src = "https://images.unsplash.com/photo-1581044777550-4cfa60707c03?w=600&q=80";
-                              }}
-                            />
+                            <div 
+                              className="h-full w-full cursor-pointer relative group"
+                              onClick={image.onClick}
+                            >
+                              <img
+                                src={image.src}
+                                alt={image.alt}
+                                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                onError={(e) => {
+                                  e.target.src = "https://images.unsplash.com/photo-1581044777550-4cfa60707c03?w=600&q=80";
+                                }}
+                              />
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
+                            </div>
                           </CarouselItem>
                         ))}
                       </CarouselContent>
+                      <CarouselPrevious className="left-2 sm:left-4 h-10 w-10 bg-white/90 hover:bg-white border-2 border-primary/20 shadow-lg" />
+                      <CarouselNext className="right-2 sm:right-4 h-10 w-10 bg-white/90 hover:bg-white border-2 border-primary/20 shadow-lg" />
                     </Carousel>
                   )}
                 </div>
