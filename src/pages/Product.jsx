@@ -19,10 +19,11 @@ import { useAuth } from "@/contexts/auth-context";
 import { useCart } from "@/contexts/cart-context";
 import { useWishlist } from "@/contexts/wishlist-context";
 import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
+import { cn, getProductUrl } from "@/lib/utils";
 
 const Product = () => {
-  const { id } = useParams();
+  const { slug } = useParams();
+  const id = slug; // Keep id for backward compatibility in code
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
   const { addItem } = useCart();
@@ -149,7 +150,7 @@ const Product = () => {
       if (!id || id === 'undefined' || id === 'null') {
         toast({
           title: 'Error',
-          description: 'Invalid product ID',
+          description: 'Invalid product',
           variant: 'destructive',
         });
         navigate('/');
@@ -158,8 +159,20 @@ const Product = () => {
       
       try {
         setLoading(true);
-        const productData = await productsAPI.getById(id);
+        // Use getBySlug which works with both slug and ID (backend handles both)
+        const productData = await productsAPI.getBySlug(id);
         setProduct(productData);
+        
+        // Update URL to use slug if available and current URL uses ID
+        // This ensures URLs always show product name instead of ID
+        if (productData.slug) {
+          // Check if current URL parameter is an ObjectId (24 char hex string)
+          const isObjectId = /^[a-f0-9]{24}$/i.test(id);
+          if (isObjectId && productData.slug !== id) {
+            // Replace ID with slug in URL
+            window.history.replaceState({}, '', `/product/${productData.slug}`);
+          }
+        }
         
         // Set default size
         if (productData.sizes && productData.sizes.length > 0) {
@@ -422,7 +435,8 @@ const Product = () => {
 
   const handleWishlist = () => {
     if (!isAuthenticated) {
-      navigate(`/auth?redirect=${encodeURIComponent(`/product/${product.id}`)}`);
+      const productUrl = getProductUrl(product);
+      navigate(`/auth?redirect=${encodeURIComponent(productUrl)}`);
       return;
     }
     if (inWishlist) {
@@ -443,7 +457,8 @@ const Product = () => {
 
   const handleAddToCart = () => {
     if (!isAuthenticated) {
-      navigate(`/auth?redirect=${encodeURIComponent(`/product/${product.id}`)}`);
+      const productUrl = getProductUrl(product);
+      navigate(`/auth?redirect=${encodeURIComponent(productUrl)}`);
       return;
     }
     if (!selectedSize) {
@@ -468,7 +483,8 @@ const Product = () => {
 
   const handleBuyNow = () => {
     if (!isAuthenticated) {
-      navigate(`/auth?redirect=${encodeURIComponent(`/product/${product.id}`)}`);
+      const productUrl = getProductUrl(product);
+      navigate(`/auth?redirect=${encodeURIComponent(productUrl)}`);
       return;
     }
     if (!selectedSize) {
@@ -616,7 +632,10 @@ const Product = () => {
                             console.log('Color clicked:', color);
                             setSelectedColor(color.name || color.hex || colorKey);
                             // If color has a productId, navigate to that product
+                            // We'll fetch the product to get its slug, or use ID as fallback
                             if (color.productId) {
+                              // Try to get product slug, but navigate immediately with ID
+                              // The product page will update the URL to slug if available
                               navigate(`/product/${color.productId}`);
                             }
                           }}
@@ -792,6 +811,7 @@ const Product = () => {
 
         {/* Ratings and Reviews */}
         <section className="mt-32 sm:mt-52 lg:mt-72">
+          <div className="max-w-4xl px-4 sm:px-6 lg:px-8">
           <div className="mb-8">
             <div className="flex items-center justify-between mb-6">
               <h2 className="font-display text-xl sm:text-2xl font-black text-foreground">
@@ -989,6 +1009,7 @@ const Product = () => {
                 </div>
               );
             })()}
+          </div>
           </div>
         </section>
 

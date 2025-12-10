@@ -137,14 +137,21 @@ const Home = () => {
                       <ProductCard
                         key={product._id || product.id}
                         id={product._id || product.id}
+                        slug={product.slug}
                         name={product.name}
                         category={product.category}
                         price={product.price}
                         originalPrice={product.originalPrice}
                         image={getImageUrl(Array.isArray(product.gallery) ? product.gallery[0]?.url || product.gallery[0] : product.gallery || product.image)}
                         accent={product.accent}
-                        onView={() => navigate(`/product/${product._id || product.id}`)}
-                        onAdd={() => handleProtectedAction(`/product/${product._id || product.id}`)}
+                        onView={() => {
+                          const url = product.slug ? `/product/${product.slug}` : `/product/${product._id || product.id}`;
+                          navigate(url);
+                        }}
+                        onAdd={() => {
+                          const url = product.slug ? `/product/${product.slug}` : `/product/${product._id || product.id}`;
+                          handleProtectedAction(url);
+                        }}
                         onWishlist={() => handleWishlistNav()}
                       />
                     ))}

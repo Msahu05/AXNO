@@ -196,9 +196,20 @@ const orderSchema = new mongoose.Schema({
 
 const Order = mongoose.model('Order', orderSchema);
 
+// Function to generate slug from product name
+function generateSlug(name) {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '') // Remove special characters
+    .replace(/[\s_-]+/g, '-') // Replace spaces, underscores, and hyphens with single hyphen
+    .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+}
+
 // Product Schema
 const productSchema = new mongoose.Schema({
   name: { type: String, required: true },
+  slug: { type: String, unique: true, sparse: true }, // URL-friendly slug
   description: { type: String, default: '' },
   category: { type: String, required: true, enum: ['Hoodie', 'T-Shirt', 'Sweatshirt'] },
   audience: { type: String, required: true, enum: ['men', 'women', 'kids'] },
@@ -229,6 +240,16 @@ const productSchema = new mongoose.Schema({
 productSchema.index({ category: 1, audience: 1 });
 productSchema.index({ isActive: 1 });
 productSchema.index({ name: 'text', description: 'text' });
+productSchema.index({ slug: 1 }); // Index for slug lookups
+
+// Pre-save hook to generate slug from name if not provided
+productSchema.pre('save', function(next) {
+  if (!this.slug && this.name) {
+    let baseSlug = generateSlug(this.name);
+    this.slug = baseSlug;
+  }
+  next();
+});
 
 const Product = mongoose.model('Product', productSchema);
 
@@ -2624,17 +2645,26 @@ app.get('/api/products', async (req, res) => {
       .lean();
     
     // Convert _id to id for frontend compatibility and format gallery images
-    const formattedProducts = products.map(p => ({
-      ...p,
-      id: p._id.toString(),
-      original: p.originalPrice,
-      gallery: p.gallery.map(g => {
-        if (g.data) {
-          return `data:${g.mimeType || 'image/jpeg'};base64,${g.data}`;
-        }
-        return g.url || '';
-      })
-    }));
+    const formattedProducts = products.map(p => {
+      // Generate slug if not present
+      if (!p.slug && p.name) {
+        p.slug = generateSlug(p.name);
+        // Save the slug to database (async, don't wait)
+        Product.findByIdAndUpdate(p._id, { slug: p.slug }).catch(err => console.error('Error saving slug:', err));
+      }
+      return {
+        ...p,
+        id: p._id.toString(),
+        original: p.originalPrice,
+        slug: p.slug || generateSlug(p.name),
+        gallery: p.gallery.map(g => {
+          if (g.data) {
+            return `data:${g.mimeType || 'image/jpeg'};base64,${g.data}`;
+          }
+          return g.url || '';
+        })
+      };
+    });
     
     res.json({ products: formattedProducts });
   } catch (error) {
@@ -2643,19 +2673,29 @@ app.get('/api/products', async (req, res) => {
   }
 });
 
-// Public: Get product by ID
+// Public: Get product by ID or slug
 app.get('/api/products/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    let product;
     
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ error: 'Invalid product ID' });
+    // Check if it's a valid ObjectId, otherwise treat as slug
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      product = await Product.findById(id).lean();
+    } else {
+      // Treat as slug
+      product = await Product.findOne({ slug: id }).lean();
     }
-    
-    const product = await Product.findById(id).lean();
     
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
+    }
+    
+    // Generate slug if not present
+    if (!product.slug && product.name) {
+      product.slug = generateSlug(product.name);
+      // Save the slug to database (async, don't wait)
+      Product.findByIdAndUpdate(product._id, { slug: product.slug }).catch(err => console.error('Error saving slug:', err));
     }
     
     // Convert _id to id and format gallery images
@@ -2663,6 +2703,7 @@ app.get('/api/products/:id', async (req, res) => {
       ...product,
       id: product._id.toString(),
       original: product.originalPrice,
+      slug: product.slug || generateSlug(product.name),
       gallery: product.gallery.map(g => {
         if (g.data) {
           return `data:${g.mimeType || 'image/jpeg'};base64,${g.data}`;
@@ -2698,17 +2739,26 @@ app.get('/api/admin/products', authenticateAdmin, async (req, res) => {
       .lean();
     
     // Convert _id to id for frontend compatibility and format gallery images
-    const formattedProducts = products.map(p => ({
-      ...p,
-      id: p._id.toString(),
-      original: p.originalPrice,
-      gallery: p.gallery.map(g => {
-        if (g.data) {
-          return `data:${g.mimeType || 'image/jpeg'};base64,${g.data}`;
-        }
-        return g.url || '';
-      })
-    }));
+    const formattedProducts = products.map(p => {
+      // Generate slug if not present
+      if (!p.slug && p.name) {
+        p.slug = generateSlug(p.name);
+        // Save the slug to database (async, don't wait)
+        Product.findByIdAndUpdate(p._id, { slug: p.slug }).catch(err => console.error('Error saving slug:', err));
+      }
+      return {
+        ...p,
+        id: p._id.toString(),
+        original: p.originalPrice,
+        slug: p.slug || generateSlug(p.name),
+        gallery: p.gallery.map(g => {
+          if (g.data) {
+            return `data:${g.mimeType || 'image/jpeg'};base64,${g.data}`;
+          }
+          return g.url || '';
+        })
+      };
+    });
     
     res.json({ products: formattedProducts });
   } catch (error) {
@@ -2843,7 +2893,11 @@ app.put('/api/admin/products/:id', authenticateAdmin, async (req, res) => {
     }
     
     // Update fields
-    if (name) product.name = name;
+    if (name) {
+      product.name = name;
+      // Regenerate slug if name changes
+      product.slug = generateSlug(name);
+    }
     if (description !== undefined) product.description = description;
     if (category) product.category = category;
     if (audience) product.audience = audience;

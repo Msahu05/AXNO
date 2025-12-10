@@ -82,12 +82,12 @@ const Header = () => {
         {/* Left side - Logo */}
         <Link
           to="/"
-          className="flex items-center h-full"
+          className="flex items-center"
         >
           <img
             src={theme === "light" ? looklynLogoLight : looklynLogoDark}
             alt="LOOKLYN"
-            className="h-20 sm:h-10 md:h-10 lg:h-20 w-auto object-contain"
+            className="h-12 sm:h-10 md:h-10 lg:h-8 xl:h-8 w-auto object-contain max-h-12"
           />
         </Link>
 

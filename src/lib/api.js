@@ -404,9 +404,34 @@ export const adminAPI = {
     });
   },
 
-  updateProduct: async (productId, productData, galleryFiles = []) => {
-    // Convert gallery files to base64 (only if new files are provided)
+  updateProduct: async (productId, productData, galleryFiles = [], existingImages = []) => {
+    // Convert gallery files to base64
     const galleryImages = [];
+    
+    // First, add existing images (if provided) - they're already data URLs
+    if (existingImages && existingImages.length > 0) {
+      for (const img of existingImages) {
+        if (img.data) {
+          // It's a data URL, extract and format it
+          if (typeof img.data === 'string' && img.data.startsWith('data:')) {
+            galleryImages.push({ 
+              data: img.data, 
+              mimeType: img.mimeType || img.data.match(/data:([^;]+);/)?.[1] || 'image/jpeg' 
+            });
+          } else {
+            galleryImages.push(img);
+          }
+        } else if (typeof img === 'string' && img.startsWith('data:')) {
+          // Direct data URL string
+          galleryImages.push({ 
+            data: img, 
+            mimeType: img.match(/data:([^;]+);/)?.[1] || 'image/jpeg' 
+          });
+        }
+      }
+    }
+    
+    // Then, add new files
     if (galleryFiles && galleryFiles.length > 0) {
       for (const file of galleryFiles) {
         try {
@@ -434,7 +459,7 @@ export const adminAPI = {
       tags: productData.tags || [],
     };
     
-    // Only include galleryImages if new files are provided
+    // Always include galleryImages if we have any (existing or new)
     if (galleryImages.length > 0) {
       payload.galleryImages = galleryImages;
     }
@@ -468,6 +493,10 @@ export const productsAPI = {
 
   getById: async (id) => {
     return apiCall(`/products/${id}`);
+  },
+  
+  getBySlug: async (slug) => {
+    return apiCall(`/products/${slug}`);
   },
 };
 

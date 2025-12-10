@@ -624,6 +624,7 @@ const ProductManagement = () => {
   
   const [galleryFiles, setGalleryFiles] = useState([]);
   const [galleryPreviews, setGalleryPreviews] = useState([]);
+  const [existingGallery, setExistingGallery] = useState([]); // Track existing images from database
   const [mainImageIndex, setMainImageIndex] = useState(0);
 
   useEffect(() => {
@@ -677,9 +678,17 @@ const ProductManagement = () => {
         colorOptions: productData.colorOptions || []
       });
       if (productData.gallery && productData.gallery.length > 0) {
-        // Convert gallery URLs to proper image URLs
+        // Store original gallery data URLs (they contain base64 data)
+        // These are data URLs in format: data:mimeType;base64,base64Data
+        setExistingGallery(productData.gallery);
+        
+        // Convert gallery URLs to proper image URLs for previews
         const galleryUrls = productData.gallery.map(img => {
           if (typeof img === 'string') {
+            // If it's already a data URL, use it directly
+            if (img.startsWith('data:')) {
+              return img;
+            }
             return getImageUrl(img);
           } else if (img.url) {
             return getImageUrl(img.url);
@@ -688,6 +697,10 @@ const ProductManagement = () => {
         });
         console.log('Setting gallery previews from database:', galleryUrls);
         setGalleryPreviews(galleryUrls);
+        
+        // Find the main image index - need to check the original product object
+        // For now, assume first image is main (we'll fix this when we have the full product object)
+        setMainImageIndex(0);
       }
     } catch (error) {
       console.error('Failed to load product:', error);
@@ -814,15 +827,57 @@ const ProductManagement = () => {
 
     try {
       setSaving(true);
-      // Reorder gallery files to put main image first
-      const orderedFiles = [...galleryFiles];
-      if (mainImageIndex > 0 && orderedFiles.length > mainImageIndex) {
-        const mainFile = orderedFiles[mainImageIndex];
-        orderedFiles.splice(mainImageIndex, 1);
-        orderedFiles.unshift(mainFile);
+      
+      // Build array matching galleryPreviews order
+      // New files have blob: URLs, existing have data: URLs
+      const allImages = [];
+      let newFileIndex = 0;
+      
+      for (let i = 0; i < galleryPreviews.length; i++) {
+        const preview = galleryPreviews[i];
+        if (preview.startsWith('blob:')) {
+          // This is a new file - get from galleryFiles
+          if (newFileIndex < galleryFiles.length) {
+            allImages.push({ type: 'file', file: galleryFiles[newFileIndex] });
+            newFileIndex++;
+          }
+        } else {
+          // This is an existing image - extract base64 from data URL
+          if (i < existingGallery.length) {
+            const existingImg = existingGallery[i];
+            if (typeof existingImg === 'string' && existingImg.startsWith('data:')) {
+              // Extract base64 data from data URL
+              const match = existingImg.match(/^data:([^;]+);base64,(.+)$/);
+              if (match) {
+                allImages.push({ 
+                  type: 'existing',
+                  data: existingImg, // Send full data URL
+                  mimeType: match[1] 
+                });
+              } else {
+                allImages.push({ type: 'existing', data: existingImg });
+              }
+            } else {
+              // Fallback: use the preview as data URL
+              allImages.push({ type: 'existing', data: preview });
+            }
+          }
+        }
       }
-      // Update existing product
-      await adminAPI.updateProduct(productId, formData, orderedFiles);
+      
+      // Reorder to put main image first
+      if (mainImageIndex > 0 && mainImageIndex < allImages.length) {
+        const mainImage = allImages[mainImageIndex];
+        allImages.splice(mainImageIndex, 1);
+        allImages.unshift(mainImage);
+      }
+      
+      // Separate new files and existing images
+      const newFiles = allImages.filter(img => img.type === 'file').map(img => img.file);
+      const existingImgs = allImages.filter(img => img.type === 'existing').map(img => ({ data: img.data, mimeType: img.mimeType }));
+      
+      // Update existing product with all images
+      await adminAPI.updateProduct(productId, formData, newFiles, existingImgs);
       toast({
         title: 'Success',
         description: 'Product updated successfully',

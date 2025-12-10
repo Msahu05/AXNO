@@ -5,7 +5,7 @@ import { useWishlist } from "@/contexts/wishlist-context";
 import { useCart } from "@/contexts/cart-context";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
+import { cn, generateSlug, getProductUrl } from "@/lib/utils";
 
 export function ProductCard({
   id,
@@ -15,7 +15,10 @@ export function ProductCard({
   image,
   rating = 4.8,
   category,
+  slug, // Optional slug, will be generated from name if not provided
 }) {
+  // Generate product URL using slug if available, otherwise use id
+  const productUrl = slug ? `/product/${slug}` : (id ? `/product/${id}` : '/');
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const { isInWishlist, addItem, removeItem } = useWishlist();
@@ -37,7 +40,7 @@ export function ProductCard({
     e.stopPropagation();
     
     if (!isAuthenticated) {
-      navigate(`/auth?redirect=${encodeURIComponent(`/product/${id}`)}`);
+      navigate(`/auth?redirect=${encodeURIComponent(productUrl)}`);
       return;
     }
     
@@ -63,7 +66,7 @@ export function ProductCard({
     e.stopPropagation();
     
     if (!isAuthenticated) {
-      navigate(`/auth?redirect=${encodeURIComponent(`/product/${id}`)}`);
+      navigate(`/auth?redirect=${encodeURIComponent(productUrl)}`);
       return;
     }
     
@@ -84,7 +87,7 @@ export function ProductCard({
 
   return (
     <Link
-      to={`/product/${id}`}
+      to={productUrl}
       className="group block overflow-hidden rounded-lg bg-card shadow-soft transition-all duration-300 hover:shadow-elevated"
     >
       <div className="relative aspect-square w-full overflow-hidden bg-secondary">
@@ -128,7 +131,7 @@ export function ProductCard({
             size="sm"
             onClick={(e) => {
               e.preventDefault();
-              window.location.href = `/product/${id}`;
+              window.location.href = productUrl;
             }}
           >
             <ShoppingBag className="h-4 w-4" />
