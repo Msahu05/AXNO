@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CheckCircle2, PhoneCall, UploadCloud, HeartHandshake, Truck, ArrowRight, Leaf, Sparkles, Zap, Award, Shield, Star } from "lucide-react";
+import { CheckCircle2, PhoneCall, UploadCloud, HeartHandshake, Truck, ArrowRight, Leaf, Sparkles, Zap, Award, Shield, Star, Instagram, Mail, Facebook } from "lucide-react";
 import { HeroSection } from "@/components/HeroSection";
 import Header from "@/components/Header";
 import ProductCard from "@/components/ProductCard";
@@ -278,6 +278,40 @@ const Home = () => {
               <Button variant="outline" className="rounded-lg border border-border px-6 py-4 text-sm font-semibold text-foreground flex items-center gap-2" onClick={() => window.open("tel:+918828844110", "_self")}>
                 <PhoneCall className="h-5 w-5" /> Call
               </Button>
+            </div>
+          </div>
+        </section>
+
+        {/* Social Media Footer */}
+        <section className="mt-8 rounded-[40px] border border-border dark:border-white/15 bg-[var(--card)]/95 py-4 px-6 shadow-[var(--shadow-soft)]">
+          <div className="flex flex-col items-center justify-center gap-4">
+            <p className="text-sm font-medium text-muted-foreground">Connect With Us</p>
+            <div className="flex items-center gap-6">
+              <a
+                href="https://www.instagram.com/_looklyn_"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#E4405F] hover:scale-110 transition-transform duration-300"
+                aria-label="Instagram"
+              >
+                <Instagram className="h-8 w-8" />
+              </a>
+              <a
+                href="https://mail.google.com/mail/?view=cm&fs=1&to=looklynnn@gmail.com&su=Support%20Request"
+                className="text-[#8B5CF6] hover:scale-110 transition-transform duration-300"
+                aria-label="Email"
+              >
+                <Mail className="h-8 w-8" />
+              </a>
+              <a
+                href="https://www.facebook.com/looklyn"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#1877F2] hover:scale-110 transition-transform duration-300"
+                aria-label="Facebook"
+              >
+                <Facebook className="h-8 w-8" />
+              </a>
             </div>
           </div>
         </section>
