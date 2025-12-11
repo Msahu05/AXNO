@@ -212,7 +212,7 @@ const productSchema = new mongoose.Schema({
   slug: { type: String, unique: true, sparse: true }, // URL-friendly slug
   description: { type: String, default: '' },
   category: { type: String, required: true, enum: ['Hoodie', 'T-Shirt', 'Sweatshirt'] },
-  audience: { type: String, required: true, enum: ['men', 'women', 'kids'] },
+  audience: { type: String, required: true, enum: ['men', 'women', 'kids', 'unisex'] },
   price: { type: Number, required: true }, // Current price
   originalPrice: { type: Number, required: true }, // Previous price
   accent: { type: String, default: 'linear-gradient(135deg,#5c3d8a,#7a5bff)' },
@@ -2859,6 +2859,7 @@ app.post('/api/admin/products', authenticateAdmin, async (req, res) => {
       ...product.toObject(),
       id: product._id.toString(),
       original: product.originalPrice,
+      slug: product.slug || generateSlug(product.name),
       gallery: product.gallery.map(g => {
         if (g.data) {
           return `data:${g.mimeType || 'image/jpeg'};base64,${g.data}`;
@@ -2971,6 +2972,7 @@ app.put('/api/admin/products/:id', authenticateAdmin, async (req, res) => {
       ...product.toObject(),
       id: product._id.toString(),
       original: product.originalPrice,
+      slug: product.slug || generateSlug(product.name),
       gallery: product.gallery.map(g => {
         if (g.data) {
           return `data:${g.mimeType || 'image/jpeg'};base64,${g.data}`;

@@ -174,15 +174,27 @@ const NewProductForm = ({ navigate }) => {
       
       const result = await adminAPI.createProduct(formData, orderedFiles);
       console.log('Product created successfully:', result);
+      
+      // Get product ID and slug from response
+      const productId = result.product?.id || result.product?._id || result.id;
+      const productSlug = result.product?.slug;
+      
       toast({
         title: 'Success',
         description: 'Product created successfully! Redirecting...',
       });
+      
+      // Redirect to product page using slug if available, otherwise use ID
       setTimeout(() => {
-        navigate('/admin?tab=products', { replace: true });
-        // Force a page reload to refresh products list
-        window.location.href = '/admin?tab=products';
-      }, 1500);
+        if (productSlug) {
+          navigate(`/product/${productSlug}`, { replace: true });
+        } else if (productId) {
+          navigate(`/product/${productId}`, { replace: true });
+        } else {
+          // Fallback to admin products list if no ID/slug
+          navigate('/admin?tab=products', { replace: true });
+        }
+      }, 1000);
     } catch (error) {
       console.error('Failed to save product:', error);
       console.error('Error details:', {
@@ -362,6 +374,7 @@ const NewProductForm = ({ navigate }) => {
                         <option value="men">Men</option>
                         <option value="women">Women</option>
                         <option value="kids">Kids</option>
+                        <option value="unisex">Unisex</option>
                       </select>
                     </div>
                   </div>
@@ -877,12 +890,28 @@ const ProductManagement = () => {
       const existingImgs = allImages.filter(img => img.type === 'existing').map(img => ({ data: img.data, mimeType: img.mimeType }));
       
       // Update existing product with all images
-      await adminAPI.updateProduct(productId, formData, newFiles, existingImgs);
+      const result = await adminAPI.updateProduct(productId, formData, newFiles, existingImgs);
+      
+      // Get product slug from response or use existing product data
+      const updatedProduct = result.product || product;
+      const productSlug = updatedProduct?.slug;
+      
       toast({
         title: 'Success',
-        description: 'Product updated successfully',
+        description: 'Product updated successfully! Redirecting...',
       });
-      navigate('/admin?tab=products');
+      
+      // Redirect to product page using slug if available, otherwise use ID
+      setTimeout(() => {
+        if (productSlug) {
+          navigate(`/product/${productSlug}`, { replace: true });
+        } else if (productId) {
+          navigate(`/product/${productId}`, { replace: true });
+        } else {
+          // Fallback to admin products list if no ID/slug
+          navigate('/admin?tab=products', { replace: true });
+        }
+      }, 1000);
     } catch (error) {
       console.error('Failed to save product:', error);
       const errorMessage = error.message || 'Failed to save product. Please check console for details.';
@@ -1090,6 +1119,7 @@ const ProductManagement = () => {
                         <option value="men">Men</option>
                         <option value="women">Women</option>
                         <option value="kids">Kids</option>
+                        <option value="unisex">Unisex</option>
                       </select>
                     </div>
                   </div>

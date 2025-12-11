@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
-import { adminAPI, adminSizeChartsAPI, getImageUrl } from '@/lib/api';
+import { adminAPI, adminSizeChartsAPI, productsAPI, getImageUrl } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -54,6 +54,7 @@ const Admin = () => {
   
   // Add product to user form
   const [showAddProductForm, setShowAddProductForm] = useState(false);
+  const [availableProducts, setAvailableProducts] = useState([]);
   const [productForm, setProductForm] = useState({
     productId: '',
     name: '',
@@ -667,9 +668,23 @@ const Admin = () => {
                             </Button>
                             <Button
                               variant="outline"
-                              onClick={(e) => {
+                              onClick={async (e) => {
                                 e.stopPropagation();
                                 setSelectedUser(user);
+                                // Fetch products when opening the form
+                                try {
+                                  const productsData = await productsAPI.getAll({ limit: 1000 });
+                                  console.log('Fetched products:', productsData);
+                                  setAvailableProducts(productsData.products || []);
+                                } catch (error) {
+                                  console.error('Error fetching products:', error);
+                                  toast({
+                                    title: 'Warning',
+                                    description: 'Could not load existing products. You can still create a new product.',
+                                    variant: 'default',
+                                  });
+                                  setAvailableProducts([]);
+                                }
                                 setShowAddProductForm(true);
                               }}
                             >
@@ -873,7 +888,21 @@ const Admin = () => {
 
                 <div className="flex gap-2">
                   <Button
-                    onClick={() => {
+                    onClick={async () => {
+                      // Fetch products when opening the form
+                      try {
+                        const productsData = await productsAPI.getAll({ limit: 1000 });
+                        console.log('Fetched products:', productsData);
+                        setAvailableProducts(productsData.products || []);
+                      } catch (error) {
+                        console.error('Error fetching products:', error);
+                        toast({
+                          title: 'Warning',
+                          description: 'Could not load existing products. You can still create a new product.',
+                          variant: 'default',
+                        });
+                        setAvailableProducts([]);
+                      }
                       setShowAddProductForm(true);
                     }}
                     className="flex-1"
@@ -915,21 +944,80 @@ const Admin = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium">Product ID</label>
-                  <Input
-                    value={productForm.productId}
-                    onChange={(e) => setProductForm({ ...productForm, productId: e.target.value })}
-                    placeholder="Enter product ID (optional)"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">Leave empty to create new product</p>
+                  <label className="text-sm font-medium">Select Product *</label>
+                  <select
+                    className="w-full p-2 border rounded-md"
+                    value={productForm.productId || ''}
+                    onChange={(e) => {
+                      const selectedProductId = e.target.value;
+                      if (selectedProductId === '') {
+                        // Create new product
+                        setProductForm({
+                          productId: '',
+                          name: '',
+                          price: '',
+                          description: '',
+                          category: 'Custom',
+                          audience: 'Unisex',
+                          image: null
+                        });
+                      } else {
+                        // Find selected product and auto-fill details
+                        const selectedProduct = availableProducts.find(p => p.id === selectedProductId || p._id === selectedProductId);
+                        if (selectedProduct) {
+                          setProductForm({
+                            productId: selectedProduct.id || selectedProduct._id,
+                            name: selectedProduct.name || '',
+                            price: selectedProduct.price || selectedProduct.originalPrice || '',
+                            description: selectedProduct.description || '',
+                            category: selectedProduct.category || 'Custom',
+                            audience: selectedProduct.audience || 'Unisex',
+                            image: null
+                          });
+                        }
+                      }
+                    }}
+                  >
+                    <option value="">-- Create New Product --</option>
+                    {availableProducts.length > 0 ? (
+                      availableProducts.map((product) => (
+                        <option key={product.id || product._id} value={product.id || product._id}>
+                          {product.name} - ₹{product.price || product.originalPrice || 0}
+                        </option>
+                      ))
+                    ) : (
+                      <option value="" disabled>Loading products...</option>
+                    )}
+                  </select>
+                  {availableProducts.length === 0 && (
+                    <p className="text-xs text-muted-foreground mt-1">No products found. You can create a new product.</p>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {productForm.productId ? 'Product details auto-filled from selection' : 'Select existing product or create new'}
+                  </p>
                 </div>
+                {productForm.productId && (
+                  <div>
+                    <label className="text-sm font-medium">Product ID</label>
+                    <Input
+                      value={productForm.productId}
+                      readOnly
+                      className="bg-muted"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Auto-filled from selected product</p>
+                  </div>
+                )}
                 <div>
                   <label className="text-sm font-medium">Product Name *</label>
                   <Input
                     value={productForm.name}
                     onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
                     placeholder="Enter product name"
+                    disabled={!!productForm.productId}
                   />
+                  {productForm.productId && (
+                    <p className="text-xs text-muted-foreground mt-1">Name from selected product (cannot edit)</p>
+                  )}
                 </div>
                 <div>
                   <label className="text-sm font-medium">Price (₹) *</label>

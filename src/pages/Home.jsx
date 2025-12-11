@@ -130,6 +130,16 @@ const Home = () => {
                       >
                         Kids
                       </Button>
+                      <Button
+                        variant="outline"
+                        className="font-display rounded-full border-foreground px-4 py-2 text-sm tracking-[0.12em]"
+                        onClick={() => {
+                          window.scrollTo({ top: 0, behavior: "smooth" });
+                          navigate(`/category/${type.route}?filter=unisex`);
+                        }}
+                      >
+                        Unisex
+                      </Button>
                     </div>
                   </div>
                   <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -203,7 +213,7 @@ const Home = () => {
           </div>
           
           <div className="flex justify-center">
-            <Button className="rounded-full bg-primary px-8 py-6 text-xs font-semibold uppercase tracking-[0.4em]" onClick={() => navigate("/checkout")}>
+            <Button className="rounded-full bg-primary px-8 py-6 text-xs font-semibold uppercase tracking-[0.4em]" onClick={() => navigate("/category/hoodies")}>
               Start custom order
             </Button>
           </div>
@@ -288,7 +298,7 @@ const Home = () => {
             <p className="text-sm font-medium text-muted-foreground">Connect With Us</p>
             <div className="flex items-center gap-6">
               <a
-                href="https://www.instagram.com/_looklyn_"
+                href="https://www.instagram.com/looklyn"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[#E4405F] hover:scale-110 transition-transform duration-300"
@@ -297,7 +307,7 @@ const Home = () => {
                 <Instagram className="h-8 w-8" />
               </a>
               <a
-                href="https://mail.google.com/mail/?view=cm&fs=1&to=looklynnn@gmail.com&su=Support%20Request"
+                href="mailto:support@looklyn.com"
                 className="text-[#8B5CF6] hover:scale-110 transition-transform duration-300"
                 aria-label="Email"
               >

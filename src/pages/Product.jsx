@@ -14,7 +14,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { productsAPI, getImageUrl, sizeChartsAPI, reviewsAPI } from "@/lib/api";
-import { Heart, Minus, Plus, ShoppingBag, Star, Truck, Zap } from "lucide-react";
+import { Heart, Minus, Plus, ShoppingBag, Star, Truck, Zap, Upload, X, Image as ImageIcon } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useCart } from "@/contexts/cart-context";
 import { useWishlist } from "@/contexts/wishlist-context";
@@ -51,6 +51,9 @@ const Product = () => {
     comment: "",
     userName: ""
   });
+  const [reviewFiles, setReviewFiles] = useState([]);
+  const [reviewFilePreviews, setReviewFilePreviews] = useState([]);
+  const [selectedImageModal, setSelectedImageModal] = useState({ open: false, url: null });
   
   // Fetch location from pincode using API
   const fetchLocationFromPincode = async (pin) => {
@@ -141,6 +144,38 @@ const Product = () => {
       setPincodeChecked(true);
     } finally {
       setCheckingPincode(false);
+    }
+  };
+
+  // Load reviews function (defined outside useEffect to be accessible)
+  const loadReviews = async (productId) => {
+    if (!productId) return;
+    setLoadingReviews(true);
+    try {
+      const data = await reviewsAPI.getReviews(productId);
+      // Format reviews for display
+      const formattedReviews = (data.reviews || []).map(review => ({
+        id: review._id || review.id,
+        userName: review.userName || 'Anonymous',
+        rating: review.rating,
+        comment: review.comment,
+        date: review.createdAt ? new Date(review.createdAt).toLocaleDateString() : 'Recently',
+        verified: false, // Can be set based on order verification
+        createdAt: review.createdAt,
+        attachments: review.attachments || []
+      }));
+      // Sort by date (newest first)
+      formattedReviews.sort((a, b) => {
+        const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
+        const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
+        return dateB - dateA;
+      });
+      setReviews(formattedReviews);
+    } catch (error) {
+      console.error('Error loading reviews:', error);
+      setReviews([]);
+    } finally {
+      setLoadingReviews(false);
     }
   };
 
@@ -240,30 +275,6 @@ const Product = () => {
         navigate('/');
       } finally {
         setLoading(false);
-      }
-    };
-
-    const loadReviews = async (productId) => {
-      if (!productId) return;
-      setLoadingReviews(true);
-      try {
-        const data = await reviewsAPI.getReviews(productId);
-        // Format reviews for display
-        const formattedReviews = (data.reviews || []).map(review => ({
-          id: review._id || review.id,
-          userName: review.userName || 'Anonymous',
-          rating: review.rating,
-          comment: review.comment,
-          date: new Date(review.createdAt).toLocaleDateString(),
-          verified: false, // Can be set based on order verification
-          createdAt: review.createdAt
-        }));
-        setReviews(formattedReviews);
-      } catch (error) {
-        console.error('Error loading reviews:', error);
-        setReviews([]);
-      } finally {
-        setLoadingReviews(false);
       }
     };
 
@@ -582,15 +593,24 @@ const Product = () => {
                     key={i}
                     className={cn(
                       "h-4 w-4",
-                      i < Math.floor(product.rating || 4.8)
+                      i < Math.floor(reviews.length > 0 
+                        ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+                        : 0)
                         ? "fill-primary text-primary"
                         : "text-muted-foreground"
                     )}
                   />
                 ))}
               </div>
-              <span className="text-sm font-medium text-foreground">{product.rating || 4.8}</span>
-              <span className="text-sm text-muted-foreground">(128 reviews)</span>
+              <span className="text-sm font-medium text-foreground">
+                {reviews.length > 0 
+                  ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
+                  : "0.0"
+                }
+              </span>
+              <span className="text-sm text-muted-foreground">
+                ({reviews.length} review{reviews.length !== 1 ? 's' : ''})
+              </span>
             </div>
 
             {/* Price */}
@@ -867,18 +887,81 @@ const Product = () => {
                           className="min-h-[120px]"
                         />
                       </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Upload Images (Optional)</label>
+                        <div className="flex flex-col gap-2">
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={(e) => {
+                              const files = Array.from(e.target.files || []);
+                              const newFiles = [...reviewFiles, ...files].slice(0, 5); // Max 5 images
+                              setReviewFiles(newFiles);
+                              
+                              // Create previews
+                              const newPreviews = [];
+                              newFiles.forEach((file, index) => {
+                                if (file.type.startsWith('image/')) {
+                                  const reader = new FileReader();
+                                  reader.onload = (event) => {
+                                    newPreviews[index] = { type: 'image', url: event.target.result, file };
+                                    if (newPreviews.filter(p => p).length === newFiles.length) {
+                                      setReviewFilePreviews([...newPreviews]);
+                                    }
+                                  };
+                                  reader.readAsDataURL(file);
+                                }
+                              });
+                            }}
+                            className="cursor-pointer"
+                          />
+                          {reviewFilePreviews.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {reviewFilePreviews.map((preview, index) => (
+                                <div key={index} className="relative">
+                                  {preview.type === 'image' && (
+                                    <img
+                                      src={preview.url}
+                                      alt={`Preview ${index + 1}`}
+                                      className="h-20 w-20 object-cover rounded-md border border-border"
+                                    />
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const newFiles = reviewFiles.filter((_, i) => i !== index);
+                                      const newPreviews = reviewFilePreviews.filter((_, i) => i !== index);
+                                      setReviewFiles(newFiles);
+                                      setReviewFilePreviews(newPreviews);
+                                    }}
+                                    className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/90"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          <p className="text-xs text-muted-foreground">
+                            You can upload up to 5 images. Selected: {reviewFiles.length}/5
+                          </p>
+                        </div>
+                      </div>
                       <div className="flex justify-end gap-2">
                         <Button
                           variant="outline"
                           onClick={() => {
                             setShowAddReview(false);
                             setNewReview({ rating: 5, comment: "", userName: "" });
+                            setReviewFiles([]);
+                            setReviewFilePreviews([]);
                           }}
                         >
                           Cancel
                         </Button>
                         <Button
-                          onClick={() => {
+                          onClick={async () => {
                             if (!newReview.comment.trim()) {
                               toast({
                                 title: "Error",
@@ -887,21 +970,46 @@ const Product = () => {
                               });
                               return;
                             }
-                            const review = {
-                              id: reviews.length + 1,
-                              userName: user?.name || "Anonymous",
-                              rating: newReview.rating,
-                              comment: newReview.comment,
-                              date: "Just now",
-                              verified: true
-                            };
-                            setReviews([review, ...reviews]);
-                            setNewReview({ rating: 5, comment: "", userName: "" });
-                            setShowAddReview(false);
-                            toast({
-                              title: "Success",
-                              description: "Your review has been added!",
-                            });
+                            
+                            try {
+                              const productId = product.id || product._id?.toString();
+                              if (!productId) {
+                                toast({
+                                  title: "Error",
+                                  description: "Product ID not found",
+                                  variant: "destructive",
+                                });
+                                return;
+                              }
+                              
+                              // Submit review with files using API
+                              await reviewsAPI.addReview(productId, {
+                                rating: newReview.rating,
+                                comment: newReview.comment
+                              }, reviewFiles);
+                              
+                              // Reload reviews to get the latest data
+                              const productIdForReviews = product.id || product._id?.toString() || id;
+                              if (productIdForReviews) {
+                                await loadReviews(productIdForReviews);
+                              }
+                              
+                              setNewReview({ rating: 5, comment: "", userName: "" });
+                              setReviewFiles([]);
+                              setReviewFilePreviews([]);
+                              setShowAddReview(false);
+                              toast({
+                                title: "Success",
+                                description: "Your review has been added!",
+                              });
+                            } catch (error) {
+                              console.error('Error submitting review:', error);
+                              toast({
+                                title: "Error",
+                                description: error.message || "Failed to submit review. Please try again.",
+                                variant: "destructive",
+                              });
+                            }
                           }}
                         >
                           Submit Review
@@ -996,6 +1104,21 @@ const Product = () => {
                               </div>
                             </div>
                             <p className="text-sm text-foreground">{review.comment}</p>
+                            {review.attachments && review.attachments.length > 0 && (
+                              <div className="flex flex-wrap gap-2 mt-2">
+                                {review.attachments.map((attachment, idx) => (
+                                  attachment.type === 'image' ? (
+                                    <img
+                                      key={idx}
+                                      src={getImageUrl(attachment.url)}
+                                      alt={`Review image ${idx + 1}`}
+                                      className="h-12 w-12 object-cover rounded-md border border-border cursor-pointer hover:opacity-80 transition-opacity"
+                                      onClick={() => setSelectedImageModal({ open: true, url: getImageUrl(attachment.url) })}
+                                    />
+                                  ) : null
+                                ))}
+                              </div>
+                            )}
                             <p className="text-xs text-muted-foreground">{review.date}</p>
                           </div>
                         ))}
@@ -1012,6 +1135,21 @@ const Product = () => {
           </div>
           </div>
         </section>
+
+        {/* Image Modal for Review Images */}
+        <Dialog open={selectedImageModal.open} onOpenChange={(open) => setSelectedImageModal({ open, url: selectedImageModal.url })}>
+          <DialogContent className="max-w-4xl max-h-[90vh] p-0 bg-transparent border-none">
+            {selectedImageModal.url && (
+              <div className="relative w-full flex items-center justify-center">
+                <img
+                  src={selectedImageModal.url}
+                  alt="Review image"
+                  className="w-full h-auto max-h-[85vh] object-contain rounded-lg"
+                />
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
 
         {/* Related Products */}
         {related.length > 0 && (
