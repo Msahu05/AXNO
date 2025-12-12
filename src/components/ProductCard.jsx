@@ -70,8 +70,8 @@ export function ProductCard({
       return;
     }
     
-    // Add to cart first
-    addToCart({
+    // Don't add to cart - buy now is separate
+    const buyNowProduct = {
       id,
       name,
       category,
@@ -79,10 +79,18 @@ export function ProductCard({
       original: originalPrice,
       image,
       size: 'M', // Default size
-    });
+      quantity: 1
+    };
     
-    // Navigate to checkout
-    navigate('/checkout');
+    // Store buy now product in sessionStorage (separate from cart)
+    sessionStorage.setItem('buyNowProduct', JSON.stringify(buyNowProduct));
+    
+    // Navigate to checkout with buyNow flag
+    navigate('/checkout', { 
+      state: { 
+        buyNow: true
+      } 
+    });
   };
 
   return (

@@ -241,12 +241,12 @@ const Tracking = () => {
                 <p className="text-sm text-muted-foreground mb-2">Items</p>
                 <div className="space-y-2">
                   {order.items?.map((item, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <div>
-                        <p className="font-semibold">{item.name}</p>
+                    <div key={index} className="flex items-center justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold truncate">{item.name}</p>
                         <p className="text-sm text-muted-foreground">Size: {item.size} × {item.quantity}</p>
                       </div>
-                      <p className="font-semibold">₹{item.price * item.quantity}</p>
+                      <p className="font-semibold flex-shrink-0">₹{item.price * item.quantity}</p>
                     </div>
                   ))}
                 </div>

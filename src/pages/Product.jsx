@@ -502,8 +502,8 @@ const Product = () => {
       toast({ title: "Please select a size", variant: "destructive" });
       return;
     }
-    // Add to cart first
-    addItem({
+    // Don't add to cart - buy now is separate
+    const buyNowProduct = {
       id: product.id,
       name: product.name,
       category: product.category,
@@ -512,9 +512,17 @@ const Product = () => {
       image: getImageUrl(productImages[0]),
       size: selectedSize,
       quantity,
+    };
+    
+    // Store buy now product in sessionStorage (separate from cart)
+    sessionStorage.setItem('buyNowProduct', JSON.stringify(buyNowProduct));
+    
+    // Navigate to checkout with buyNow flag
+    navigate('/checkout', { 
+      state: { 
+        buyNow: true
+      } 
     });
-    // Navigate to checkout
-    navigate('/checkout');
   };
 
   return (

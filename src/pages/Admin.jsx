@@ -71,6 +71,18 @@ const Admin = () => {
   const [trackingMessage, setTrackingMessage] = useState('');
   const [trackingLocation, setTrackingLocation] = useState('');
 
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (showAddProductForm) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [showAddProductForm]);
+
   // Refresh user data on mount to get latest isAdmin status
   useEffect(() => {
     if (isAuthenticated) {
@@ -918,9 +930,28 @@ const Admin = () => {
 
         {/* Add Product Form Modal */}
         {showAddProductForm && selectedUser && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <Card className="max-w-md w-full">
-              <CardHeader>
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setShowAddProductForm(false);
+                setProductForm({
+                  productId: '',
+                  name: '',
+                  price: '',
+                  description: '',
+                  category: 'Custom',
+                  audience: 'Unisex',
+                  image: null
+                });
+              }
+            }}
+          >
+            <Card 
+              className="max-w-md w-full max-h-[calc(100vh-2rem)] flex flex-col overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <CardHeader className="flex-shrink-0 border-b">
                 <div className="flex justify-between items-start">
                   <CardTitle>Add Product to {selectedUser.name}</CardTitle>
                   <Button
@@ -942,7 +973,7 @@ const Admin = () => {
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 overflow-y-auto flex-1 min-h-0 p-6">
                 <div>
                   <label className="text-sm font-medium">Select Product *</label>
                   <select

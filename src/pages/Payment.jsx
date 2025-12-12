@@ -193,9 +193,19 @@ const Payment = () => {
 
           if (result.success) {
             setSuccess(true);
-            clearCart();
+            
+            // Only clear cart if it's NOT a buy now order
+            // Buy now orders don't affect the cart
+            const isBuyNowOrder = sessionStorage.getItem('isBuyNowOrder') === 'true';
+            if (!isBuyNowOrder) {
+              clearCart();
+            }
+            
+            // Clean up sessionStorage
             sessionStorage.removeItem('pendingOrder');
             sessionStorage.removeItem('pendingOrderFiles');
+            sessionStorage.removeItem('buyNowProduct');
+            sessionStorage.removeItem('isBuyNowOrder');
 
             toast({
               title: "Payment Successful!",
