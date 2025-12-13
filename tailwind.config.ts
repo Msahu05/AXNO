@@ -74,7 +74,7 @@ export default {
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
-        display: ["Playfair Display", "Georgia", "serif"],
+        display: ["Inter", "system-ui", "sans-serif"],
       },
       fontSize: {
         'body': ['16px', { lineHeight: '1.6' }],

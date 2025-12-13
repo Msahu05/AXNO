@@ -588,10 +588,10 @@ const Home = () => {
               </p>
             </div>
             <div className="flex gap-4">
-              <Button className="rounded-full bg-[#25D366] px-8 py-4 text-sm font-semibold uppercase tracking-[0.4em] text-white shadow-lg" onClick={() => window.open("https://wa.me/918828844110", "_blank")}>
+              <Button className="rounded-full bg-[#25D366] px-8 py-4 text-sm font-semibold uppercase tracking-[0.4em] text-white shadow-lg" onClick={() => window.open("https://wa.me/917016925325", "_blank")}>
                 WhatsApp
               </Button>
-              <Button variant="ghost" className="rounded-full border border-foreground px-8 py-4 text-sm font-semibold uppercase tracking-[0.4em]" onClick={() => window.open("tel:+918828844110", "_self")}>
+              <Button variant="ghost" className="rounded-full border border-foreground px-8 py-4 text-sm font-semibold uppercase tracking-[0.4em]" onClick={() => window.open("tel:+917016925325", "_self")}>
                 <PhoneCall className="mr-2 h-4 w-4" /> Call
               </Button>
             </div>

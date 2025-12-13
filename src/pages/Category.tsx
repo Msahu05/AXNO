@@ -20,7 +20,7 @@ const Category = () => {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
     const filter = searchParams.get("filter");
-    if (filter && ["all", "men", "women", "kids"].includes(filter)) {
+    if (filter && ["all", "men", "women", "kids", "unisex"].includes(filter)) {
       setAudienceFilter(filter);
     }
   }, [searchParams]);
@@ -78,7 +78,7 @@ const Category = () => {
 
         <div className="flex flex-wrap items-center gap-4 rounded-[32px] border border-white/10 bg-[var(--card)]/90 p-4 shadow-[var(--shadow-soft)]">
           <span className="font-display text-sm uppercase tracking-[0.4em] text-muted-foreground">Filter by:</span>
-          {['all', 'men', 'women', 'kids'].map((filter) => (
+          {['all', 'men', 'women', 'kids', 'unisex'].map((filter) => (
             <Button
               key={filter}
               variant={audienceFilter === filter ? "default" : "outline"}
