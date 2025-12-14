@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Trash2, Plus, Minus } from "lucide-react";
+import { ArrowLeft, Trash2, Plus, Minus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
 import { useCart } from "@/contexts/cart-context";
@@ -8,10 +8,27 @@ import { useAuth } from "@/contexts/auth-context";
 const Cart = () => {
   const navigate = useNavigate();
   const { items, removeItem, updateQuantity, total, clearCart } = useCart();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth();
+
+  // Wait for auth to finish loading before checking
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(124,90,255,0.1),_transparent_65%)]">
+        <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-6">
+          <Header />
+        </div>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
-    navigate(`/auth?redirect=${encodeURIComponent("/cart")}`);
+    // Only redirect if not already on auth page to prevent loops
+    if (window.location.pathname !== '/auth') {
+      navigate(`/auth?redirect=${encodeURIComponent("/cart")}`, { replace: true });
+    }
     return null;
   }
 
@@ -101,7 +118,12 @@ const Cart = () => {
                 <span>₹{total}</span>
               </div>
             </div>
-            <Button className="w-full rounded-full bg-foreground px-4 sm:px-8 py-3 sm:py-6 text-xs sm:text-sm font-semibold uppercase tracking-[0.2em] sm:tracking-[0.4em] text-background mb-3 sm:mb-4" onClick={() => navigate("/checkout")}>
+            <Button className="w-full rounded-full bg-foreground px-4 sm:px-8 py-3 sm:py-6 text-xs sm:text-sm font-semibold uppercase tracking-[0.2em] sm:tracking-[0.4em] text-background mb-3 sm:mb-4" onClick={() => {
+              // Clear buy now product when checking out from cart
+              sessionStorage.removeItem('buyNowProduct');
+              sessionStorage.removeItem('isBuyNowOrder');
+              navigate("/checkout");
+            }}>
               Proceed to Checkout
             </Button>
             <Button variant="outline" className="w-full rounded-full border-foreground text-xs sm:text-sm py-2 sm:py-3 mt-2" onClick={clearCart}>

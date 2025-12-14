@@ -1,48 +1,62 @@
-import { ArrowRight, Truck, CreditCard, Headphones } from "lucide-react";
+import { ArrowRight, Truck, Headphones } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "@/components/ui/carousel";
 import { useState, useEffect } from "react";
 import Autoplay from "embla-carousel-autoplay";
-import { productsAPI, getImageUrl } from "@/lib/api";
+import { slideshowAPI, getImageUrl } from "@/lib/api";
 
 export function HeroSection() {
   const navigate = useNavigate();
-  const [heroProducts, setHeroProducts] = useState([]);
+  const [slideshowImages, setSlideshowImages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [plugin] = useState(() =>
     Autoplay({ delay: 3000, stopOnInteraction: false })
   );
 
   useEffect(() => {
-    const loadHeroProducts = async () => {
+    const loadSlideshow = async () => {
       try {
-        const response = await productsAPI.getAll({ limit: 4 });
-        setHeroProducts(response.products || []);
+        const response = await slideshowAPI.getSlideshow();
+        setSlideshowImages(response.slideshow || []);
       } catch (error) {
-        console.error('Error loading hero products:', error);
-        setHeroProducts([]);
+        console.error('Error loading slideshow:', error);
+        setSlideshowImages([]);
       } finally {
         setLoading(false);
       }
     };
-    loadHeroProducts();
+    
+    loadSlideshow();
   }, []);
 
-  // Use product images or fallback to placeholder
-  const heroImages = heroProducts.length > 0 
-    ? heroProducts.map(product => ({
-        src: getImageUrl(Array.isArray(product.gallery) ? product.gallery[0] : product.gallery || product.image),
-        alt: product.name || "Fashion model",
-        productId: product.id || product._id,
-        onClick: () => product.id ? navigate(`/product/${product.id}`) : navigate('/shop')
-      }))
-    : [
-        { src: "https://images.unsplash.com/photo-1581044777550-4cfa60707c03?w=600&q=80", alt: "Fashion model", onClick: () => navigate('/shop') },
-        { src: "https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=600&q=80", alt: "Stylish woman", onClick: () => navigate('/shop') },
-        { src: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&q=80", alt: "Model showcasing fashion", onClick: () => navigate('/shop') },
-        { src: "https://images.unsplash.com/photo-1509631179647-0177331693ae?w=600&q=80", alt: "Elegant fashion", onClick: () => navigate('/shop') }
-      ];
+  // Use only slideshow images for carousel
+  const heroImages = (() => {
+    const images = [];
+    
+    // Add slideshow images (sorted by order)
+    const sortedSlideshow = [...slideshowImages].sort((a, b) => (a.order || 0) - (b.order || 0));
+    sortedSlideshow.forEach((slide, index) => {
+      images.push({
+        src: slide.image?.startsWith('data:') ? slide.image : getImageUrl(slide.image) || "https://images.unsplash.com/photo-1581044777550-4cfa60707c03?w=600&q=80",
+        alt: `Slide ${index + 1}`,
+        isBanner: false,
+        redirectUrl: slide.redirectUrl || (index === 0 ? '/category/hoodies' : index === 1 ? '/category/t-shirts' : index === 2 ? '/category/sweatshirts' : '/category/all'),
+        onClick: () => {
+          navigate(slide.redirectUrl || (index === 0 ? '/category/hoodies' : index === 1 ? '/category/t-shirts' : index === 2 ? '/category/sweatshirts' : '/category/all'));
+        }
+      });
+    });
+    
+    // If no images at all, add fallback
+    if (images.length === 0) {
+      images.push(
+        { src: "https://images.unsplash.com/photo-1581044777550-4cfa60707c03?w=600&q=80", alt: "Fashion model", onClick: () => navigate('/category/all') }
+      );
+    }
+    
+    return images;
+  })();
 
   return (
     <section className="relative min-h-[60vh] sm:min-h-[80vh] overflow-hidden bg-background">
@@ -93,25 +107,22 @@ export function HeroSection() {
           </div>
 
           {/* Content - Second on mobile */}
-          <div className="flex flex-col justify-center space-y-4 sm:space-y-6 animate-fade-in py-4 sm:py-8 order-2 lg:order-1">
+          <div className="flex flex-col items-start justify-center space-y-4 sm:space-y-6 animate-fade-in py-4 sm:py-8 order-2 lg:order-1">
             {/* Top Banner */}
-            <div className="inline-flex w-fit items-center gap-2 rounded-full bg-primary/20 px-4 py-2 text-sm font-medium text-primary">
-              <span className="h-2 w-2 rounded-full bg-primary" />
-              New Collection Available
+            <div className="inline-flex w-fit items-center gap-2 rounded-lg bg-primary/10 px-3 py-2 text-3xl font-bold text-primary">
+              Looklyn - Own The Look
             </div>
 
             {/* Headline */}
             <h1 className="font-display text-3xl sm:text-4xl font-bold leading-tight tracking-tight md:text-5xl lg:text-6xl">
-              <span className="text-foreground">Step into Style:</span>
+              <span className="text-foreground">Made For You,</span>
               <br />
-              <span className="text-primary">Your Ultimate Fashion</span>
-              <br />
-              <span className="text-primary">Destination</span>
+              <span className="text-primary">Designed By You!!</span>
             </h1>
 
             {/* Description */}
             <p className="max-w-md text-sm sm:text-base text-muted-foreground leading-relaxed">
-              Discover curated collections that blend timeless elegance with contemporary trends. Elevate your wardrobe today.
+              Choose your own design and wear it. No design in mind? No worries, explore our curated collection of the coolest designs and make them yours...
             </p>
 
             {/* CTA Buttons */}
@@ -142,16 +153,7 @@ export function HeroSection() {
                 </div>
                 <div>
                   <p className="text-sm sm:text-base font-semibold text-foreground">Free Shipping</p>
-                  <p className="text-xs text-muted-foreground">On orders above ₹999</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-primary/10">
-                  <CreditCard className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm sm:text-base font-semibold text-foreground">Flexible Payment</p>
-                  <p className="text-xs text-muted-foreground">Multiple secure options</p>
+                  <p className="text-xs text-muted-foreground">Across Ahmedabad & Gandhinagar</p>
                 </div>
               </div>
               <div className="flex items-center gap-2 sm:gap-3">
@@ -159,7 +161,7 @@ export function HeroSection() {
                   <Headphones className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-sm sm:text-base font-semibold text-foreground">24/7 Support</p>
+                  <p className="text-sm sm:text-base font-semibold text-foreground">24/7 WhatsApp Support</p>
                   <p className="text-xs text-muted-foreground">Always here to help</p>
                 </div>
               </div>

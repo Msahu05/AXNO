@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 const Payment = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const { clearCart } = useCart();
   const { toast } = useToast();
 
@@ -25,8 +25,16 @@ const Payment = () => {
 
   // Load order data from location state or sessionStorage
   useEffect(() => {
+    // Wait for auth to finish loading before checking
+    if (authLoading) {
+      return;
+    }
+    
     if (!isAuthenticated) {
-      navigate(`/auth?redirect=${encodeURIComponent("/payment")}`);
+      // Only redirect if not already on auth page to prevent loops
+      if (window.location.pathname !== '/auth') {
+        navigate(`/auth?redirect=${encodeURIComponent("/payment")}`, { replace: true });
+      }
       return;
     }
 

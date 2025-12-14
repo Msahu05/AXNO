@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { ArrowLeft, UploadCloud, MessageCircle, ShieldCheck, Loader2, MapPin, Plus, Minus, ChevronRight, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import Header from "@/components/Header";
 import { useAuth } from "@/contexts/auth-context";
 import { useCart } from "@/contexts/cart-context";
-import { userAPI } from "@/lib/api";
+import { userAPI, couponsAPI } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
 // Indian cities and states data
@@ -61,6 +61,8 @@ const Checkout = () => {
   const [state, setState] = useState("");
   const [description, setDescription] = useState("");
   const [discountCode, setDiscountCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponDiscount, setCouponDiscount] = useState(0);
   const [designFiles, setDesignFiles] = useState([]);
   const [referenceLinks, setReferenceLinks] = useState("");
   const [citySuggestions, setCitySuggestions] = useState([]);
@@ -77,7 +79,7 @@ const Checkout = () => {
   const descriptionRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, loading: authLoading } = useAuth();
   const { items: cartItems, total: cartTotal, updateQuantity } = useCart();
   const { toast } = useToast();
   
@@ -89,6 +91,16 @@ const Checkout = () => {
   const [buyNowLoading, setBuyNowLoading] = useState(true);
   
   useEffect(() => {
+    // Check if coming from cart (not buy now) - clear buy now product
+    if (!location.state?.buyNow) {
+      sessionStorage.removeItem('buyNowProduct');
+      sessionStorage.removeItem('isBuyNowOrder');
+      setBuyNowProduct(null);
+      setIsBuyNow(false);
+      setBuyNowLoading(false);
+      return;
+    }
+    
     // Check sessionStorage for buy now product (in case location.state is lost)
     const stored = sessionStorage.getItem('buyNowProduct');
     if (stored) {
@@ -101,8 +113,35 @@ const Checkout = () => {
       }
     }
     setBuyNowLoading(false);
-  }, []); // Run once on mount
+  }, [location.state]); // Run when location.state changes
   
+  // Cleanup: Clear buy now product when user navigates away via back button
+  useEffect(() => {
+    const handlePopState = () => {
+      // Clear buy now product when user clicks back button
+      sessionStorage.removeItem('buyNowProduct');
+      sessionStorage.removeItem('isBuyNowOrder');
+    };
+    
+    window.addEventListener('popstate', handlePopState);
+    
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
+  
+  // Function to update buy now product quantity
+  const updateBuyNowQuantity = (newQuantity) => {
+    if (newQuantity < 1) return; // Don't allow quantity less than 1
+    setBuyNowProduct(prev => {
+      if (!prev) return prev;
+      const updated = { ...prev, quantity: newQuantity };
+      // Update sessionStorage
+      sessionStorage.setItem('buyNowProduct', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   // Use buy now product if available, otherwise use cart items
   const displayItems = isBuyNow && buyNowProduct 
     ? [buyNowProduct] // Only the buy now product, not from cart
@@ -113,8 +152,8 @@ const Checkout = () => {
   
   // Calculate totals based on display items
   const displaySubtotal = displayItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const displayEstimatedTaxes = Math.round(displaySubtotal * 0.05);
-  const displayTotal = displaySubtotal + shipping + displayEstimatedTaxes;
+  const displayEstimatedTaxes = 0; // No taxes
+  const displayTotal = displaySubtotal - couponDiscount + shipping + displayEstimatedTaxes;
 
   const formatPhone = (value) => {
     const digits = value.replace(/\D/g, "");
@@ -142,6 +181,213 @@ const Checkout = () => {
       loadSavedAddresses();
     }
   }, [isAuthenticated]);
+
+  // Auto-apply coupon from sessionStorage or based on quantity
+  useEffect(() => {
+    const autoApplyCouponCode = sessionStorage.getItem('autoApplyCoupon');
+    if (autoApplyCouponCode) {
+      setDiscountCode(autoApplyCouponCode);
+      applyCoupon(autoApplyCouponCode);
+      sessionStorage.removeItem('autoApplyCoupon'); // Clear after applying
+    } else {
+      // Auto-apply coupon based on quantity
+      autoApplyCouponByQuantity();
+    }
+  }, [displayItems]);
+
+  const autoApplyCouponByQuantity = async () => {
+    try {
+      // Get all active coupons
+      const response = await couponsAPI.getAllPublic();
+      const coupons = response.coupons || [];
+      
+      // Get total quantity
+      const totalQuantity = displayItems.reduce((sum, item) => sum + item.quantity, 0);
+      
+      // Find matching coupon based on quantity and category
+      const matchingCoupon = coupons.find(coupon => {
+        if (!coupon.isActive) return false;
+        
+        // Check if quantity matches
+        if (coupon.minQuantity && totalQuantity >= coupon.minQuantity) {
+          // Check if category matches
+          if (coupon.category === 'All') return true;
+          
+          // Check if any item matches the category
+          return displayItems.some(item => item.category === coupon.category);
+        }
+        
+        return false;
+      });
+      
+      if (matchingCoupon && (!appliedCoupon || appliedCoupon.code !== matchingCoupon.code)) {
+        setDiscountCode(matchingCoupon.code);
+        applyCoupon(matchingCoupon.code);
+      }
+    } catch (error) {
+      console.error('Error auto-applying coupon:', error);
+      // Silently fail - don't show error to user
+    }
+  };
+
+  const applyCoupon = async (code, silent = false) => {
+    if (!code) return;
+    
+    try {
+      const response = await couponsAPI.getCoupon(code);
+      const coupon = response.coupon;
+      
+      if (!coupon) {
+        toast({
+          title: "Invalid Coupon",
+          description: "This coupon code does not exist",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (!coupon.isActive) {
+        toast({
+          title: "Invalid Coupon",
+          description: "This coupon code is inactive",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate coupon conditions
+      let isValid = true;
+      let discount = 0;
+
+      // Check category filter
+      if (coupon.category && coupon.category !== 'All') {
+        const hasMatchingCategory = displayItems.some(item => 
+          item.category === coupon.category
+        );
+        if (!hasMatchingCategory) {
+          isValid = false;
+          toast({
+            title: "Invalid Coupon",
+            description: `This coupon is only valid for ${coupon.category} category`,
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
+      // Check minimum quantity
+      if (coupon.minQuantity) {
+        const totalQuantity = displayItems.reduce((sum, item) => sum + item.quantity, 0);
+        if (totalQuantity < coupon.minQuantity) {
+          isValid = false;
+          toast({
+            title: "Coupon Not Applicable",
+            description: `Minimum quantity of ${coupon.minQuantity} required`,
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
+      // Check minimum price
+      if (coupon.minPrice) {
+        if (displaySubtotal < coupon.minPrice) {
+          isValid = false;
+          toast({
+            title: "Coupon Not Applicable",
+            description: `Minimum order value of ₹${coupon.minPrice} required`,
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
+      if (!isValid) {
+        return;
+      }
+
+      // Calculate discount based on type
+      console.log('Calculating discount for coupon:', {
+        code: coupon.code,
+        discountType: coupon.discountType,
+        discountValue: coupon.discountValue,
+        category: coupon.category,
+        price: coupon.price,
+        minQuantity: coupon.minQuantity,
+        displayItems: displayItems.map(i => ({ category: i.category, price: i.price, quantity: i.quantity }))
+      });
+      
+      if (coupon.discountType === 'price_override') {
+        // For price override, discountValue is the discount amount per item
+        // Match by category and quantity only - price field is for reference only
+        // The discountValue is what gets deducted, regardless of exact price match
+        let itemsToUse = displayItems;
+        
+        // Filter by category if specified
+        if (coupon.category && coupon.category !== 'All') {
+          itemsToUse = displayItems.filter(item => item.category === coupon.category);
+          console.log('Filtered by category:', coupon.category, 'Items:', itemsToUse.map(i => ({ category: i.category, price: i.price, quantity: i.quantity })));
+        } else {
+          console.log('No category filter, using all items:', itemsToUse.map(i => ({ category: i.category, price: i.price, quantity: i.quantity })));
+        }
+        
+        if (itemsToUse.length > 0) {
+          // Calculate total matching quantity
+          const totalMatchingQuantity = itemsToUse.reduce((sum, item) => sum + item.quantity, 0);
+          
+          console.log('Total matching quantity:', totalMatchingQuantity, 'Min required:', coupon.minQuantity);
+          
+          // Check if minimum quantity requirement is met
+          if (!coupon.minQuantity || totalMatchingQuantity >= coupon.minQuantity) {
+            // Apply discountValue per matching item
+            // discountValue is the discount amount to deduct per item
+            const discountValue = parseFloat(coupon.discountValue) || 0;
+            discount = discountValue * totalMatchingQuantity;
+            console.log('Discount calculated:', discount, '= discountValue', discountValue, '* quantity', totalMatchingQuantity);
+          } else {
+            console.log('Min quantity not met');
+            discount = 0;
+          }
+        } else {
+          console.log('No matching items found');
+          discount = 0;
+        }
+      } else if (coupon.discountType === 'percentage') {
+        const discountValue = parseFloat(coupon.discountValue) || 0;
+        discount = Math.round((displaySubtotal * discountValue) / 100);
+        console.log('Percentage discount:', discount, '= subtotal', displaySubtotal, '*', discountValue, '%');
+      } else if (coupon.discountType === 'fixed') {
+        const discountValue = parseFloat(coupon.discountValue) || 0;
+        if (coupon.applyTo === 'item') {
+          discount = discountValue * displayItems.reduce((sum, item) => sum + item.quantity, 0);
+        } else {
+          discount = discountValue;
+        }
+        console.log('Fixed discount:', discount);
+      }
+
+      // Round discount to 2 decimal places
+      discount = Math.round(discount * 100) / 100;
+      console.log('Final discount after rounding:', discount);
+
+      console.log('Setting coupon discount:', discount, 'for coupon:', coupon.code);
+      setAppliedCoupon(coupon);
+      setCouponDiscount(discount);
+      if (!silent) {
+        toast({
+          title: "Coupon Applied",
+          description: `${coupon.title || coupon.code} has been applied${discount > 0 ? ` - Discount: ₹${discount.toFixed(2)}` : ''}`,
+        });
+      }
+    } catch (error) {
+      console.error('Error applying coupon:', error);
+      toast({
+        title: "Invalid Coupon",
+        description: error.message || "This coupon code is not valid",
+        variant: "destructive",
+      });
+    }
+  };
 
   const loadSavedAddresses = async () => {
     try {
@@ -455,6 +701,7 @@ const Checkout = () => {
         referenceLinks: referenceLinks,
         instructions: description
       },
+      couponCode: appliedCoupon?.code || discountCode || null,
       payment: {
         method: 'test',
         status: 'pending'
@@ -499,8 +746,25 @@ const Checkout = () => {
     });
   };
 
+  // Wait for auth to finish loading before checking
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(124,90,255,0.12),_transparent_70%)]">
+        <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-6">
+          <Header />
+        </div>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
+
   if (!isAuthenticated) {
-    navigate(`/auth?redirect=${encodeURIComponent("/checkout")}`);
+    // Only redirect if not already on auth page to prevent loops
+    if (location.pathname !== '/auth') {
+      navigate(`/auth?redirect=${encodeURIComponent("/checkout")}`, { replace: true });
+    }
     return null;
   }
 
@@ -555,18 +819,28 @@ const Checkout = () => {
         <div className="mx-auto max-w-7xl">
           {/* Breadcrumb */}
           <div className="mb-4 flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-600">
-            <button className="hover:text-gray-900 cursor-pointer" onClick={() => navigate("/")}>Home</button>
+            <button className="hover:text-gray-900 cursor-pointer" onClick={() => {
+              // Clear buy now product when navigating away
+              sessionStorage.removeItem('buyNowProduct');
+              sessionStorage.removeItem('isBuyNowOrder');
+              navigate("/");
+            }}>Home</button>
             <span>/</span>
-            <button className="hover:text-gray-900 cursor-pointer" onClick={() => navigate("/cart")}>Cart</button>
-            <span>/</span>
+          <button className="hover:text-gray-900 cursor-pointer" onClick={() => {
+              // Clear buy now product when navigating away
+              sessionStorage.removeItem('buyNowProduct');
+              sessionStorage.removeItem('isBuyNowOrder');
+              navigate("/cart");
+            }}>Cart</button>
+          <span>/</span>
             <span className="text-gray-900 font-semibold">Checkout</span>
-          </div>
-          
+        </div>
+
           <div className="mb-6">
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-center" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>Checkout</h1>
-          </div>
+        </div>
 
-          <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
             {/* Left Column */}
             <div className="space-y-4">
               {/* Shipping Address Section */}
@@ -585,148 +859,148 @@ const Checkout = () => {
                 {isShippingOpen && (
                   <div className="px-6 pb-6">
                     {/* Saved Addresses */}
-                    {savedAddresses.length > 0 && (
+            {savedAddresses.length > 0 && (
                       <div className="mb-6">
                         <h3 className="text-sm font-medium text-gray-700 mb-3">Saved Addresses</h3>
-                        <div className="space-y-3">
-                          {savedAddresses.map((addr) => (
-                            <div
-                              key={addr._id}
-                              className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                                selectedAddressId === addr._id
-                                  ? 'border-purple-500 bg-purple-50'
+                <div className="space-y-3">
+                  {savedAddresses.map((addr) => (
+                    <div
+                      key={addr._id}
+                      className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                        selectedAddressId === addr._id
+                          ? 'border-purple-500 bg-purple-50'
                                   : 'border-gray-200 hover:border-purple-200'
-                              }`}
-                              onClick={() => selectSavedAddress(addr)}
-                            >
-                              <div className="flex items-start justify-between">
-                                <div className="flex-1">
-                                  {addr.isDefault && (
-                                    <span className="text-xs font-semibold text-purple-600 uppercase tracking-wide mb-1 block">
-                                      Default
-                                    </span>
-                                  )}
+                      }`}
+                      onClick={() => selectSavedAddress(addr)}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          {addr.isDefault && (
+                            <span className="text-xs font-semibold text-purple-600 uppercase tracking-wide mb-1 block">
+                              Default
+                            </span>
+                          )}
                                   <p className="font-semibold text-gray-900">{addr.name}</p>
-                                  <p className="text-sm text-gray-600">{addr.address}</p>
-                                  <p className="text-sm text-gray-600">
-                                    {addr.city}, {addr.state} - {addr.pincode}
-                                  </p>
-                                  {addr.phone && (
-                                    <p className="text-sm text-gray-600">Phone: {addr.phone}</p>
-                                  )}
-                                </div>
-                                <MapPin className="h-5 w-5 text-purple-500 flex-shrink-0 ml-2" />
-                              </div>
-                            </div>
-                          ))}
+                          <p className="text-sm text-gray-600">{addr.address}</p>
+                          <p className="text-sm text-gray-600">
+                            {addr.city}, {addr.state} - {addr.pincode}
+                          </p>
+                          {addr.phone && (
+                            <p className="text-sm text-gray-600">Phone: {addr.phone}</p>
+                          )}
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedAddressId(null);
-                            setFirstName("");
-                            setLastName("");
-                            setAddress("");
-                            setCity("");
-                            setState("");
-                            setZipCode("");
-                            setPhone("+91 ");
-                          }}
-                          className="mt-4 text-sm text-purple-600 hover:text-purple-700 font-medium"
-                        >
-                          + Add New Address
-                        </button>
+                                <MapPin className="h-5 w-5 text-purple-500 flex-shrink-0 ml-2" />
                       </div>
-                    )}
+                    </div>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedAddressId(null);
+                    setFirstName("");
+                    setLastName("");
+                    setAddress("");
+                    setCity("");
+                    setState("");
+                    setZipCode("");
+                    setPhone("+91 ");
+                  }}
+                  className="mt-4 text-sm text-purple-600 hover:text-purple-700 font-medium"
+                >
+                  + Add New Address
+                </button>
+                      </div>
+            )}
 
                     {/* Address Form */}
                     <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
                       <label className="block text-xs font-semibold uppercase tracking-wide text-gray-700 mb-2">FIRST NAME</label>
-                      <Input
-                        value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)}
-                        className="w-full"
+                  <Input
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className="w-full"
                         placeholder=""
-                      />
-                    </div>
-                    <div>
+                  />
+                </div>
+                <div>
                       <label className="block text-xs font-semibold uppercase tracking-wide text-gray-700 mb-2">LAST NAME</label>
-                      <Input
-                        value={lastName}
-                        onChange={(e) => setLastName(e.target.value)}
-                        className="w-full"
+                  <Input
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className="w-full"
                         placeholder=""
-                      />
-                    </div>
-                    <div className="col-span-2">
+                  />
+                </div>
+                <div className="col-span-2">
                       <label className="block text-xs font-semibold uppercase tracking-wide text-gray-700 mb-2">ADDRESS 1 - STREET OR P.O. BOX</label>
-                      <Input
+                  <Input
                         value={address}
                         onChange={(e) => setAddress(e.target.value)}
-                        className="w-full"
+                    className="w-full"
                         placeholder=""
-                      />
-                    </div>
-                    <div className="col-span-2">
+                  />
+                </div>
+                <div className="col-span-2">
                       <label className="block text-xs font-semibold uppercase tracking-wide text-gray-700 mb-2">
                         ADDRESS 2 - APT, SUITE, FLOOR
                         <span className="text-xs font-normal text-gray-500 ml-2">(Leave blank if P.O. Box in Address 1)</span>
                       </label>
-                      <Input
-                        className="w-full"
+                  <Input
+                    className="w-full"
                         placeholder=""
-                      />
-                    </div>
-                    <div className="col-span-2 relative">
+                  />
+                </div>
+                <div className="col-span-2 relative">
                       <label className="block text-xs font-semibold uppercase tracking-wide text-gray-700 mb-2">
                         ZIP CODE
                         {loadingPincode && <Loader2 className="inline h-3 w-3 animate-spin ml-2" />}
                         <span className="text-xs font-normal text-gray-500 ml-2">(Ahmedabad/Gandhinagar only)</span>
-                      </label>
-                      <Input
-                        value={zipCode}
-                        onChange={handleZipCodeChange}
-                        className={`w-full ${!isValidPincode && zipCode.length === 6 ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                  </label>
+                  <Input
+                    value={zipCode}
+                    onChange={handleZipCodeChange}
+                    className={`w-full ${!isValidPincode && zipCode.length === 6 ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                         placeholder=""
-                        maxLength={6}
-                      />
-                      {!isValidPincode && zipCode.length === 6 && (
-                        <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
-                          We deliver only to Ahmedabad and Gandhinagar
-                        </p>
-                      )}
-                    </div>
-                    <div className="relative">
+                    maxLength={6}
+                  />
+                  {!isValidPincode && zipCode.length === 6 && (
+                    <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                      <MapPin className="h-3 w-3" />
+                      We deliver only to Ahmedabad and Gandhinagar
+                    </p>
+                  )}
+                </div>
+                <div className="relative">
                       <label className="block text-xs font-semibold uppercase tracking-wide text-gray-700 mb-2">CITY</label>
-                      <Input
-                        value={city}
-                        onChange={handleCityChange}
-                        onFocus={() => city && setShowCitySuggestions(true)}
-                        onBlur={() => setTimeout(() => setShowCitySuggestions(false), 200)}
-                        className="w-full"
+                  <Input
+                    value={city}
+                    onChange={handleCityChange}
+                    onFocus={() => city && setShowCitySuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowCitySuggestions(false), 200)}
+                    className="w-full"
                         placeholder=""
-                      />
-                      {showCitySuggestions && citySuggestions.length > 0 && (
-                        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-40 overflow-auto">
-                          {citySuggestions.map((suggestion, idx) => (
-                            <div
-                              key={idx}
+                  />
+                  {showCitySuggestions && citySuggestions.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-40 overflow-auto">
+                      {citySuggestions.map((suggestion, idx) => (
+                        <div
+                          key={idx}
                               className="px-4 py-2 hover:bg-purple-50 cursor-pointer"
-                              onClick={() => selectCity(suggestion)}
-                            >
-                              {suggestion}
-                            </div>
-                          ))}
+                          onClick={() => selectCity(suggestion)}
+                        >
+                          {suggestion}
                         </div>
-                      )}
+                      ))}
                     </div>
-                    <div className="relative">
+                  )}
+                </div>
+                <div className="relative">
                       <label className="block text-xs font-semibold uppercase tracking-wide text-gray-700 mb-2">STATE</label>
                       <select
-                        value={state}
+                    value={state}
                         onChange={(e) => setState(e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                       >
@@ -742,10 +1016,10 @@ const Checkout = () => {
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="w-full"
+                    className="w-full"
                         placeholder=""
-                      />
-                    </div>
+                  />
+                        </div>
                     <div className="col-span-2">
                       <label className="block text-xs font-semibold uppercase tracking-wide text-gray-700 mb-2">PHONE NUMBER</label>
                       <Input
@@ -767,9 +1041,9 @@ const Checkout = () => {
                         <label htmlFor="saveAddress" className="text-sm text-gray-700 cursor-pointer">
                           Save this address for future orders
                         </label>
-                      </div>
-                    )}
                     </div>
+                  )}
+                </div>
                   </div>
                 </div>
                 )}
@@ -793,48 +1067,48 @@ const Checkout = () => {
                     <div className="space-y-4">
                   <div>
                     <label className="block text-xs font-semibold uppercase tracking-wide text-gray-700 mb-2">DESCRIPTION / INSTRUCTIONS</label>
-                    <Textarea
-                      ref={descriptionRef}
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
+                  <Textarea
+                    ref={descriptionRef}
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
                       className="w-full resize-none"
-                      placeholder="Enter any special instructions for your custom design..."
+                    placeholder="Enter any special instructions for your custom design..."
                       rows={4}
-                    />
-                  </div>
+                  />
+                </div>
                   <div>
                     <label className="block text-xs font-semibold uppercase tracking-wide text-gray-700 mb-2">REFERENCE LINKS (OPTIONAL)</label>
-                    <Input
-                      value={referenceLinks}
-                      onChange={(e) => setReferenceLinks(e.target.value)}
-                      className="w-full"
-                      placeholder="Paste links to design references, Pinterest, etc."
-                    />
-                  </div>
+                  <Input
+                    value={referenceLinks}
+                    onChange={(e) => setReferenceLinks(e.target.value)}
+                    className="w-full"
+                    placeholder="Paste links to design references, Pinterest, etc."
+                  />
+                </div>
                   <div>
                     <label className="block text-xs font-semibold uppercase tracking-wide text-gray-700 mb-2">UPLOAD DESIGN FILES (OPTIONAL)</label>
-                    <div className="flex items-center gap-4">
-                      <Input
-                        type="file"
-                        multiple
-                        accept="image/*,.pdf,.doc,.docx"
-                        onChange={(e) => {
-                          const files = Array.from(e.target.files || []);
-                          setDesignFiles(files);
-                        }}
-                        className="w-full"
-                      />
-                      {designFiles.length > 0 && (
+                  <div className="flex items-center gap-4">
+                    <Input
+                      type="file"
+                      multiple
+                      accept="image/*,.pdf,.doc,.docx"
+                      onChange={(e) => {
+                        const files = Array.from(e.target.files || []);
+                        setDesignFiles(files);
+                      }}
+                      className="w-full"
+                    />
+                    {designFiles.length > 0 && (
                         <span className="text-sm text-gray-600 whitespace-nowrap">{designFiles.length} file(s) selected</span>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">Upload images, PDFs, or documents (max 10MB each)</p>
-                    </div>
+                    )}
                   </div>
+                  <p className="text-xs text-gray-500 mt-1">Upload images, PDFs, or documents (max 10MB each)</p>
                 </div>
+                  </div>
+              </div>
                 )}
-              </section>
-            </div>
+            </section>
+          </div>
 
             {/* Right Column */}
             <aside className="space-y-6">
@@ -847,48 +1121,64 @@ const Checkout = () => {
                 {/* Summary Box */}
                 <div className="border border-gray-200 rounded-lg p-4 mb-6">
                   <div className="mb-4">
-                    <label className="block text-xs font-semibold uppercase tracking-wide text-gray-700 mb-2">PROMO CODE</label>
+                    <label className="block text-xs font-semibold uppercase tracking-wide text-gray-700 mb-3">PROMO CODE</label>
                     <div className="flex gap-2">
-                      <Input
-                        value={discountCode}
-                        onChange={(e) => setDiscountCode(e.target.value)}
+                <Input
+                  value={discountCode}
+                  onChange={(e) => setDiscountCode(e.target.value)}
                         placeholder="Enter code"
-                        className="flex-1"
-                      />
-                      <Button variant="outline" className="whitespace-nowrap">Apply</Button>
-                    </div>
-                  </div>
+                  className="flex-1"
+                />
+                      <Button 
+                        variant="outline" 
+                        className="whitespace-nowrap"
+                        onClick={() => {
+                          if (appliedCoupon) {
+                            setAppliedCoupon(null);
+                            setCouponDiscount(0);
+                            setDiscountCode('');
+                          } else {
+                            applyCoupon(discountCode);
+                          }
+                        }}
+                      >
+                        {appliedCoupon ? 'Remove' : 'Apply'}
+                      </Button>
+              </div>
+            </div>
                   <div className="space-y-2 pt-4 border-t">
-                    <div className="flex justify-between text-sm">
+              {appliedCoupon && (
+                <div className="flex justify-between text-sm text-green-600 mb-2">
+                  <span>Discount ({appliedCoupon.code})</span>
+                  <span>-₹{couponDiscount.toFixed(2)}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-sm">
                       <span className="text-gray-700">Subtotal</span>
                       <span className="font-semibold">₹{displaySubtotal.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
+              </div>
+              <div className="flex justify-between text-sm">
                       <span className="text-gray-700">Shipping</span>
                       <span className="font-semibold text-green-600">FREE</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-700">Estimated tax</span>
-                      <span className="font-semibold">₹{displayEstimatedTaxes.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between text-lg font-bold border-t pt-2 mt-2">
+              </div>
+              <div className="flex justify-between text-lg font-bold border-t pt-2 mt-2">
                       <span className="text-gray-900">Total</span>
                       <span className="text-gray-900">₹{displayTotal.toLocaleString()}</span>
-                    </div>
-                  </div>
+              </div>
+            </div>
                 </div>
 
                 <p className="text-sm text-purple-600 font-medium mb-6 text-center">
                   Assured delivery by 1-12 days
                 </p>
 
-                <button 
+            <button 
                   className="w-full bg-black hover:bg-gray-800 text-white font-semibold py-3 px-4 rounded-md transition-colors"
-                  onClick={handlePlaceOrder}
+              onClick={handlePlaceOrder}
                   style={{ backgroundColor: '#000000' }}
-                >
+            >
                   Continue to payment
-                </button>
+            </button>
               </div>
 
               {/* Cart Items */}
@@ -897,43 +1187,86 @@ const Checkout = () => {
                   Cart ({displayItems.reduce((sum, item) => sum + item.quantity, 0)} {displayItems.reduce((sum, item) => sum + item.quantity, 0) === 1 ? 'Item' : 'Items'})
                 </h2>
                 <div className="space-y-3">
-                  {displayItems.map((item) => (
+                  {displayItems.map((item) => {
+                    // Extract color from product name if it's in parentheses, or use item.color
+                    const colorMatch = item.name.match(/\(([^)]+)\)/);
+                    const displayColor = item.color || (colorMatch ? colorMatch[1] : null);
+                    // Remove color from name for display
+                    const nameWithoutColor = item.name.replace(/\s*\([^)]+\)\s*$/, '').trim();
+                    // Get product URL - use slug if available, otherwise use id
+                    const productUrl = item.slug ? `/product/${item.slug}` : `/product/${item.id}`;
+                    
+                    return (
                     <div key={`${item.id}-${item.size}`} className="flex gap-2 items-center">
-                      <img 
-                        src={item.image} 
-                        alt={item.name} 
-                        className="w-12 h-12 object-cover rounded flex-shrink-0"
-                      />
+                      <Link 
+                        to={productUrl}
+                        className="flex-shrink-0"
+                        onClick={(e) => {
+                          // Don't navigate if clicking on quantity buttons
+                          if (e.target.closest('button')) {
+                            e.preventDefault();
+                          }
+                        }}
+                      >
+                        <img 
+                          src={item.image} 
+                          alt={item.name} 
+                          className="w-12 h-12 object-cover rounded flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                        />
+                      </Link>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-xs text-gray-900 mb-0.5 leading-tight">{item.name}</p>
-                        <p className="text-xs text-gray-600 mb-1.5 leading-tight">
+                        <Link 
+                          to={productUrl}
+                          className="block hover:text-purple-600 transition-colors"
+                        >
+                          <p className="font-semibold text-xs text-gray-900 mb-0.5 leading-tight">{nameWithoutColor}</p>
+                        </Link>
+                        <p className="text-xs text-gray-600 mb-1 leading-tight">
                           {item.category} · Size {String(item.size).replace(/[\[\]"]/g, '').replace(/\\/g, '').trim()}
                         </p>
+                        {displayColor && (
+                          <p className="text-xs text-purple-600 font-medium mb-1.5">
+                            Color: {displayColor}
+                          </p>
+                        )}
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1 border border-gray-200 rounded">
+                          <div className="flex items-center gap-1.5 border border-gray-200 rounded">
                             <button 
-                              className="p-0.5 hover:bg-gray-100 transition-colors"
-                              onClick={() => updateQuantity(item.id, item.size, item.quantity - 1)}
+                              className="p-1.5 hover:bg-gray-100 transition-colors"
+                              onClick={() => {
+                                if (isBuyNow && buyNowProduct && item.id === buyNowProduct.id) {
+                                  updateBuyNowQuantity(item.quantity - 1);
+                                } else {
+                                  updateQuantity(item.id, item.size, item.quantity - 1);
+                                }
+                              }}
                             >
-                              <Minus className="h-2.5 w-2.5" />
+                              <Minus className="h-3.5 w-3.5" />
                             </button>
-                            <span className="px-1.5 text-xs font-semibold min-w-[1.5rem] text-center">{item.quantity}</span>
+                            <span className="px-2 text-sm font-semibold min-w-[2rem] text-center">{item.quantity}</span>
                             <button 
-                              className="p-0.5 hover:bg-gray-100 transition-colors"
-                              onClick={() => updateQuantity(item.id, item.size, item.quantity + 1)}
+                              className="p-1.5 hover:bg-gray-100 transition-colors"
+                              onClick={() => {
+                                if (isBuyNow && buyNowProduct && item.id === buyNowProduct.id) {
+                                  updateBuyNowQuantity(item.quantity + 1);
+                                } else {
+                                  updateQuantity(item.id, item.size, item.quantity + 1);
+                                }
+                              }}
                             >
-                              <Plus className="h-2.5 w-2.5" />
+                              <Plus className="h-3.5 w-3.5" />
                             </button>
                           </div>
                           <p className="font-semibold text-xs text-gray-900">₹{(item.price * item.quantity).toLocaleString()}</p>
                         </div>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
-            </aside>
-          </div>
+          </aside>
+        </div>
         </div>
       </div>
     </div>

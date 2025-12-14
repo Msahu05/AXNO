@@ -59,7 +59,7 @@ const INDIAN_CITIES = {
 const Account = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { user, isAuthenticated, refreshUser } = useAuth();
+  const { user, isAuthenticated, refreshUser, loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "profile");
   const [loading, setLoading] = useState(false);
   const [addresses, setAddresses] = useState([]);
@@ -72,8 +72,16 @@ const Account = () => {
   });
 
   useEffect(() => {
+    // Wait for auth to finish loading before checking
+    if (authLoading) {
+      return;
+    }
+    
     if (!isAuthenticated) {
-      navigate("/auth?redirect=/account");
+      // Only redirect if not already on auth page to prevent loops
+      if (window.location.pathname !== '/auth') {
+        navigate("/auth?redirect=/account", { replace: true });
+      }
       return;
     }
 

@@ -179,6 +179,32 @@ const Product = () => {
     }
   };
 
+  // Listen for review submission events and refresh reviews
+  useEffect(() => {
+    if (!product) return;
+    
+    const productId = product.id || product._id;
+    if (!productId) return;
+    
+    const handleReviewSubmitted = (event) => {
+      if (event.detail.productId === productId) {
+        loadReviews(productId);
+      }
+    };
+    
+    window.addEventListener('reviewSubmitted', handleReviewSubmitted);
+    
+    // Poll for new reviews every 10 seconds
+    const interval = setInterval(() => {
+      loadReviews(productId);
+    }, 10000);
+    
+    return () => {
+      window.removeEventListener('reviewSubmitted', handleReviewSubmitted);
+      clearInterval(interval);
+    };
+  }, [product?.id, product?._id]);
+
   // Load product from API
   useEffect(() => {
     const loadProduct = async () => {

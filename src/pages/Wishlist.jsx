@@ -10,15 +10,23 @@ import { toast } from "@/hooks/use-toast";
 
 const Wishlist = () => {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const { items: wishlistItems, removeItem } = useWishlist();
   const { addItem } = useCart();
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate(`/auth?redirect=${encodeURIComponent("/wishlist")}`);
+    // Wait for auth to finish loading before checking
+    if (authLoading) {
+      return;
     }
-  }, [isAuthenticated, navigate]);
+    
+    if (!isAuthenticated) {
+      // Only redirect if not already on auth page to prevent loops
+      if (window.location.pathname !== '/auth') {
+        navigate(`/auth?redirect=${encodeURIComponent("/wishlist")}`, { replace: true });
+      }
+    }
+  }, [isAuthenticated, authLoading, navigate]);
 
   const handleMoveToCart = (item) => {
     if (!isAuthenticated) {

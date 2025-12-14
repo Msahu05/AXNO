@@ -20,7 +20,20 @@ const ProductReviews = ({ productId }) => {
     fetchReviews();
     // Poll for new reviews every 5 seconds
     const interval = setInterval(fetchReviews, 5000);
-    return () => clearInterval(interval);
+    
+    // Listen for review submission events
+    const handleReviewSubmitted = (event) => {
+      if (event.detail.productId === productId) {
+        fetchReviews();
+      }
+    };
+    
+    window.addEventListener('reviewSubmitted', handleReviewSubmitted);
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('reviewSubmitted', handleReviewSubmitted);
+    };
   }, [productId]);
 
   const fetchReviews = async () => {
@@ -102,6 +115,8 @@ const ProductReviews = ({ productId }) => {
       setFilePreviews([]);
       setShowForm(false);
       fetchReviews();
+      // Trigger event to notify other components
+      window.dispatchEvent(new CustomEvent('reviewSubmitted', { detail: { productId } }));
     } catch (error) {
       toast({
         title: "Error",

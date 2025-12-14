@@ -280,6 +280,41 @@ const sizeChartSchema = new mongoose.Schema({
 
 const SizeChart = mongoose.model('SizeChart', sizeChartSchema);
 
+// Coupon Schema
+const couponSchema = new mongoose.Schema({
+  code: { type: String, required: true, unique: true, uppercase: true },
+  category: { type: String, default: 'All', enum: ['All', 'Hoodie', 'T-Shirt', 'Sweatshirt'] },
+  price: { type: Number, default: null }, // Original product price
+  salePrice: { type: Number, default: null }, // Sale price for price override
+  minQuantity: { type: Number, default: null }, // Minimum quantity required
+  minPrice: { type: Number, default: null }, // Minimum order value
+  discountType: { type: String, enum: ['price_override', 'percentage', 'fixed'], default: 'price_override' },
+  discountValue: { type: Number, default: 0 },
+  applyTo: { type: String, enum: ['total', 'item'], default: 'total' },
+  isActive: { type: Boolean, default: true },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
+
+const Coupon = mongoose.model('Coupon', couponSchema);
+
+// Slideshow Schema
+const slideshowSchema = new mongoose.Schema({
+  slideshow: [{
+    image: { type: String, required: true }, // Base64 or URL
+    redirectUrl: { type: String, default: '/category/all' },
+    order: { type: Number, default: 0 }
+  }]
+}, { timestamps: true });
+
+// Use a single document for slideshow
+let Slideshow;
+try {
+  Slideshow = mongoose.model('Slideshow');
+} catch {
+  Slideshow = mongoose.model('Slideshow', slideshowSchema);
+}
+
 // Generate unique order ID
 // Generate sequential order ID in format ODR-001, ODR-002, etc.
 const generateOrderId = async () => {
@@ -3073,6 +3108,179 @@ app.delete('/api/admin/products/:id', authenticateAdmin, async (req, res) => {
   } catch (error) {
     console.error('Delete product error:', error);
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ==================== COUPON ENDPOINTS ====================
+
+// Get all coupons (admin)
+app.get('/api/admin/coupons', authenticateAdmin, async (req, res) => {
+  try {
+    const coupons = await Coupon.find({}).sort({ createdAt: -1 });
+    res.json({ coupons });
+  } catch (error) {
+    console.error('Error fetching coupons:', error);
+    res.status(500).json({ error: 'Failed to fetch coupons' });
+  }
+});
+
+// Get active banners (public)
+app.get('/api/coupons/banners', async (req, res) => {
+  try {
+    const banners = await Coupon.find({ isActive: true }).sort({ createdAt: -1 });
+    res.json({ banners });
+  } catch (error) {
+    console.error('Error fetching banners:', error);
+    res.status(500).json({ error: 'Failed to fetch banners' });
+  }
+});
+
+// Get coupon by code (public)
+app.get('/api/coupons/:code', async (req, res) => {
+  try {
+    const { code } = req.params;
+    const coupon = await Coupon.findOne({ code: code.toUpperCase(), isActive: true });
+    if (!coupon) {
+      return res.status(404).json({ error: 'Coupon not found' });
+    }
+    res.json({ coupon });
+  } catch (error) {
+    console.error('Error fetching coupon:', error);
+    res.status(500).json({ error: 'Failed to fetch coupon' });
+  }
+});
+
+// Create coupon (admin)
+app.post('/api/admin/coupons', authenticateAdmin, async (req, res) => {
+  try {
+    const { code, category, price, salePrice, minQuantity, minPrice, discountType, discountValue, applyTo, isActive } = req.body;
+    
+    if (!code) {
+      return res.status(400).json({ error: 'Coupon code is required' });
+    }
+
+    const coupon = new Coupon({
+      code: code.toUpperCase(),
+      category: category || 'All',
+      price: price ? parseFloat(price) : null,
+      salePrice: salePrice ? parseFloat(salePrice) : null,
+      minQuantity: minQuantity ? parseInt(minQuantity) : null,
+      minPrice: minPrice ? parseFloat(minPrice) : null,
+      discountType: discountType || 'price_override',
+      discountValue: discountValue ? parseFloat(discountValue) : 0,
+      applyTo: applyTo || 'total',
+      isActive: isActive !== undefined ? isActive : true
+    });
+
+    await coupon.save();
+    res.json({ coupon });
+  } catch (error) {
+    console.error('Error creating coupon:', error);
+    if (error.code === 11000) {
+      return res.status(400).json({ error: 'Coupon code already exists' });
+    }
+    res.status(500).json({ error: 'Failed to create coupon' });
+  }
+});
+
+// Update coupon (admin)
+app.put('/api/admin/coupons/:id', authenticateAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { code, category, price, salePrice, minQuantity, minPrice, discountType, discountValue, applyTo, isActive } = req.body;
+    
+    const updateData = {
+      category: category || 'All',
+      price: price ? parseFloat(price) : null,
+      salePrice: salePrice ? parseFloat(salePrice) : null,
+      minQuantity: minQuantity ? parseInt(minQuantity) : null,
+      minPrice: minPrice ? parseFloat(minPrice) : null,
+      discountType: discountType || 'price_override',
+      discountValue: discountValue ? parseFloat(discountValue) : 0,
+      applyTo: applyTo || 'total',
+      isActive: isActive !== undefined ? isActive : true,
+      updatedAt: Date.now()
+    };
+
+    if (code) {
+      updateData.code = code.toUpperCase();
+    }
+
+    const coupon = await Coupon.findByIdAndUpdate(id, updateData, { new: true });
+    if (!coupon) {
+      return res.status(404).json({ error: 'Coupon not found' });
+    }
+    res.json({ coupon });
+  } catch (error) {
+    console.error('Error updating coupon:', error);
+    if (error.code === 11000) {
+      return res.status(400).json({ error: 'Coupon code already exists' });
+    }
+    res.status(500).json({ error: 'Failed to update coupon' });
+  }
+});
+
+// Delete coupon (admin)
+app.delete('/api/admin/coupons/:id', authenticateAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await Coupon.findByIdAndDelete(id);
+    res.json({ message: 'Coupon deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting coupon:', error);
+    res.status(500).json({ error: 'Failed to delete coupon' });
+  }
+});
+
+// ==================== SLIDESHOW ENDPOINTS ====================
+
+// Get slideshow (public)
+app.get('/api/slideshow', async (req, res) => {
+  try {
+    let slideshow = await Slideshow.findOne();
+    if (!slideshow) {
+      slideshow = new Slideshow({ slideshow: [] });
+      await slideshow.save();
+    }
+    res.json({ slideshow: slideshow.slideshow || [] });
+  } catch (error) {
+    console.error('Error fetching slideshow:', error);
+    res.status(500).json({ error: 'Failed to fetch slideshow' });
+  }
+});
+
+// Get slideshow (admin)
+app.get('/api/admin/slideshow', authenticateAdmin, async (req, res) => {
+  try {
+    let slideshow = await Slideshow.findOne();
+    if (!slideshow) {
+      slideshow = new Slideshow({ slideshow: [] });
+      await slideshow.save();
+    }
+    res.json({ slideshow: slideshow.slideshow || [] });
+  } catch (error) {
+    console.error('Error fetching slideshow:', error);
+    res.status(500).json({ error: 'Failed to fetch slideshow' });
+  }
+});
+
+// Update slideshow (admin)
+app.put('/api/admin/slideshow', authenticateAdmin, async (req, res) => {
+  try {
+    const { slideshow: slideshowData } = req.body;
+    
+    let slideshow = await Slideshow.findOne();
+    if (!slideshow) {
+      slideshow = new Slideshow({ slideshow: slideshowData || [] });
+    } else {
+      slideshow.slideshow = slideshowData || [];
+    }
+    
+    await slideshow.save();
+    res.json({ slideshow: slideshow.slideshow });
+  } catch (error) {
+    console.error('Error updating slideshow:', error);
+    res.status(500).json({ error: 'Failed to update slideshow' });
   }
 });
 

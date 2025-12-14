@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
-import { adminAPI, adminSizeChartsAPI, productsAPI, getImageUrl } from '@/lib/api';
+import { adminAPI, adminSizeChartsAPI, productsAPI, couponsAPI, getImageUrl } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,7 +24,15 @@ import {
   Plus,
   Edit,
   User,
-  Ruler
+  Ruler,
+  Trash2,
+  Undo2,
+  Tag,
+  Image as ImageIcon,
+  ArrowUp,
+  ArrowDown,
+  X,
+  Upload
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import SizeChartsEditor from '@/components/SizeChartsEditor';
@@ -42,7 +50,23 @@ const Admin = () => {
   const [users, setUsers] = useState([]);
   const [products, setProducts] = useState([]);
   const [sizeCharts, setSizeCharts] = useState([]);
+  const [coupons, setCoupons] = useState([]);
+  const [slideshow, setSlideshow] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [showCouponForm, setShowCouponForm] = useState(false);
+  const [editingCoupon, setEditingCoupon] = useState(null);
+  const [couponForm, setCouponForm] = useState({
+    code: '',
+    category: 'All',
+    price: '',
+    salePrice: '',
+    minQuantity: '',
+    minPrice: '',
+    discountType: 'price_override',
+    discountValue: '',
+    applyTo: 'total',
+    isActive: true
+  });
   const [statusFilter, setStatusFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [userSearchQuery, setUserSearchQuery] = useState('');
@@ -51,6 +75,9 @@ const Admin = () => {
   const [pagination, setPagination] = useState(null);
   const [userPagination, setUserPagination] = useState(null);
   const [checkingAdmin, setCheckingAdmin] = useState(true);
+  
+  // Delete product with undo functionality
+  const [deletedProducts, setDeletedProducts] = useState([]); // Store deleted products temporarily
   
   // Add product to user form
   const [showAddProductForm, setShowAddProductForm] = useState(false);
@@ -82,6 +109,17 @@ const Admin = () => {
       document.body.style.overflow = '';
     };
   }, [showAddProductForm]);
+
+  // Cleanup pending delete timeouts on unmount
+  useEffect(() => {
+    return () => {
+      deletedProducts.forEach(del => {
+        if (del.deleteTimeout) {
+          clearTimeout(del.deleteTimeout);
+        }
+      });
+    };
+  }, [deletedProducts]);
 
   // Refresh user data on mount to get latest isAdmin status
   useEffect(() => {
@@ -121,6 +159,10 @@ const Admin = () => {
       fetchProducts();
     } else if (activeTab === 'size-charts') {
       fetchSizeCharts();
+    } else if (activeTab === 'coupons') {
+      fetchCoupons();
+    } else if (activeTab === 'slideshow') {
+      fetchSlideshow();
     }
   }, [isAuthenticated, user, statusFilter, page, userPage, activeTab, checkingAdmin, authLoading]);
 
@@ -214,6 +256,367 @@ const Admin = () => {
     }
   };
 
+  const fetchCoupons = async () => {
+    try {
+      setLoading(true);
+      const response = await couponsAPI.getAll();
+      setCoupons(response.coupons || []);
+    } catch (error) {
+      console.error('Error fetching coupons:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load coupons',
+        variant: 'destructive',
+      });
+      setCoupons([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchSlideshow = async () => {
+    try {
+      setLoading(true);
+      const response = await adminAPI.getSlideshow();
+      console.log('Slideshow response:', response);
+      if (response && response.slideshow) {
+        setSlideshow(Array.isArray(response.slideshow) ? response.slideshow : []);
+      } else {
+        setSlideshow([]);
+      }
+    } catch (error) {
+      console.error('Error fetching slideshow:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load slideshow images',
+        variant: 'destructive',
+      });
+      setSlideshow([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteProduct = async (product) => {
+    const productId = product.id || product._id;
+    const productName = product.name;
+    
+    // Store product data before deletion for potential undo
+    const productData = { ...product };
+    
+    // Remove from products list immediately (UI update)
+    setProducts(prev => prev.filter(p => (p.id || p._id) !== productId));
+    
+    // Store deleted product info for undo
+    const deletedProduct = {
+      ...productData,
+      id: productId,
+      deletedAt: new Date().toISOString(),
+      deleteTimeout: null
+    };
+    setDeletedProducts(prev => [...prev, deletedProduct]);
+    
+    // Schedule actual backend deletion after 10 seconds
+    const deleteTimeout = setTimeout(async () => {
+      try {
+        // Actually delete from backend after delay
+        await adminAPI.deleteProduct(productId);
+        // Remove from deleted products list
+        setDeletedProducts(prev => prev.filter(del => del.id !== productId));
+      } catch (error) {
+        console.error('Error deleting product from backend:', error);
+        // If deletion fails, restore the product in the UI
+        setProducts(prev => {
+          const exists = prev.find(p => (p.id || p._id) === productId);
+          if (!exists) {
+            return [...prev, productData];
+          }
+          return prev;
+        });
+        setDeletedProducts(prev => prev.filter(del => del.id !== productId));
+        toast({
+          title: 'Deletion Failed',
+          description: `Failed to delete "${productName}" from database. Product has been restored.`,
+          variant: 'destructive',
+        });
+      }
+    }, 10000); // 10 second delay before actual deletion
+    
+    // Store timeout ID
+    deletedProduct.deleteTimeout = deleteTimeout;
+    setDeletedProducts(prev => prev.map(del => 
+      del.id === productId ? { ...del, deleteTimeout } : del
+    ));
+    
+    toast({
+      title: 'Product Deleted',
+      description: `${productName} will be permanently deleted in 10 seconds.`,
+      action: (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            handleUndoDelete(deletedProduct);
+          }}
+          className="ml-2"
+        >
+          <Undo2 className="h-3 w-3 mr-1" />
+          Undo
+        </Button>
+      ),
+    });
+  };
+
+  // Coupon handlers
+  const handleSaveCoupon = async () => {
+    if (!couponForm.code) {
+      toast({
+        title: 'Error',
+        description: 'Please fill in the coupon code',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const couponData = {
+        code: couponForm.code.toUpperCase(),
+        category: couponForm.category,
+        price: couponForm.price ? parseFloat(couponForm.price) : null,
+        salePrice: couponForm.salePrice ? parseFloat(couponForm.salePrice) : null,
+        minQuantity: couponForm.minQuantity ? parseInt(couponForm.minQuantity) : null,
+        minPrice: couponForm.minPrice ? parseFloat(couponForm.minPrice) : null,
+        discountType: couponForm.discountType,
+        discountValue: parseFloat(couponForm.discountValue) || 0,
+        applyTo: couponForm.applyTo,
+        isActive: couponForm.isActive
+      };
+
+      if (editingCoupon) {
+        await couponsAPI.updateCoupon(editingCoupon.id || editingCoupon._id, couponData);
+        toast({
+          title: 'Success',
+          description: 'Coupon updated successfully',
+        });
+      } else {
+        await couponsAPI.createCoupon(couponData);
+        toast({
+          title: 'Success',
+          description: 'Coupon created successfully',
+        });
+      }
+
+      setShowCouponForm(false);
+      setEditingCoupon(null);
+      setCouponForm({
+        code: '',
+        category: 'All',
+        price: '',
+        salePrice: '',
+        minQuantity: '',
+        minPrice: '',
+        discountType: 'price_override',
+        discountValue: '',
+        applyTo: 'total',
+        isActive: true
+      });
+      await fetchCoupons();
+    } catch (error) {
+      console.error('Error saving coupon:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to save coupon',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteCoupon = async (couponId) => {
+    if (!window.confirm('Are you sure you want to delete this coupon?')) {
+      return;
+    }
+
+    try {
+      await couponsAPI.deleteCoupon(couponId);
+      toast({
+        title: 'Success',
+        description: 'Coupon deleted successfully',
+      });
+      fetchCoupons();
+    } catch (error) {
+      console.error('Error deleting coupon:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to delete coupon',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleEditCoupon = (coupon) => {
+    setEditingCoupon(coupon);
+      setCouponForm({
+        code: coupon.code || '',
+        category: coupon.category || 'All',
+        price: coupon.price || '',
+        salePrice: coupon.salePrice || '',
+        minQuantity: coupon.minQuantity || '',
+        minPrice: coupon.minPrice || '',
+        discountType: coupon.discountType || 'price_override',
+        discountValue: coupon.discountValue || '',
+        applyTo: coupon.applyTo || 'total',
+        isActive: coupon.isActive !== undefined ? coupon.isActive : true
+      });
+    setShowCouponForm(true);
+  };
+
+  // Slideshow handlers
+  const handleAddSlideshowImage = async (file) => {
+    try {
+      setLoading(true);
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64Image = reader.result;
+        const newSlideshow = [...slideshow, {
+          image: base64Image,
+          redirectUrl: slideshow.length === 0 ? '/category/hoodies' : 
+                       slideshow.length === 1 ? '/category/t-shirts' : 
+                       slideshow.length === 2 ? '/category/sweatshirts' : '/category/all',
+          order: slideshow.length
+        }];
+        await adminAPI.updateSlideshow({ slideshow: newSlideshow });
+        toast({
+          title: 'Success',
+          description: 'Image added to slideshow',
+        });
+        fetchSlideshow();
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Error adding slideshow image:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to add image',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteSlideshowImage = async (index) => {
+    if (!window.confirm('Are you sure you want to delete this image?')) {
+      return;
+    }
+    try {
+      setLoading(true);
+      const newSlideshow = slideshow.filter((_, i) => i !== index).map((slide, i) => ({
+        ...slide,
+        order: i
+      }));
+      await adminAPI.updateSlideshow({ slideshow: newSlideshow });
+      toast({
+        title: 'Success',
+        description: 'Image deleted',
+      });
+      fetchSlideshow();
+    } catch (error) {
+      console.error('Error deleting slideshow image:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete image',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMoveSlideshowImage = async (index, direction) => {
+    if ((direction === 'up' && index === 0) || (direction === 'down' && index === slideshow.length - 1)) {
+      return;
+    }
+    try {
+      setLoading(true);
+      const newSlideshow = [...slideshow];
+      const newIndex = direction === 'up' ? index - 1 : index + 1;
+      [newSlideshow[index], newSlideshow[newIndex]] = [newSlideshow[newIndex], newSlideshow[index]];
+      newSlideshow.forEach((slide, i) => {
+        slide.order = i;
+      });
+      await adminAPI.updateSlideshow({ slideshow: newSlideshow });
+      fetchSlideshow();
+    } catch (error) {
+      console.error('Error moving slideshow image:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to move image',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditSlideshowImage = (slide, index) => {
+    const redirectUrl = window.prompt('Enter redirect URL (e.g., /category/hoodies, /category/t-shirts, /category/sweatshirts, /category/all):', slide.redirectUrl || '/category/all');
+    if (redirectUrl !== null) {
+      const newSlideshow = [...slideshow];
+      newSlideshow[index] = { ...newSlideshow[index], redirectUrl };
+      adminAPI.updateSlideshow({ slideshow: newSlideshow }).then(() => {
+        toast({
+          title: 'Success',
+          description: 'Redirect URL updated',
+        });
+        fetchSlideshow();
+      }).catch(error => {
+        console.error('Error updating slideshow:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to update redirect URL',
+          variant: 'destructive',
+        });
+      });
+    }
+  };
+
+  const handleUndoDelete = async (deletedProduct) => {
+    try {
+      const productId = deletedProduct.id;
+      
+      // Cancel the scheduled deletion
+      if (deletedProduct.deleteTimeout) {
+        clearTimeout(deletedProduct.deleteTimeout);
+      }
+      
+      // Remove from deleted products list
+      setDeletedProducts(prev => prev.filter(del => del.id !== productId));
+      
+      // Restore product to products list
+      setProducts(prev => {
+        const exists = prev.find(p => (p.id || p._id) === productId);
+        if (!exists) {
+          return [...prev, deletedProduct];
+        }
+        return prev;
+      });
+      
+      toast({
+        title: 'Product Restored',
+        description: `${deletedProduct.name} has been restored successfully.`,
+      });
+    } catch (error) {
+      console.error('Error handling undo:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to restore product.',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const handleViewUser = async (userId) => {
     try {
@@ -501,6 +904,14 @@ const Admin = () => {
             <TabsTrigger value="size-charts" className="flex items-center gap-2">
               <Ruler className="h-4 w-4" />
               Size Charts
+            </TabsTrigger>
+            <TabsTrigger value="coupons" className="flex items-center gap-2">
+              <Tag className="h-4 w-4" />
+              Coupons
+            </TabsTrigger>
+            <TabsTrigger value="slideshow" className="flex items-center gap-2">
+              <ImageIcon className="h-4 w-4" />
+              Slideshow
             </TabsTrigger>
           </TabsList>
 
@@ -793,18 +1204,32 @@ const Admin = () => {
                         <h3 className="font-semibold">{product.name}</h3>
                         <p className="text-sm text-gray-600">{product.category} - {product.audience || 'Unisex'}</p>
                         <p className="text-lg font-bold mt-2">₹{product.price}</p>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="w-full mt-2"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/admin/products/${product.id || product._id}`);
-                          }}
-                        >
-                          <Eye className="h-4 w-4 mr-2" />
-                          Manage Product
-                        </Button>
+                        <div className="flex gap-2 mt-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="flex-1"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/admin/products/${product.id || product._id}`);
+                            }}
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            Manage
+                          </Button>
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (window.confirm(`Are you sure you want to delete "${product.name}"? This action can be undone within 10 seconds.`)) {
+                                handleDeleteProduct(product);
+                              }
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                       );
                     })}
@@ -817,6 +1242,235 @@ const Admin = () => {
           {/* Size Charts Tab */}
           <TabsContent value="size-charts" className="space-y-6">
             <SizeChartsEditor sizeCharts={sizeCharts} onRefresh={fetchSizeCharts} />
+          </TabsContent>
+
+          {/* Coupons Tab */}
+          <TabsContent value="coupons" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Coupon Management</CardTitle>
+                  <Button
+                    onClick={() => {
+                      setEditingCoupon(null);
+                      setCouponForm({
+                        code: '',
+                        title: '',
+                        subtitle: '',
+                        category: 'All',
+                        price: '',
+                        salePrice: '',
+                        minQuantity: '',
+                        minPrice: '',
+        discountType: 'price_override',
+        discountValue: '',
+        applyTo: 'total',
+        isActive: true
+      });
+      setShowCouponForm(true);
+                    }}
+                    className="flex items-center gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Create Coupon
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="text-center py-8">Loading coupons...</div>
+                ) : coupons.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 mb-4">No coupons found</p>
+                    <Button
+                      onClick={() => setShowCouponForm(true)}
+                      className="flex items-center gap-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Create Your First Coupon
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {coupons.map((coupon) => (
+                      <div
+                        key={coupon.id || coupon._id}
+                        className="border rounded-lg p-4 hover:shadow-lg transition-shadow"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <h3 className="font-semibold text-lg">{coupon.code}</h3>
+                              {coupon.isActive ? (
+                                <Badge className="bg-green-100 text-green-800 border-green-200">Active</Badge>
+                              ) : (
+                                <Badge className="bg-gray-100 text-gray-800 border-gray-200">Inactive</Badge>
+                              )}
+                            </div>
+                            <div className="flex flex-wrap gap-4 text-xs text-gray-600 mt-2">
+                              {coupon.category && coupon.category !== 'All' && (
+                                <span>Category: {coupon.category}</span>
+                              )}
+                              {coupon.price && (
+                                <span>Price: ₹{coupon.price}</span>
+                              )}
+                              {coupon.salePrice && (
+                                <span>Sale Price: ₹{coupon.salePrice}</span>
+                              )}
+                              {coupon.minQuantity && (
+                                <span>Min Qty: {coupon.minQuantity}</span>
+                              )}
+                              {coupon.minPrice && (
+                                <span>Min Order: ₹{coupon.minPrice}</span>
+                              )}
+                              <span>Type: {coupon.discountType === 'price_override' ? `Buy ${coupon.minQuantity || 2} @ ₹${coupon.salePrice || coupon.discountValue} each` : coupon.discountType === 'percentage' ? `${coupon.discountValue}%` : `₹${coupon.discountValue}`}</span>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditCoupon(coupon)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDeleteCoupon(coupon.id || coupon._id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Slideshow Tab */}
+          <TabsContent value="slideshow" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Slideshow Management</CardTitle>
+                  <Button
+                    onClick={() => {
+                      const fileInput = document.createElement('input');
+                      fileInput.type = 'file';
+                      fileInput.accept = 'image/*';
+                      fileInput.onchange = async (e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          await handleAddSlideshowImage(file);
+                        }
+                      };
+                      fileInput.click();
+                    }}
+                    className="flex items-center gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Image
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="text-center py-8">Loading slideshow...</div>
+                ) : slideshow.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 mb-4">No slideshow images</p>
+                    <Button
+                      onClick={() => {
+                        const fileInput = document.createElement('input');
+                        fileInput.type = 'file';
+                        fileInput.accept = 'image/*';
+                        fileInput.onchange = async (e) => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            await handleAddSlideshowImage(file);
+                          }
+                        };
+                        fileInput.click();
+                      }}
+                      className="flex items-center gap-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add Your First Image
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {slideshow.map((slide, index) => (
+                      <div
+                        key={slide.id || index}
+                        className="border rounded-lg p-4 hover:shadow-lg transition-shadow"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="flex-shrink-0">
+                            <img
+                              src={slide.image?.startsWith('data:') ? slide.image : getImageUrl(slide.image)}
+                              alt={`Slide ${index + 1}`}
+                              className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded border border-gray-200 flex-shrink-0"
+                              style={{ maxWidth: '80px', maxHeight: '80px' }}
+                              onError={(e) => {
+                                e.target.src = 'https://via.placeholder.com/80';
+                              }}
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Badge>Position {index + 1}</Badge>
+                              <span className="text-sm text-gray-600">
+                                Redirects to: {slide.redirectUrl === '/category/hoodies' ? 'All Hoodies' : 
+                                               slide.redirectUrl === '/category/t-shirts' ? 'All T-Shirts' :
+                                               slide.redirectUrl === '/category/sweatshirts' ? 'All Sweatshirts' :
+                                               slide.redirectUrl || 'All Products'}
+                              </span>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleMoveSlideshowImage(index, 'up')}
+                                disabled={index === 0}
+                              >
+                                <ArrowUp className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleMoveSlideshowImage(index, 'down')}
+                                disabled={index === slideshow.length - 1}
+                              >
+                                <ArrowDown className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditSlideshowImage(slide, index)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleDeleteSlideshowImage(index)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
 
@@ -1113,6 +1767,150 @@ const Admin = () => {
                 >
                   Add Product
                 </Button>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Coupon Form Modal */}
+        {showCouponForm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <Card className="max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+              <CardHeader className="flex-shrink-0">
+                <div className="flex justify-between items-start">
+                  <CardTitle>{editingCoupon ? 'Edit Coupon' : 'Create Coupon'}</CardTitle>
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setShowCouponForm(false);
+                      setEditingCoupon(null);
+                    }}
+                  >
+                    <X className="h-5 w-5" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4 overflow-y-auto flex-1 min-h-0">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Coupon Code *</label>
+                    <Input
+                      value={couponForm.code}
+                      onChange={(e) => setCouponForm({ ...couponForm, code: e.target.value.toUpperCase() })}
+                      placeholder="SALE2024"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Is Active</label>
+                    <select
+                      value={couponForm.isActive}
+                      onChange={(e) => setCouponForm({ ...couponForm, isActive: e.target.value === 'true' })}
+                      className="w-full p-2 border rounded-md"
+                    >
+                      <option value="true">Active</option>
+                      <option value="false">Inactive</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Category</label>
+                    <select
+                      value={couponForm.category}
+                      onChange={(e) => setCouponForm({ ...couponForm, category: e.target.value })}
+                      className="w-full p-2 border rounded-md"
+                    >
+                      <option value="All">All Categories</option>
+                      <option value="Hoodie">Hoodie</option>
+                      <option value="T-Shirt">T-Shirt</option>
+                      <option value="Sweatshirt">Sweatshirt</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Product Price (₹)</label>
+                    <Input
+                      type="number"
+                      value={couponForm.price}
+                      onChange={(e) => setCouponForm({ ...couponForm, price: e.target.value })}
+                      placeholder="799"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Sale Price (₹)</label>
+                    <Input
+                      type="number"
+                      value={couponForm.salePrice}
+                      onChange={(e) => setCouponForm({ ...couponForm, salePrice: e.target.value })}
+                      placeholder="649"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Min Quantity</label>
+                    <Input
+                      type="number"
+                      value={couponForm.minQuantity}
+                      onChange={(e) => setCouponForm({ ...couponForm, minQuantity: e.target.value })}
+                      placeholder="2"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Min Order Value (₹)</label>
+                  <Input
+                    type="number"
+                    value={couponForm.minPrice}
+                    onChange={(e) => setCouponForm({ ...couponForm, minPrice: e.target.value })}
+                    placeholder="Optional"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Discount Type</label>
+                    <select
+                      value={couponForm.discountType}
+                      onChange={(e) => setCouponForm({ ...couponForm, discountType: e.target.value })}
+                      className="w-full p-2 border rounded-md"
+                    >
+                      <option value="price_override">Price Override (Buy X @ Y price)</option>
+                      <option value="percentage">Percentage</option>
+                      <option value="fixed">Fixed Amount</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Discount Value</label>
+                    <Input
+                      type="number"
+                      value={couponForm.discountValue}
+                      onChange={(e) => setCouponForm({ ...couponForm, discountValue: e.target.value })}
+                      placeholder={couponForm.discountType === 'percentage' ? '10' : '100'}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-4">
+                  <Button
+                    onClick={handleSaveCoupon}
+                    className="flex-1"
+                    disabled={loading}
+                  >
+                    {editingCoupon ? 'Update Coupon' : 'Create Coupon'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowCouponForm(false);
+                      setEditingCoupon(null);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </div>

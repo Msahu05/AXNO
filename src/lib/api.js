@@ -475,6 +475,25 @@ export const adminAPI = {
       method: 'DELETE',
     });
   },
+
+  // Slideshow Management
+  getSlideshow: async () => {
+    return apiCall('/admin/slideshow');
+  },
+
+  updateSlideshow: async (slideshowData) => {
+    return apiCall('/admin/slideshow', {
+      method: 'PUT',
+      body: JSON.stringify(slideshowData),
+    });
+  },
+};
+
+// Slideshow API (Public)
+export const slideshowAPI = {
+  getSlideshow: async () => {
+    return apiCall('/slideshow');
+  },
 };
 
 // Products API (Public)
@@ -522,6 +541,47 @@ export const adminSizeChartsAPI = {
 
   delete: async (category) => {
     return apiCall(`/admin/size-charts/${category}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+// Coupons API
+export const couponsAPI = {
+  getAll: async () => {
+    return apiCall('/admin/coupons');
+  },
+
+  getAllPublic: async () => {
+    // Get active coupons for public use (frontend auto-apply)
+    const response = await apiCall('/coupons/banners');
+    return { coupons: response.banners || [] };
+  },
+
+  getActiveBanners: async () => {
+    return apiCall('/coupons/banners');
+  },
+
+  getCoupon: async (couponCode) => {
+    return apiCall(`/coupons/${couponCode}`);
+  },
+
+  createCoupon: async (couponData) => {
+    return apiCall('/admin/coupons', {
+      method: 'POST',
+      body: JSON.stringify(couponData),
+    });
+  },
+
+  updateCoupon: async (couponId, couponData) => {
+    return apiCall(`/admin/coupons/${couponId}`, {
+      method: 'PUT',
+      body: JSON.stringify(couponData),
+    });
+  },
+
+  deleteCoupon: async (couponId) => {
+    return apiCall(`/admin/coupons/${couponId}`, {
       method: 'DELETE',
     });
   },

@@ -1,29 +1,36 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Package, CheckCircle2, Clock, XCircle, Truck, Loader2, MapPin } from "lucide-react";
+import { ArrowLeft, Package, CheckCircle2, Clock, XCircle, Truck, Loader2, MapPin, Star, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
 import { useAuth } from "@/contexts/auth-context";
-import { ordersAPI } from "@/lib/api";
+import { ordersAPI, reviewsAPI } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
 const Orders = () => {
   const navigate = useNavigate();
   const { orderId } = useParams();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const [orders, setOrders] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [ratings, setRatings] = useState({}); // { productId: { rating, comment, files } }
+  const [submittingRatings, setSubmittingRatings] = useState({}); // { productId: true/false }
 
   useEffect(() => {
+    // Wait for auth to finish loading before checking authentication
+    if (authLoading) {
+      return;
+    }
+
     if (!isAuthenticated) {
       navigate(`/auth?redirect=${encodeURIComponent("/orders")}`);
       return;
     }
 
     loadOrders();
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, authLoading, navigate]);
 
   useEffect(() => {
     if (orderId) {
@@ -69,6 +76,7 @@ const Orders = () => {
   const getStatusIcon = (status) => {
     switch (status) {
       case 'completed':
+      case 'delivered':
         return <CheckCircle2 className="h-5 w-5 text-green-500" />;
       case 'processing':
         return <Clock className="h-5 w-5 text-yellow-500" />;
@@ -84,6 +92,7 @@ const Orders = () => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'completed':
+      case 'delivered':
         return 'bg-green-100 text-green-800 border-green-200';
       case 'processing':
         return 'bg-yellow-100 text-yellow-800 border-yellow-200';
@@ -107,6 +116,252 @@ const Orders = () => {
       minute: '2-digit'
     });
   };
+
+  const isOrderDelivered = (order) => {
+    return order?.status === 'delivered' || order?.tracking?.status === 'delivered';
+  };
+
+  const handleRatingChange = (productId, rating) => {
+    setRatings(prev => ({
+      ...prev,
+      [productId]: {
+        rating: rating,
+        comment: prev[productId]?.comment || "",
+        files: prev[productId]?.files || []
+      }
+    }));
+  };
+
+  const handleCommentChange = (productId, comment) => {
+    setRatings(prev => ({
+      ...prev,
+      [productId]: {
+        rating: prev[productId]?.rating || 0,
+        comment: comment,
+        files: prev[productId]?.files || []
+      }
+    }));
+  };
+
+  const handleFileSelect = (productId, e) => {
+    const files = Array.from(e.target.files);
+    setRatings(prev => ({
+      ...prev,
+      [productId]: {
+        rating: prev[productId]?.rating || 0,
+        comment: prev[productId]?.comment || "",
+        files: files.slice(0, 5)
+      }
+    }));
+  };
+
+  const removeFile = (productId, index) => {
+    setRatings(prev => {
+      const newFiles = prev[productId]?.files?.filter((_, i) => i !== index) || [];
+      return {
+        ...prev,
+        [productId]: {
+          rating: prev[productId]?.rating || 0,
+          comment: prev[productId]?.comment || "",
+          files: newFiles
+        }
+      };
+    });
+  };
+
+  const handleSubmitRating = async (productId, item, localComment = null) => {
+    // Use localComment if provided, otherwise fall back to ratings state
+    const ratingData = ratings[productId];
+    const commentToSubmit = localComment !== null ? localComment : (ratingData?.comment || "");
+    
+    if (!ratingData || !ratingData.rating) {
+      toast({
+        title: "Rating required",
+        description: "Please select a rating.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSubmittingRatings(prev => ({ ...prev, [productId]: true }));
+    try {
+      await reviewsAPI.addReview(
+        productId,
+        {
+          rating: ratingData.rating,
+          comment: commentToSubmit
+        },
+        ratingData.files || []
+      );
+      toast({
+        title: "Rating submitted",
+        description: "Thank you for your feedback! Your review will appear on the product page shortly.",
+      });
+      // Clear the rating form for this product
+      setRatings(prev => {
+        const newRatings = { ...prev };
+        delete newRatings[productId];
+        return newRatings;
+      });
+      // Note: Local state in ProductRatingSection will be cleared when component re-renders
+      
+      // Trigger a custom event to notify other components to refresh reviews
+      window.dispatchEvent(new CustomEvent('reviewSubmitted', { detail: { productId } }));
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to submit rating. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmittingRatings(prev => ({ ...prev, [productId]: false }));
+    }
+  };
+
+  const ProductRatingSection = ({ item, productId }) => {
+    // Use local state for textarea to prevent focus loss
+    const textareaRef = useRef(null);
+    const [localComment, setLocalComment] = useState(() => ratings[productId]?.comment || "");
+    
+    // Sync from parent only when productId changes (switching products) or when rating is cleared
+    useEffect(() => {
+      const parentComment = ratings[productId]?.comment || "";
+      // If parent has no comment and we have one, clear it (rating was submitted)
+      if (!parentComment && localComment) {
+        setLocalComment("");
+      } else if (parentComment && parentComment !== localComment && !localComment) {
+        // Initialize from parent when switching products
+        setLocalComment(parentComment);
+      }
+    }, [productId, ratings[productId]]); // When productId or parent rating changes
+    
+    // Maintain focus after state updates
+    useEffect(() => {
+      if (textareaRef.current && document.activeElement === textareaRef.current) {
+        const cursorPosition = textareaRef.current.selectionStart;
+        textareaRef.current.setSelectionRange(cursorPosition, cursorPosition);
+      }
+    }, [localComment]);
+    
+    const ratingData = useMemo(() => {
+      return ratings[productId] || { rating: 0, comment: "", files: [] };
+    }, [ratings, productId]);
+    
+    const isSubmitting = submittingRatings[productId] || false;
+    const currentRating = ratingData.rating || 0;
+
+    // Handle comment change with local state only
+    const handleLocalCommentChange = (e) => {
+      const value = e.target.value;
+      setLocalComment(value);
+    };
+    
+    // Sync to parent on blur to prevent focus loss during typing
+    const handleBlur = () => {
+      handleCommentChange(productId, localComment);
+    };
+
+    return (
+      <div className="mt-4 p-3 sm:p-4 rounded-lg border border-purple-200 bg-purple-50/50 dark:bg-purple-900/20 overflow-hidden">
+        <h3 className="text-sm font-semibold mb-3 text-purple-900 dark:text-purple-100">Rate this product</h3>
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                key={star}
+                type="button"
+                onClick={() => handleRatingChange(productId, star)}
+                className="focus:outline-none flex-shrink-0"
+                disabled={isSubmitting}
+              >
+                <Star
+                  className={`h-5 w-5 sm:h-6 sm:w-6 transition-colors ${
+                    star <= currentRating
+                      ? "fill-yellow-400 text-yellow-400 stroke-yellow-400"
+                      : "fill-gray-200 text-gray-300 stroke-gray-300 hover:fill-yellow-200 hover:text-yellow-300"
+                  }`}
+                />
+              </button>
+            ))}
+            {currentRating > 0 && (
+              <span className="ml-2 text-sm text-purple-700 dark:text-purple-300 font-medium">
+                {currentRating} out of 5
+              </span>
+            )}
+          </div>
+          <textarea
+            ref={textareaRef}
+            placeholder="Write your review (optional)..."
+            value={localComment}
+            onChange={handleLocalCommentChange}
+            onBlur={handleBlur}
+            className="w-full p-3 rounded-lg border border-purple-200 bg-white dark:bg-gray-800 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-purple-500 min-w-0"
+            rows={3}
+            disabled={isSubmitting}
+          />
+          <div className="flex items-center gap-2 flex-wrap">
+            <label className="cursor-pointer flex-shrink-0">
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={(e) => handleFileSelect(productId, e)}
+                className="hidden"
+                disabled={isSubmitting}
+              />
+              <span className="flex items-center gap-2 px-3 py-2 rounded-lg border border-purple-200 bg-white dark:bg-gray-800 text-sm hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors">
+                <Upload className="h-4 w-4" />
+                Add Photos
+              </span>
+            </label>
+            {ratingData.files && ratingData.files.length > 0 && (
+              <div className="flex gap-2 flex-wrap min-w-0">
+                {ratingData.files.map((file, index) => (
+                  <div key={index} className="flex items-center gap-1 px-2 py-1 rounded bg-white dark:bg-gray-800 text-xs max-w-full">
+                    <span className="truncate max-w-[80px] sm:max-w-[100px]">{file.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeFile(productId, index)}
+                      className="text-red-500 hover:text-red-700 flex-shrink-0"
+                      disabled={isSubmitting}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <Button
+            onClick={() => {
+              // Sync local comment to parent before submitting
+              handleCommentChange(productId, localComment);
+              handleSubmitRating(productId, item, localComment);
+            }}
+            disabled={isSubmitting || currentRating === 0}
+            className="w-full bg-black hover:bg-gray-800 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+            style={{ display: 'block' }}
+          >
+            {isSubmitting ? "Submitting..." : currentRating === 0 ? "Please select a rating" : "Submit Rating"}
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  // Wait for auth to finish loading
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(124,90,255,0.12),_transparent_70%)]">
+        <div className="px-2 sm:px-4 lg:px-6 pb-4 sm:pb-8 lg:pb-12 pt-4 sm:pt-6">
+          <Header />
+        </div>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return null;
@@ -203,24 +458,32 @@ const Orders = () => {
                 </div>
               )}
 
-              <div className="grid gap-6 sm:grid-cols-2">
+              <div className="grid gap-6 sm:grid-cols-2 overflow-hidden">
                 <div className="space-y-4">
                   <h2 className="text-lg font-semibold">Order Items</h2>
                   <div className="space-y-4">
-                    {selectedOrder.items?.map((item, index) => (
-                      <div key={index} className="flex gap-4 p-4 rounded-lg border border-white/15 bg-background/70">
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          className="w-20 h-20 object-cover rounded-lg"
-                        />
-                        <div className="flex-1">
-                          <p className="font-semibold">{item.name}</p>
-                          <p className="text-sm text-muted-foreground">Size {item.size} × {item.quantity}</p>
-                          <p className="text-sm font-semibold mt-1">₹{(item.price * item.quantity).toLocaleString('en-IN')}</p>
+                    {selectedOrder.items?.map((item, index) => {
+                      const productId = item.id || item.productId || item._id;
+                      return (
+                        <div key={index}>
+                          <div className="flex gap-2 sm:gap-4 p-3 sm:p-4 rounded-lg border border-white/15 bg-background/70 overflow-hidden">
+                            <img
+                              src={item.image}
+                              alt={item.name}
+                              className="w-12 h-12 sm:w-20 sm:h-20 object-cover rounded-lg flex-shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-sm sm:text-base truncate">{item.name}</p>
+                              <p className="text-xs sm:text-sm text-muted-foreground">Size {item.size} × {item.quantity}</p>
+                              <p className="text-xs sm:text-sm font-semibold mt-1">₹{(item.price * item.quantity).toLocaleString('en-IN')}</p>
+                            </div>
+                          </div>
+                          {isOrderDelivered(selectedOrder) && productId && (
+                            <ProductRatingSection item={item} productId={productId} />
+                          )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -306,14 +569,14 @@ const Orders = () => {
               {orders.map((order) => (
                 <div
                   key={order._id}
-                  className="rounded-[32px] border border-white/15 bg-[var(--card)]/95 p-6 shadow-[var(--shadow-soft)] cursor-pointer hover:shadow-lg transition-shadow"
+                  className="rounded-[32px] border border-white/15 bg-[var(--card)]/95 p-4 sm:p-6 shadow-[var(--shadow-soft)] cursor-pointer hover:shadow-lg transition-shadow overflow-hidden"
                   onClick={() => navigate(`/orders/${order.orderId}`)}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold">Order #{order.orderId}</h3>
-                        <div className={`flex items-center gap-2 px-3 py-1 rounded-full border text-xs ${getStatusColor(order.status)}`}>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
+                        <h3 className="text-base sm:text-lg font-semibold truncate">Order #{order.orderId}</h3>
+                        <div className={`flex items-center gap-2 px-2 sm:px-3 py-1 rounded-full border text-xs flex-shrink-0 ${getStatusColor(order.status)}`}>
                           {getStatusIcon(order.status)}
                           <span className="font-semibold capitalize">{order.status}</span>
                         </div>
@@ -321,34 +584,50 @@ const Orders = () => {
                       <p className="text-sm text-muted-foreground mb-2">
                         Placed on {formatDate(order.createdAt)}
                       </p>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-2 overflow-hidden">
                         {order.items?.slice(0, 3).map((item, index) => (
-                          <div key={index} className="flex items-center gap-2">
+                          <div key={index} className="flex items-center gap-2 min-w-0 max-w-full">
                             <img
                               src={item.image}
                               alt={item.name}
-                              className="w-12 h-12 object-cover rounded-lg"
+                              className="w-10 h-10 sm:w-12 sm:h-12 object-cover rounded-lg flex-shrink-0"
                             />
-                            <div>
-                              <p className="text-sm font-medium">{item.name}</p>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs sm:text-sm font-medium truncate">{item.name}</p>
                               <p className="text-xs text-muted-foreground">Size {item.size} × {item.quantity}</p>
                             </div>
                           </div>
                         ))}
                         {order.items?.length > 3 && (
-                          <p className="text-sm text-muted-foreground self-center">
+                          <p className="text-xs sm:text-sm text-muted-foreground self-center">
                             +{order.items.length - 3} more items
                           </p>
                         )}
                       </div>
+                      {isOrderDelivered(order) && (
+                        <div className="mt-3" onClick={(e) => e.stopPropagation()}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="rounded-full border-purple-300 text-purple-700 hover:bg-purple-50 dark:hover:bg-purple-900/30"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/orders/${order.orderId}`);
+                            }}
+                          >
+                            <Star className="h-4 w-4 mr-2" />
+                            Rate your product
+                          </Button>
+                        </div>
+                      )}
                     </div>
-                    <div className="text-right space-y-2">
-                      <p className="text-lg font-bold">₹{order.total?.toLocaleString('en-IN') || 0}</p>
-                      <div className="flex flex-col gap-2">
+                    <div className="text-right space-y-2 flex-shrink-0">
+                      <p className="text-base sm:text-lg font-bold">₹{order.total?.toLocaleString('en-IN') || 0}</p>
+                      <div className="flex flex-col sm:flex-row gap-2">
                         <Button
                           variant="outline"
                           size="sm"
-                          className="rounded-full"
+                          className="rounded-full text-xs sm:text-sm"
                           onClick={(e) => {
                             e.stopPropagation();
                             navigate(`/tracking/${order.orderId}`);
@@ -359,7 +638,7 @@ const Orders = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="rounded-full"
+                          className="rounded-full text-xs sm:text-sm"
                           onClick={(e) => {
                             e.stopPropagation();
                             navigate(`/orders/${order.orderId}`);

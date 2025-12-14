@@ -34,12 +34,13 @@ const Auth = () => {
 
   // Redirect if already authenticated (but not if phone modal is showing)
   useEffect(() => {
-    if (isAuthenticated && !showPhoneModal) {
+    // Only redirect if authenticated, not showing phone modal, and not already on target path
+    if (isAuthenticated && !showPhoneModal && location.pathname === '/auth') {
       const targetPath = redirect.startsWith("/") ? redirect : "/";
-      // Use window.location for a full page reload to avoid white screen
-      window.location.href = targetPath;
+      // Use replace to avoid adding to history and prevent loops
+      navigate(targetPath, { replace: true });
     }
-  }, [isAuthenticated, redirect, showPhoneModal]);
+  }, [isAuthenticated, redirect, showPhoneModal, location.pathname, navigate]);
 
   // Google Sign-In handler
   useEffect(() => {
@@ -86,7 +87,7 @@ const Auth = () => {
           });
           const targetPath = redirect.startsWith("/") ? redirect : "/";
           setTimeout(() => {
-            window.location.href = targetPath;
+            navigate(targetPath, { replace: true });
           }, 1000);
         } else {
           toast({
