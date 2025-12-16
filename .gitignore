@@ -19,6 +19,19 @@ dist-ssr
 server/.env
 server/.env.local
 
+# Uploads and user-generated content
+uploads/
+server/uploads/
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.pdf
+!public/**/*.jpg
+!public/**/*.jpeg
+!public/**/*.png
+!public/**/*.gif
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
