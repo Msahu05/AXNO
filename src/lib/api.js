@@ -210,6 +210,13 @@ export const reviewsAPI = {
 };
 
 export const paymentsAPI = {
+  createRazorpayOrder: async (amount, currency = 'INR', receipt = null) => {
+    return apiCall('/payments/create-order', {
+      method: 'POST',
+      body: JSON.stringify({ amount, currency, receipt }),
+    });
+  },
+
   testPayment: async (amount, orderId, status = 'success') => {
     return apiCall('/payments/test-payment', {
       method: 'POST',
@@ -217,10 +224,14 @@ export const paymentsAPI = {
     });
   },
 
-  verifyPayment: async (orderId, transactionId) => {
+  verifyPayment: async (razorpay_order_id, razorpay_payment_id, razorpay_signature) => {
     return apiCall('/payments/verify', {
       method: 'POST',
-      body: JSON.stringify({ orderId, transactionId }),
+      body: JSON.stringify({ 
+        razorpay_order_id, 
+        razorpay_payment_id, 
+        razorpay_signature 
+      }),
     });
   },
 

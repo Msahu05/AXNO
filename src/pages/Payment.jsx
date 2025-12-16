@@ -152,92 +152,199 @@ const Payment = () => {
     setPaymentStatus('processing');
 
     try {
-      // Generate a temporary order ID for payment
+      const totalAmount = orderData.totals.total || 0;
       const tempOrderId = `ORDER-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
 
-      // Simulate payment (test mode)
-      const paymentResult = await paymentsAPI.testPayment(
-        orderData.totals.total || 0,
-        tempOrderId,
-        'success' // Always success in test mode
-      );
+      // Check if Razorpay is available (production mode)
+      const isRazorpayAvailable = window.Razorpay && typeof window.Razorpay === 'function';
 
-      if (paymentResult.success && paymentResult.paymentStatus === 'PAID') {
-        setPaymentStatus('success');
-
-        // Verify payment
-        const verifyResult = await paymentsAPI.verifyPayment(
-          paymentResult.orderId,
-          paymentResult.transactionId
+      if (isRazorpayAvailable) {
+        // Create Razorpay order
+        const razorpayOrder = await paymentsAPI.createRazorpayOrder(
+          totalAmount,
+          'INR',
+          tempOrderId
         );
 
-        if (verifyResult.success) {
-          // Create order - ensure all required data is present
-          const orderDataToSend = {
-            items: orderData.items || [],
-            shippingAddress: orderData.shippingAddress || {},
-            customDesign: orderData.customDesign || {},
-            totals: orderData.totals || {}
-          };
+        if (!razorpayOrder.success || !razorpayOrder.orderId) {
+          throw new Error('Failed to create payment order');
+        }
 
-          // Final validation before sending
-          if (!orderDataToSend.items || orderDataToSend.items.length === 0) {
-            console.error('Order items are empty before sending to API:', orderDataToSend);
-            throw new Error('Order items are required');
+        // Configure Razorpay options
+        const options = {
+          key: razorpayOrder.key,
+          amount: razorpayOrder.amount,
+          currency: razorpayOrder.currency,
+          order_id: razorpayOrder.orderId,
+          name: 'Looklyn',
+          description: `Order ${tempOrderId}`,
+          prefill: {
+            name: orderData.shippingAddress.name || user?.name || '',
+            email: user?.email || '',
+            contact: orderData.shippingAddress.phone || user?.phone || ''
+          },
+          theme: {
+            color: '#7C5AFF'
+          },
+          handler: async function (response) {
+            try {
+              setProcessing(true);
+              
+              // Verify payment
+              const verifyResult = await paymentsAPI.verifyPayment(
+                response.razorpay_order_id,
+                response.razorpay_payment_id,
+                response.razorpay_signature
+              );
+
+              if (verifyResult.success) {
+                setPaymentStatus('success');
+
+                // Create order
+                const orderDataToSend = {
+                  items: orderData.items || [],
+                  shippingAddress: orderData.shippingAddress || {},
+                  customDesign: orderData.customDesign || {},
+                  totals: orderData.totals || {}
+                };
+
+                if (!orderDataToSend.items || orderDataToSend.items.length === 0) {
+                  throw new Error('Order items are required');
+                }
+
+                const result = await paymentsAPI.confirmPayment(
+                  response.razorpay_order_id,
+                  response.razorpay_payment_id,
+                  orderDataToSend,
+                  designFiles
+                );
+
+                if (result.success) {
+                  setSuccess(true);
+                  
+                  const isBuyNowOrder = sessionStorage.getItem('isBuyNowOrder') === 'true';
+                  if (!isBuyNowOrder) {
+                    clearCart();
+                  }
+                  
+                  sessionStorage.removeItem('pendingOrder');
+                  sessionStorage.removeItem('pendingOrderFiles');
+                  sessionStorage.removeItem('buyNowProduct');
+                  sessionStorage.removeItem('isBuyNowOrder');
+
+                  toast({
+                    title: "Payment Successful!",
+                    description: `Order ${result.order.orderId} has been placed successfully.`,
+                  });
+
+                  setTimeout(() => {
+                    navigate(`/orders/${result.order.orderId}`);
+                  }, 2000);
+                } else {
+                  throw new Error(result.error || 'Failed to create order');
+                }
+              } else {
+                throw new Error(verifyResult.error || 'Payment verification failed');
+              }
+            } catch (err) {
+              setPaymentStatus('failed');
+              const errorMessage = err.message || 'Payment processing failed';
+              setError(errorMessage);
+              toast({
+                title: "Payment Error",
+                description: errorMessage,
+                variant: "destructive",
+              });
+            } finally {
+              setLoading(false);
+              setProcessing(false);
+            }
+          },
+          modal: {
+            ondismiss: function() {
+              setLoading(false);
+              setPaymentStatus('pending');
+              setError(null);
+            }
           }
+        };
 
-          console.log('Sending order data to confirmPayment:', {
-            itemsCount: orderDataToSend.items.length,
-            hasShippingAddress: !!orderDataToSend.shippingAddress,
-            hasTotals: !!orderDataToSend.totals
-          });
+        // Open Razorpay checkout
+        const razorpay = new window.Razorpay(options);
+        razorpay.open();
+        setLoading(false); // Set loading to false as Razorpay modal is now open
+      } else {
+        // Fallback to test mode if Razorpay is not available
+        const paymentResult = await paymentsAPI.testPayment(
+          totalAmount,
+          tempOrderId,
+          'success'
+        );
 
-          const result = await paymentsAPI.confirmPayment(
+        if (paymentResult.success && paymentResult.paymentStatus === 'PAID') {
+          setPaymentStatus('success');
+
+          const verifyResult = await paymentsAPI.verifyPayment(
             paymentResult.orderId,
-            paymentResult.transactionId,
-            orderDataToSend,
-            designFiles
+            paymentResult.transactionId
           );
 
-          if (result.success) {
-            setSuccess(true);
-            
-            // Only clear cart if it's NOT a buy now order
-            // Buy now orders don't affect the cart
-            const isBuyNowOrder = sessionStorage.getItem('isBuyNowOrder') === 'true';
-            if (!isBuyNowOrder) {
-              clearCart();
+          if (verifyResult.success) {
+            const orderDataToSend = {
+              items: orderData.items || [],
+              shippingAddress: orderData.shippingAddress || {},
+              customDesign: orderData.customDesign || {},
+              totals: orderData.totals || {}
+            };
+
+            if (!orderDataToSend.items || orderDataToSend.items.length === 0) {
+              throw new Error('Order items are required');
             }
-            
-            // Clean up sessionStorage
-            sessionStorage.removeItem('pendingOrder');
-            sessionStorage.removeItem('pendingOrderFiles');
-            sessionStorage.removeItem('buyNowProduct');
-            sessionStorage.removeItem('isBuyNowOrder');
 
-            toast({
-              title: "Payment Successful!",
-              description: `Order ${result.order.orderId} has been placed successfully.`,
-            });
+            const result = await paymentsAPI.confirmPayment(
+              paymentResult.orderId,
+              paymentResult.transactionId,
+              orderDataToSend,
+              designFiles
+            );
 
-            // Redirect to orders page after 2 seconds
-            setTimeout(() => {
-              navigate(`/orders/${result.order.orderId}`);
-            }, 2000);
+            if (result.success) {
+              setSuccess(true);
+              
+              const isBuyNowOrder = sessionStorage.getItem('isBuyNowOrder') === 'true';
+              if (!isBuyNowOrder) {
+                clearCart();
+              }
+              
+              sessionStorage.removeItem('pendingOrder');
+              sessionStorage.removeItem('pendingOrderFiles');
+              sessionStorage.removeItem('buyNowProduct');
+              sessionStorage.removeItem('isBuyNowOrder');
+
+              toast({
+                title: "Payment Successful!",
+                description: `Order ${result.order.orderId} has been placed successfully.`,
+              });
+
+              setTimeout(() => {
+                navigate(`/orders/${result.order.orderId}`);
+              }, 2000);
+            } else {
+              throw new Error(result.error || 'Failed to create order');
+            }
           } else {
-            throw new Error(result.error || 'Failed to create order');
+            throw new Error(verifyResult.error || 'Payment verification failed');
           }
         } else {
-          throw new Error(verifyResult.error || 'Payment verification failed');
+          setPaymentStatus('failed');
+          setError(paymentResult.message || 'Payment failed');
+          toast({
+            title: "Payment Failed",
+            description: paymentResult.message || 'Payment failed. Please try again.',
+            variant: "destructive",
+          });
         }
-      } else {
-        setPaymentStatus('failed');
-        setError(paymentResult.message || 'Payment failed');
-        toast({
-          title: "Payment Failed",
-          description: paymentResult.message || 'Payment failed. Please try again.',
-          variant: "destructive",
-        });
+        setLoading(false);
       }
     } catch (err) {
       setPaymentStatus('failed');
@@ -248,7 +355,6 @@ const Payment = () => {
         description: errorMessage,
         variant: "destructive",
       });
-    } finally {
       setLoading(false);
       setProcessing(false);
     }
@@ -311,21 +417,27 @@ const Payment = () => {
                 <div className="flex items-center gap-3">
                   <CreditCard className="h-6 w-6 text-primary" />
                   <div>
-                    <p className="text-sm font-semibold uppercase tracking-[0.4em]">Test Payment Mode</p>
-                    <p className="text-sm text-muted-foreground">Simulated payment for development</p>
-                  </div>
-                </div>
-
-                {/* Test Mode Banner */}
-                <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 flex items-start gap-3">
-                  <TestTube className="h-5 w-5 text-yellow-600 mt-0.5" />
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-yellow-900">Test Mode Active</p>
-                    <p className="text-xs text-yellow-700 mt-1">
-                      This is a simulated payment. No real money will be charged. Perfect for testing the complete order flow!
+                    <p className="text-sm font-semibold uppercase tracking-[0.4em]">
+                      {window.Razorpay ? 'Razorpay Payment' : 'Test Payment Mode'}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {window.Razorpay ? 'Secure payment gateway' : 'Simulated payment for development'}
                     </p>
                   </div>
                 </div>
+
+                {!window.Razorpay && (
+                  /* Test Mode Banner */
+                  <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 flex items-start gap-3">
+                    <TestTube className="h-5 w-5 text-yellow-600 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-yellow-900">Test Mode Active</p>
+                      <p className="text-xs text-yellow-700 mt-1">
+                        This is a simulated payment. No real money will be charged. Perfect for testing the complete order flow!
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-4">
                   {paymentStatus === 'processing' && (
@@ -361,22 +473,36 @@ const Payment = () => {
                         Processing Payment...
                       </>
                     ) : (
-                      `Complete Payment (Test) - ₹${total.toLocaleString('en-IN')}`
+                      `Complete Payment${window.Razorpay ? '' : ' (Test)'} - ₹${total.toLocaleString('en-IN')}`
                     )}
                   </Button>
                 </div>
 
-                {/* Info Box */}
-                <div className="rounded-lg border border-dashed border-primary/40 bg-primary/5 p-4 text-xs">
-                  <p className="font-semibold mb-2">How Test Mode Works:</p>
-                  <ul className="space-y-1 text-muted-foreground">
-                    <li>• Click "Complete Payment" to simulate a successful payment</li>
-                    <li>• Payment is processed instantly (simulated)</li>
-                    <li>• Order is created automatically after payment</li>
-                    <li>• No real money is charged</li>
-                    <li>• Perfect for testing the complete order flow</li>
-                  </ul>
-                </div>
+                {!window.Razorpay && (
+                  /* Info Box */
+                  <div className="rounded-lg border border-dashed border-primary/40 bg-primary/5 p-4 text-xs">
+                    <p className="font-semibold mb-2">How Test Mode Works:</p>
+                    <ul className="space-y-1 text-muted-foreground">
+                      <li>• Click "Complete Payment" to simulate a successful payment</li>
+                      <li>• Payment is processed instantly (simulated)</li>
+                      <li>• Order is created automatically after payment</li>
+                      <li>• No real money is charged</li>
+                      <li>• Perfect for testing the complete order flow</li>
+                    </ul>
+                  </div>
+                )}
+                
+                {window.Razorpay && (
+                  <div className="rounded-lg border border-dashed border-primary/40 bg-primary/5 p-4 text-xs">
+                    <p className="font-semibold mb-2">Secure Payment:</p>
+                    <ul className="space-y-1 text-muted-foreground">
+                      <li>• Your payment is secured by Razorpay</li>
+                      <li>• Multiple payment methods available</li>
+                      <li>• Your card details are never stored</li>
+                      <li>• Instant payment confirmation</li>
+                    </ul>
+                  </div>
+                )}
               </div>
 
               {/* Order Summary */}
