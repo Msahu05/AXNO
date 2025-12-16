@@ -109,7 +109,7 @@ export function HeroSection() {
           {/* Content - Second on mobile */}
           <div className="flex flex-col items-start justify-center space-y-4 sm:space-y-6 animate-fade-in py-4 sm:py-8 order-2 lg:order-1">
             {/* Top Banner */}
-            <div className="inline-flex w-fit items-center gap-2 rounded-lg bg-primary/10 px-3 py-2 text-3xl font-bold text-primary">
+            <div className="inline-flex w-fit items-center gap-2 rounded-lg bg-primary/10 px-3 py-2 text-lg sm:text-xl md:text-2xl xl:text-3xl font-bold text-primary">
               Looklyn - Own The Look
             </div>
 

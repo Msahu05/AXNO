@@ -614,9 +614,21 @@ const Product = () => {
               <p className="text-xs sm:text-sm font-medium uppercase tracking-wider text-primary">
                 {product.category}
               </p>
-              <h1 className="mt-1 sm:mt-2 font-display text-2xl sm:text-3xl font-bold text-foreground lg:text-4xl">
-                {product.name}
-              </h1>
+              <div className="flex items-center justify-between gap-4 mt-1 sm:mt-2">
+                <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground lg:text-4xl">
+                  {product.name}
+                </h1>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className={cn("flex-shrink-0 h-10 w-10 sm:h-12 sm:w-12", inWishlist && "border-primary text-primary")}
+                  onClick={handleWishlist}
+                >
+                  <Heart
+                    className={cn("h-5 w-5 sm:h-6 sm:w-6", inWishlist && "fill-primary")}
+                  />
+                </Button>
+              </div>
             </div>
 
             {/* Rating */}
@@ -798,16 +810,6 @@ const Product = () => {
               >
                 <Zap className="h-4 w-4 sm:h-5 sm:w-5" />
                 Buy Now
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className={cn("sm:flex-shrink-0 h-12 sm:h-auto py-3 sm:py-0", inWishlist && "border-primary text-primary")}
-                onClick={handleWishlist}
-              >
-                <Heart
-                  className={cn("h-4 w-4 sm:h-5 sm:w-5", inWishlist && "fill-primary")}
-                />
               </Button>
             </div>
 

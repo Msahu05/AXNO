@@ -4,7 +4,7 @@ import { ArrowLeft, Package, CheckCircle2, Clock, XCircle, Truck, Loader2, MapPi
 import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
 import { useAuth } from "@/contexts/auth-context";
-import { ordersAPI, reviewsAPI } from "@/lib/api";
+import { ordersAPI, reviewsAPI, getImageUrl } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
 const Orders = () => {
@@ -474,7 +474,7 @@ const Orders = () => {
                             />
                             <div className="flex-1 min-w-0">
                               <p className="font-semibold text-sm sm:text-base truncate">{item.name}</p>
-                              <p className="text-xs sm:text-sm text-muted-foreground">Size {item.size} × {item.quantity}</p>
+                              <p className="text-xs sm:text-sm text-muted-foreground">Size {String(item.size).replace(/[\[\]"]/g, '').replace(/\\/g, '').trim()} × {item.quantity}</p>
                               <p className="text-xs sm:text-sm font-semibold mt-1">₹{(item.price * item.quantity).toLocaleString('en-IN')}</p>
                             </div>
                           </div>
@@ -499,6 +499,60 @@ const Orders = () => {
                       <p className="text-sm text-muted-foreground mt-1">Phone: {selectedOrder.shippingAddress.phone}</p>
                     )}
                   </div>
+
+                  {/* Customization Details */}
+                  {selectedOrder.customDesign && (selectedOrder.customDesign.instructions || selectedOrder.customDesign.referenceLinks || (selectedOrder.customDesign.files && selectedOrder.customDesign.files.length > 0)) && (
+                    <div className="space-y-4 pt-4 border-t">
+                      <h2 className="text-lg font-semibold">Customization Details</h2>
+                      <div className="p-4 rounded-lg border border-white/15 bg-background/70 space-y-3">
+                        {selectedOrder.customDesign.instructions && (
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">Instructions</p>
+                            <p className="text-sm text-foreground whitespace-pre-wrap">{selectedOrder.customDesign.instructions}</p>
+                          </div>
+                        )}
+                        {selectedOrder.customDesign.referenceLinks && (
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">Reference Links</p>
+                            <p className="text-sm text-foreground break-all">{selectedOrder.customDesign.referenceLinks}</p>
+                          </div>
+                        )}
+                        {selectedOrder.customDesign.files && selectedOrder.customDesign.files.length > 0 && (
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Uploaded Files</p>
+                            <div className="space-y-2">
+                              {selectedOrder.customDesign.files.map((file, index) => {
+                                // Handle both string paths and file objects
+                                const filePath = typeof file === 'string' ? file : (file.url || file.path || file);
+                                const fileName = typeof file === 'string' 
+                                  ? file.split('/').pop() || `File ${index + 1}`
+                                  : (file.name || file.originalName || file.filename || `File ${index + 1}`);
+                                const fileUrl = typeof file === 'string' 
+                                  ? getImageUrl(filePath)
+                                  : (file.url || getImageUrl(file.path || file));
+                                
+                                return (
+                                  <div key={index} className="flex items-center gap-2 p-2 rounded border border-white/10 bg-background/50 hover:bg-background/70 transition-colors">
+                                    <Upload className="h-4 w-4 text-primary flex-shrink-0" />
+                                    <span className="text-sm text-foreground truncate flex-1" title={fileName}>{fileName}</span>
+                                    <a
+                                      href={fileUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      download
+                                      className="text-xs text-primary hover:underline flex-shrink-0 px-2 py-1 rounded hover:bg-primary/10 transition-colors"
+                                    >
+                                      Download
+                                    </a>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   <div className="space-y-2 pt-4 border-t">
                     <div className="flex justify-between text-sm">
@@ -594,7 +648,7 @@ const Orders = () => {
                             />
                             <div className="min-w-0 flex-1">
                               <p className="text-xs sm:text-sm font-medium truncate">{item.name}</p>
-                              <p className="text-xs text-muted-foreground">Size {item.size} × {item.quantity}</p>
+                              <p className="text-xs text-muted-foreground">Size {String(item.size).replace(/[\[\]"]/g, '').replace(/\\/g, '').trim()} × {item.quantity}</p>
                             </div>
                           </div>
                         ))}

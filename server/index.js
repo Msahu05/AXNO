@@ -1356,6 +1356,37 @@ app.put('/api/user/addresses/:addressId', authenticateToken, async (req, res) =>
   }
 });
 
+// Delete address
+app.delete('/api/user/addresses/:addressId', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const { addressId } = req.params;
+    const addressIndex = user.addresses.findIndex(addr => addr._id.toString() === addressId);
+    
+    if (addressIndex === -1) {
+      return res.status(404).json({ error: 'Address not found' });
+    }
+
+    // Remove the address
+    user.addresses.splice(addressIndex, 1);
+
+    // If we deleted the default address and there are other addresses, make the first one default
+    if (user.addresses.length > 0 && !user.addresses.some(addr => addr.isDefault)) {
+      user.addresses[0].isDefault = true;
+    }
+
+    await user.save();
+    res.json({ addresses: user.addresses });
+  } catch (error) {
+    console.error('Delete address error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // Get reviews for a product
 app.get('/api/reviews/:productId', async (req, res) => {
   try {

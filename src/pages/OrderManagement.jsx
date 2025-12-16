@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
-import { adminAPI } from '@/lib/api';
+import { adminAPI, getImageUrl } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Save, XCircle, Package, Truck, MapPin, DollarSign, User, Mail, Phone } from 'lucide-react';
+import { ArrowLeft, Save, XCircle, Package, Truck, MapPin, DollarSign, User, Mail, Phone, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/Header';
 
@@ -408,7 +408,7 @@ const OrderManagement = () => {
                         />
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold truncate">{item.name}</p>
-                          <p className="text-sm text-muted-foreground">Size: {item.size} × {item.quantity}</p>
+                          <p className="text-sm text-muted-foreground">Size: {String(item.size).replace(/[\[\]"]/g, '').replace(/\\/g, '').trim()} × {item.quantity}</p>
                           <p className="text-sm font-semibold mt-1">₹{(item.price * item.quantity).toLocaleString()}</p>
                         </div>
                       </div>
@@ -416,6 +416,66 @@ const OrderManagement = () => {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Customization Details */}
+              {order.customDesign && (order.customDesign.instructions || order.customDesign.referenceLinks || (order.customDesign.files && order.customDesign.files.length > 0)) && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Customization Details</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {order.customDesign.instructions && (
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Instructions</label>
+                        <div className="p-3 rounded-lg border bg-muted/50">
+                          <p className="text-sm whitespace-pre-wrap">{order.customDesign.instructions}</p>
+                        </div>
+                      </div>
+                    )}
+                    {order.customDesign.referenceLinks && (
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Reference Links</label>
+                        <div className="p-3 rounded-lg border bg-muted/50">
+                          <p className="text-sm break-all">{order.customDesign.referenceLinks}</p>
+                        </div>
+                      </div>
+                    )}
+                    {order.customDesign.files && order.customDesign.files.length > 0 && (
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Uploaded Files</label>
+                        <div className="space-y-2">
+                          {order.customDesign.files.map((file, index) => {
+                            // Handle both string paths and file objects
+                            const filePath = typeof file === 'string' ? file : (file.url || file.path || file);
+                            const fileName = typeof file === 'string' 
+                              ? file.split('/').pop() || `File ${index + 1}`
+                              : (file.name || file.originalName || file.filename || `File ${index + 1}`);
+                            const fileUrl = typeof file === 'string' 
+                              ? getImageUrl(filePath)
+                              : (file.url || getImageUrl(file.path || file));
+                            
+                            return (
+                              <div key={index} className="flex items-center gap-2 p-2 rounded border bg-muted/50 hover:bg-muted transition-colors">
+                                <Upload className="h-4 w-4 text-primary flex-shrink-0" />
+                                <span className="text-sm truncate flex-1" title={fileName}>{fileName}</span>
+                                <a
+                                  href={fileUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  download
+                                  className="text-xs text-primary hover:underline flex-shrink-0 px-2 py-1 rounded hover:bg-primary/10 transition-colors"
+                                >
+                                  Download
+                                </a>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Payment Info */}
               <Card>

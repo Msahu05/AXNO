@@ -151,6 +151,12 @@ export const userAPI = {
       body: JSON.stringify(addressData),
     });
   },
+
+  deleteAddress: async (addressId) => {
+    return apiCall(`/user/addresses/${addressId}`, {
+      method: 'DELETE',
+    });
+  },
 };
 
 // Helper function for file uploads

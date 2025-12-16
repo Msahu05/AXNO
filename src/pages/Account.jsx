@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSearchParams } from "react-router-dom";
-import { ArrowLeft, User, Mail, Phone, MapPin, Save, Edit2, Loader2 } from "lucide-react";
+import { ArrowLeft, User, Mail, Phone, MapPin, Save, Edit2, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -203,6 +203,30 @@ const Account = () => {
     }
   };
 
+  const handleDeleteAddress = async (addressId) => {
+    if (!window.confirm("Are you sure you want to delete this address?")) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await userAPI.deleteAddress(addressId);
+      toast({
+        title: "Address Deleted",
+        description: "Address has been deleted successfully",
+      });
+      await loadAddresses();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete address",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!isAuthenticated) {
     return null;
   }
@@ -364,14 +388,25 @@ const Account = () => {
                             <p className="mt-1 text-sm text-muted-foreground">Phone: {address.phone}</p>
                           )}
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEditingAddress(address)}
-                          className="rounded-full"
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEditingAddress(address)}
+                            className="rounded-full"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteAddress(address._id)}
+                            className="rounded-full text-destructive hover:text-destructive hover:bg-destructive/10"
+                            disabled={loading}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   ))}
