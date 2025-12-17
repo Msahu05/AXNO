@@ -43,7 +43,13 @@ if (PAYMENT_MODE === 'production' && process.env.RAZORPAY_KEY_ID && process.env.
 }
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: [
+    "https://looklyn.in",
+    "https://www.looklyn.in"
+  ],
+  credentials: true
+}));
 
 // Health check route
 app.get("/health", (req, res) => {

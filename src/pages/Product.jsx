@@ -60,6 +60,7 @@ const Product = () => {
   const [touchEnd, setTouchEnd] = useState(null);
   const [isSliding, setIsSliding] = useState(false);
   const [slideDirection, setSlideDirection] = useState(null);
+  const [prevImageIndex, setPrevImageIndex] = useState(0);
   
   // Fetch location from pincode using API
   const fetchLocationFromPincode = async (pin) => {
@@ -360,33 +361,31 @@ const Product = () => {
   // Image navigation functions
   const nextImage = () => {
     if (productImages.length > 0 && !isSliding) {
+      setPrevImageIndex(selectedImage);
       setIsSliding(true);
       setSlideDirection('left');
-      // Slide out current image
       setTimeout(() => {
         setSelectedImage((prev) => (prev + 1) % productImages.length);
-        // Reset after new image loads
         setTimeout(() => {
           setIsSliding(false);
           setSlideDirection(null);
         }, 50);
-      }, 150);
+      }, 500);
     }
   };
   
   const prevImage = () => {
     if (productImages.length > 0 && !isSliding) {
+      setPrevImageIndex(selectedImage);
       setIsSliding(true);
       setSlideDirection('right');
-      // Slide out current image
       setTimeout(() => {
         setSelectedImage((prev) => (prev - 1 + productImages.length) % productImages.length);
-        // Reset after new image loads
         setTimeout(() => {
           setIsSliding(false);
           setSlideDirection(null);
         }, 50);
-      }, 150);
+      }, 500);
     }
   };
   
@@ -409,6 +408,7 @@ const Product = () => {
     const isRightSwipe = distance < -minSwipeDistance;
     
     if (isLeftSwipe) {
+      setPrevImageIndex(selectedImage);
       setIsSliding(true);
       setSlideDirection('left');
       setTimeout(() => {
@@ -417,9 +417,10 @@ const Product = () => {
           setIsSliding(false);
           setSlideDirection(null);
         }, 50);
-      }, 150);
+      }, 500);
     }
     if (isRightSwipe) {
+      setPrevImageIndex(selectedImage);
       setIsSliding(true);
       setSlideDirection('right');
       setTimeout(() => {
@@ -428,7 +429,7 @@ const Product = () => {
           setIsSliding(false);
           setSlideDirection(null);
         }, 50);
-      }, 150);
+      }, 500);
     }
   };
   
@@ -657,17 +658,44 @@ const Product = () => {
               onTouchEnd={onTouchEnd}
             >
               <div className="relative h-full w-full overflow-hidden">
+                {/* Previous image sliding out */}
+                {isSliding && (
+                  <div 
+                    className="absolute inset-0 transition-transform duration-500 ease-in-out"
+                    style={{
+                      transform: slideDirection === 'left' 
+                        ? 'translateX(-100%)' 
+                        : 'translateX(100%)',
+                      zIndex: 1
+                    }}
+                  >
+                    <img
+                      src={getImageUrl(productImages[prevImageIndex] || productImages[0])}
+                      alt={product.name}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                )}
+                
+                {/* Current/New image sliding in */}
                 <div 
-                  className="absolute inset-0 transition-transform duration-300 ease-in-out"
+                  className="absolute inset-0 transition-transform duration-500 ease-in-out"
                   style={{
                     transform: isSliding 
                       ? slideDirection === 'left' 
-                        ? 'translateX(-100%)' 
+                        ? 'translateX(0)' 
                         : slideDirection === 'right'
-                        ? 'translateX(100%)'
+                        ? 'translateX(0)'
                         : 'translateX(0)'
                       : 'translateX(0)',
-                    opacity: isSliding ? 0 : 1
+                    zIndex: 2,
+                    animation: isSliding 
+                      ? slideDirection === 'left' 
+                        ? 'slideInFromRight 0.5s ease-in-out' 
+                        : slideDirection === 'right'
+                        ? 'slideInFromLeft 0.5s ease-in-out'
+                        : 'none'
+                      : 'none'
                   }}
                 >
                   <img
@@ -678,6 +706,24 @@ const Product = () => {
                   />
                 </div>
               </div>
+              <style>{`
+                @keyframes slideInFromRight {
+                  from {
+                    transform: translateX(100%);
+                  }
+                  to {
+                    transform: translateX(0);
+                  }
+                }
+                @keyframes slideInFromLeft {
+                  from {
+                    transform: translateX(-100%);
+                  }
+                  to {
+                    transform: translateX(0);
+                  }
+                }
+              `}</style>
               
               {/* Navigation Arrows - Only show if more than 1 image */}
               {productImages.length > 1 && (
