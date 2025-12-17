@@ -14,7 +14,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { productsAPI, getImageUrl, sizeChartsAPI, reviewsAPI } from "@/lib/api";
-import { Heart, Minus, Plus, ShoppingBag, Star, Truck, Zap, Upload, X, Image as ImageIcon } from "lucide-react";
+import { Heart, Minus, Plus, ShoppingBag, Star, Truck, Zap, Upload, X, Image as ImageIcon, ArrowLeft, ArrowRight } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useCart } from "@/contexts/cart-context";
 import { useWishlist } from "@/contexts/wishlist-context";
@@ -54,6 +54,10 @@ const Product = () => {
   const [reviewFiles, setReviewFiles] = useState([]);
   const [reviewFilePreviews, setReviewFilePreviews] = useState([]);
   const [selectedImageModal, setSelectedImageModal] = useState({ open: false, url: null });
+  
+  // Touch/swipe state for image navigation
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
   
   // Fetch location from pincode using API
   const fetchLocationFromPincode = async (pin) => {
@@ -350,6 +354,46 @@ const Product = () => {
   };
   
   const productImages = getProductImages();
+  
+  // Image navigation functions
+  const nextImage = () => {
+    if (productImages.length > 0) {
+      setSelectedImage((prev) => (prev + 1) % productImages.length);
+    }
+  };
+  
+  const prevImage = () => {
+    if (productImages.length > 0) {
+      setSelectedImage((prev) => (prev - 1 + productImages.length) % productImages.length);
+    }
+  };
+  
+  // Touch/swipe handlers for mobile
+  const minSwipeDistance = 50;
+  
+  const onTouchStart = (e) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+  
+  const onTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+  
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+    
+    if (isLeftSwipe) {
+      nextImage();
+    }
+    if (isRightSwipe) {
+      prevImage();
+    }
+  };
+  
   // Clean and format sizes - remove brackets, quotes, and extra characters
   const productSizes = (() => {
     // Define correct size order
@@ -568,12 +612,45 @@ const Product = () => {
           {/* Product Images */}
           <div className="space-y-3 sm:space-y-4">
             {/* Main Image */}
-            <div className="aspect-square overflow-hidden rounded-xl sm:rounded-2xl bg-secondary shadow-soft">
+            <div 
+              className="relative aspect-square overflow-hidden rounded-xl sm:rounded-2xl bg-secondary shadow-soft group"
+              onTouchStart={onTouchStart}
+              onTouchMove={onTouchMove}
+              onTouchEnd={onTouchEnd}
+            >
               <img
                 src={getImageUrl(productImages[selectedImage] || productImages[0])}
                 alt={product.name}
                 className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
               />
+              
+              {/* Navigation Arrows - Only show if more than 1 image */}
+              {productImages.length > 1 && (
+                <>
+                  {/* Left Arrow */}
+                  <button
+                    onClick={prevImage}
+                    className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 active:bg-black/80 text-white rounded-full p-2 sm:p-3 transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 z-10"
+                    aria-label="Previous image"
+                  >
+                    <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </button>
+                  
+                  {/* Right Arrow */}
+                  <button
+                    onClick={nextImage}
+                    className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 active:bg-black/80 text-white rounded-full p-2 sm:p-3 transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 z-10"
+                    aria-label="Next image"
+                  >
+                    <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </button>
+                  
+                  {/* Image Counter */}
+                  <div className="absolute bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-full">
+                    {selectedImage + 1} / {productImages.length}
+                  </div>
+                </>
+              )}
         </div>
 
             {/* Thumbnail Gallery */}

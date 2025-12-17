@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import Header from "@/components/Header";
 import { useAuth } from "@/contexts/auth-context";
 import { useCart } from "@/contexts/cart-context";
-import { userAPI, couponsAPI } from "@/lib/api";
+import { userAPI, couponsAPI, paymentsAPI } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
 // Indian cities and states data
@@ -80,7 +80,7 @@ const Checkout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, user, loading: authLoading } = useAuth();
-  const { items: cartItems, total: cartTotal, updateQuantity } = useCart();
+  const { items: cartItems, total: cartTotal, updateQuantity, clearCart } = useCart();
   const { toast } = useToast();
   
   // Check if this is a buy now flow (from location state or sessionStorage)
@@ -733,17 +733,202 @@ const Checkout = () => {
     }));
     sessionStorage.setItem('pendingOrderFiles', JSON.stringify(fileData));
     
-    // Keep buyNow flag in sessionStorage for payment page
+    // Keep buyNow flag in sessionStorage
     if (isBuyNow) {
       sessionStorage.setItem('isBuyNowOrder', 'true');
     }
 
-    navigate("/payment", { 
-      state: { 
-        orderData,
-        designFiles: Array.from(designFiles)
-      } 
-    });
+    // Directly initiate Razorpay payment
+    await initiatePayment(orderData, Array.from(designFiles));
+  };
+
+  const initiatePayment = async (orderData, designFiles) => {
+    try {
+      const totalAmount = orderData.totals.total || 0;
+      const tempOrderId = `ORDER-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
+
+      // Check if Razorpay is available (production mode)
+      const isRazorpayAvailable = window.Razorpay && typeof window.Razorpay === 'function';
+
+      if (isRazorpayAvailable) {
+        // Create Razorpay order
+        const razorpayOrder = await paymentsAPI.createRazorpayOrder(
+          totalAmount,
+          'INR',
+          tempOrderId
+        );
+
+        if (!razorpayOrder.success || !razorpayOrder.orderId) {
+          throw new Error('Failed to create payment order');
+        }
+
+        // Configure Razorpay options
+        const options = {
+          key: razorpayOrder.key,
+          amount: razorpayOrder.amount,
+          currency: razorpayOrder.currency,
+          order_id: razorpayOrder.orderId,
+          name: 'Looklyn',
+          description: `Order ${tempOrderId}`,
+          prefill: {
+            name: orderData.shippingAddress.name || user?.name || '',
+            email: user?.email || '',
+            contact: orderData.shippingAddress.phone || user?.phone || ''
+          },
+          theme: {
+            color: '#7C5AFF'
+          },
+          handler: async function (response) {
+            try {
+              // Verify payment
+              const verifyResult = await paymentsAPI.verifyPayment(
+                response.razorpay_order_id,
+                response.razorpay_payment_id,
+                response.razorpay_signature
+              );
+
+              if (verifyResult.success) {
+                // Create order
+                const orderDataToSend = {
+                  items: orderData.items || [],
+                  shippingAddress: orderData.shippingAddress || {},
+                  customDesign: orderData.customDesign || {},
+                  totals: orderData.totals || {}
+                };
+
+                if (!orderDataToSend.items || orderDataToSend.items.length === 0) {
+                  throw new Error('Order items are required');
+                }
+
+                const result = await paymentsAPI.confirmPayment(
+                  response.razorpay_order_id,
+                  response.razorpay_payment_id,
+                  orderDataToSend,
+                  designFiles
+                );
+
+                if (result.success) {
+                  const isBuyNowOrder = sessionStorage.getItem('isBuyNowOrder') === 'true';
+                  if (!isBuyNowOrder) {
+                    clearCart();
+                  }
+                  
+                  sessionStorage.removeItem('pendingOrder');
+                  sessionStorage.removeItem('pendingOrderFiles');
+                  sessionStorage.removeItem('buyNowProduct');
+                  sessionStorage.removeItem('isBuyNowOrder');
+
+                  toast({
+                    title: "Payment Successful!",
+                    description: `Order ${result.order.orderId} has been placed successfully.`,
+                  });
+
+                  setTimeout(() => {
+                    navigate(`/orders/${result.order.orderId}`);
+                  }, 2000);
+                } else {
+                  throw new Error(result.error || 'Failed to create order');
+                }
+              } else {
+                throw new Error(verifyResult.error || 'Payment verification failed');
+              }
+            } catch (err) {
+              const errorMessage = err.message || 'Payment processing failed';
+              toast({
+                title: "Payment Error",
+                description: errorMessage,
+                variant: "destructive",
+              });
+            }
+          },
+          modal: {
+            ondismiss: function() {
+              // User closed the payment modal
+              toast({
+                title: "Payment Cancelled",
+                description: "You can complete the payment later.",
+              });
+            }
+          }
+        };
+
+        // Open Razorpay checkout
+        const razorpay = new window.Razorpay(options);
+        razorpay.open();
+      } else {
+        // Fallback to test mode if Razorpay is not available
+        const paymentResult = await paymentsAPI.testPayment(
+          totalAmount,
+          tempOrderId,
+          'success'
+        );
+
+        if (paymentResult.success && paymentResult.paymentStatus === 'PAID') {
+          const verifyResult = await paymentsAPI.verifyPayment(
+            paymentResult.orderId,
+            paymentResult.transactionId
+          );
+
+          if (verifyResult.success) {
+            const orderDataToSend = {
+              items: orderData.items || [],
+              shippingAddress: orderData.shippingAddress || {},
+              customDesign: orderData.customDesign || {},
+              totals: orderData.totals || {}
+            };
+
+            if (!orderDataToSend.items || orderDataToSend.items.length === 0) {
+              throw new Error('Order items are required');
+            }
+
+            const result = await paymentsAPI.confirmPayment(
+              paymentResult.orderId,
+              paymentResult.transactionId,
+              orderDataToSend,
+              designFiles
+            );
+
+            if (result.success) {
+              const isBuyNowOrder = sessionStorage.getItem('isBuyNowOrder') === 'true';
+              if (!isBuyNowOrder) {
+                clearCart();
+              }
+              
+              sessionStorage.removeItem('pendingOrder');
+              sessionStorage.removeItem('pendingOrderFiles');
+              sessionStorage.removeItem('buyNowProduct');
+              sessionStorage.removeItem('isBuyNowOrder');
+
+              toast({
+                title: "Payment Successful!",
+                description: `Order ${result.order.orderId} has been placed successfully.`,
+              });
+
+              setTimeout(() => {
+                navigate(`/orders/${result.order.orderId}`);
+              }, 2000);
+            } else {
+              throw new Error(result.error || 'Failed to create order');
+            }
+          } else {
+            throw new Error(verifyResult.error || 'Payment verification failed');
+          }
+        } else {
+          toast({
+            title: "Payment Failed",
+            description: paymentResult.message || 'Payment failed. Please try again.',
+            variant: "destructive",
+          });
+        }
+      }
+    } catch (err) {
+      const errorMessage = err.message || 'Payment processing failed';
+      toast({
+        title: "Payment Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
   };
 
   // Wait for auth to finish loading before checking
