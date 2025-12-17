@@ -45,6 +45,11 @@ if (PAYMENT_MODE === 'production' && process.env.RAZORPAY_KEY_ID && process.env.
 const app = express();
 app.use(cors());
 
+// Health check route
+app.get("/health", (req, res) => {
+  res.status(200).send("OK");
+});
+
 // IMPORTANT: Webhook route must be BEFORE express.json() middleware
 // because Razorpay webhook signature verification needs the RAW body
 // Payment Webhook - Handle payment notifications from Razorpay (MUST BE BEFORE JSON PARSER)
