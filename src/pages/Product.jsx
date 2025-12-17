@@ -58,6 +58,8 @@ const Product = () => {
   // Touch/swipe state for image navigation
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
+  const [isSliding, setIsSliding] = useState(false);
+  const [slideDirection, setSlideDirection] = useState(null);
   
   // Fetch location from pincode using API
   const fetchLocationFromPincode = async (pin) => {
@@ -357,14 +359,34 @@ const Product = () => {
   
   // Image navigation functions
   const nextImage = () => {
-    if (productImages.length > 0) {
-      setSelectedImage((prev) => (prev + 1) % productImages.length);
+    if (productImages.length > 0 && !isSliding) {
+      setIsSliding(true);
+      setSlideDirection('left');
+      // Slide out current image
+      setTimeout(() => {
+        setSelectedImage((prev) => (prev + 1) % productImages.length);
+        // Reset after new image loads
+        setTimeout(() => {
+          setIsSliding(false);
+          setSlideDirection(null);
+        }, 50);
+      }, 150);
     }
   };
   
   const prevImage = () => {
-    if (productImages.length > 0) {
-      setSelectedImage((prev) => (prev - 1 + productImages.length) % productImages.length);
+    if (productImages.length > 0 && !isSliding) {
+      setIsSliding(true);
+      setSlideDirection('right');
+      // Slide out current image
+      setTimeout(() => {
+        setSelectedImage((prev) => (prev - 1 + productImages.length) % productImages.length);
+        // Reset after new image loads
+        setTimeout(() => {
+          setIsSliding(false);
+          setSlideDirection(null);
+        }, 50);
+      }, 150);
     }
   };
   
@@ -381,16 +403,32 @@ const Product = () => {
   };
   
   const onTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
+    if (!touchStart || !touchEnd || isSliding) return;
     const distance = touchStart - touchEnd;
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
     
     if (isLeftSwipe) {
-      nextImage();
+      setIsSliding(true);
+      setSlideDirection('left');
+      setTimeout(() => {
+        setSelectedImage((prev) => (prev + 1) % productImages.length);
+        setTimeout(() => {
+          setIsSliding(false);
+          setSlideDirection(null);
+        }, 50);
+      }, 150);
     }
     if (isRightSwipe) {
-      prevImage();
+      setIsSliding(true);
+      setSlideDirection('right');
+      setTimeout(() => {
+        setSelectedImage((prev) => (prev - 1 + productImages.length) % productImages.length);
+        setTimeout(() => {
+          setIsSliding(false);
+          setSlideDirection(null);
+        }, 50);
+      }, 150);
     }
   };
   
@@ -618,11 +656,28 @@ const Product = () => {
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
             >
-              <img
-                src={getImageUrl(productImages[selectedImage] || productImages[0])}
-                alt={product.name}
-                className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
-              />
+              <div className="relative h-full w-full overflow-hidden">
+                <div 
+                  className="absolute inset-0 transition-transform duration-300 ease-in-out"
+                  style={{
+                    transform: isSliding 
+                      ? slideDirection === 'left' 
+                        ? 'translateX(-100%)' 
+                        : slideDirection === 'right'
+                        ? 'translateX(100%)'
+                        : 'translateX(0)'
+                      : 'translateX(0)',
+                    opacity: isSliding ? 0 : 1
+                  }}
+                >
+                  <img
+                    key={selectedImage}
+                    src={getImageUrl(productImages[selectedImage] || productImages[0])}
+                    alt={product.name}
+                    className="h-full w-full object-cover hover:scale-105 transition-transform duration-500"
+                  />
+                </div>
+              </div>
               
               {/* Navigation Arrows - Only show if more than 1 image */}
               {productImages.length > 1 && (
@@ -630,7 +685,7 @@ const Product = () => {
                   {/* Left Arrow */}
                   <button
                     onClick={prevImage}
-                    className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 active:bg-black/80 text-white rounded-full p-2 sm:p-3 transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 z-10"
+                    className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white/90 active:bg-white text-gray-800 rounded-full p-2 sm:p-3 transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 z-10 shadow-lg backdrop-blur-sm"
                     aria-label="Previous image"
                   >
                     <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -639,7 +694,7 @@ const Product = () => {
                   {/* Right Arrow */}
                   <button
                     onClick={nextImage}
-                    className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 active:bg-black/80 text-white rounded-full p-2 sm:p-3 transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 z-10"
+                    className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white/90 active:bg-white text-gray-800 rounded-full p-2 sm:p-3 transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 z-10 shadow-lg backdrop-blur-sm"
                     aria-label="Next image"
                   >
                     <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
