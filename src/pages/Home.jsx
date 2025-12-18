@@ -4,7 +4,6 @@ import { CheckCircle2, PhoneCall, UploadCloud, HeartHandshake, Truck, ArrowRight
 import { HeroSection } from "@/components/HeroSection";
 import Header from "@/components/Header";
 import ProductCard from "@/components/ProductCard";
-import { ProductCardSkeleton } from "@/components/ProductCardSkeleton";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/auth-context";
 import { useWishlist } from "@/contexts/wishlist-context";
@@ -143,14 +142,15 @@ const Home = () => {
                       </Button>
                     </div>
                   </div>
-                  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                    {loading ? (
-                      // Show skeleton placeholders while loading
-                      Array.from({ length: 3 }).map((_, index) => (
-                        <ProductCardSkeleton key={`skeleton-${type.key}-${index}`} />
-                      ))
-                    ) : (
-                      typeProducts.slice(0, 3).map((product) => (
+                  {loading ? (
+                    // Show centered loading spinner
+                    <div className="flex flex-col items-center justify-center py-12">
+                      <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent mb-4"></div>
+                      <p className="text-muted-foreground text-lg">Loading...</p>
+                    </div>
+                  ) : (
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                      {typeProducts.slice(0, 3).map((product) => (
                         <ProductCard
                           key={product._id || product.id}
                           id={product._id || product.id}
@@ -171,9 +171,9 @@ const Home = () => {
                           }}
                           onWishlist={() => handleWishlistNav()}
                         />
-                      ))
-                    )}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                   <div className="flex justify-center">
                     <Button
                       variant="outline"

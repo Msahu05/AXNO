@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { ProductCard } from "@/components/ProductCard";
-import { ProductCardSkeleton } from "@/components/ProductCardSkeleton";
 import { productsAPI, getImageUrl } from "@/lib/api";
 
 export function FeaturedProducts() {
@@ -34,14 +33,15 @@ export function FeaturedProducts() {
           </p>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {loading ? (
-            // Show skeleton placeholders while loading
-            Array.from({ length: 4 }).map((_, index) => (
-              <ProductCardSkeleton key={`skeleton-${index}`} />
-            ))
-          ) : (
-            products.map((product, index) => (
+        {loading ? (
+          // Show centered loading spinner
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent mb-4"></div>
+            <p className="text-muted-foreground text-lg">Loading...</p>
+          </div>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {products.map((product, index) => (
               <div
                 key={product.id}
                 className="animate-fade-in"
@@ -57,9 +57,9 @@ export function FeaturedProducts() {
                   rating={4.8}
                 />
               </div>
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );
