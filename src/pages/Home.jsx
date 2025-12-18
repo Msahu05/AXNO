@@ -83,13 +83,13 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-purple-soft/40 dark:bg-background">
       <Header />
-      <main className="container mx-auto px-4 lg:px-8 py-12 space-y-16">
+      <main className="container mx-auto px-4 lg:px-8 py-6 sm:py-8 lg:py-12 space-y-8 sm:space-y-12 lg:space-y-16">
         <HeroSection />
 
         <div className="border-t border-border/50 my-12"></div>
 
-        <section id="catalogue" className="space-y-12">
-          <div className="space-y-16">
+        <section id="catalogue" className="space-y-6 sm:space-y-8 lg:space-y-12">
+          <div className="space-y-8 sm:space-y-12 lg:space-y-16">
             {productTypes.map((type) => {
               const typeProducts = allProducts.filter((p) => p.category === type.key);
               
@@ -192,9 +192,9 @@ const Home = () => {
           </div>
         </section>
 
-        <div className="border-t border-border/50 my-12"></div>
+        <div className="border-t border-border/50 my-6 sm:my-8 lg:my-12"></div>
 
-        <section id="custom" className="space-y-8 rounded-[56px] border border-border dark:border-white/15 bg-purple-soft/50 dark:bg-gradient-to-r dark:from-[var(--card)] dark:via-[var(--muted)] dark:to-[var(--card)] p-10 shadow-[var(--shadow-soft)]">
+        <section id="custom" className="space-y-6 sm:space-y-8 rounded-[28px] sm:rounded-[40px] lg:rounded-[56px] border border-border dark:border-white/15 bg-purple-soft/50 dark:bg-gradient-to-r dark:from-[var(--card)] dark:via-[var(--muted)] dark:to-[var(--card)] p-4 sm:p-6 lg:p-10 shadow-[var(--shadow-soft)]">
           <div className="space-y-4">
             <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Custom studio</p>
             <h2 className="text-4xl font-black">Upload, confirm, conquer.</h2>
@@ -206,7 +206,7 @@ const Home = () => {
           <div className="flex items-center justify-center gap-4 md:gap-8 flex-wrap">
             {customizationSteps.map((step, index) => (
               <div key={step.title} className="flex items-center gap-4 md:gap-8">
-                <div className="flex flex-col items-center justify-center text-center space-y-4 rounded-[28px] border border-border dark:border-white/20 bg-background/60 p-6 backdrop-blur w-[280px] h-[280px]">
+                <div className="flex flex-col items-center justify-center text-center space-y-4 rounded-[20px] sm:rounded-[24px] lg:rounded-[28px] border border-border dark:border-white/20 bg-background/60 p-4 sm:p-5 lg:p-6 backdrop-blur w-full sm:w-[240px] lg:w-[280px] h-auto sm:h-[240px] lg:h-[280px]">
                   <div className="rounded-2xl bg-primary/10 p-4 text-primary">{step.icon}</div>
                   <div className="space-y-2">
                     <p className="text-lg font-semibold">{step.title}</p>
@@ -336,7 +336,7 @@ const Home = () => {
           </div>
         </section>
 
-        <footer className="py-10 text-center text-xs uppercase tracking-[0.5em] text-muted-foreground">
+        <footer className="py-6 sm:py-8 lg:py-10 text-center text-xs uppercase tracking-[0.5em] text-muted-foreground">
           © {new Date().getFullYear()} Looklyn — Own The Look
         </footer>
       </main>
