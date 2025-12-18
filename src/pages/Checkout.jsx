@@ -251,12 +251,17 @@ const Checkout = () => {
     }
   };
 
-  const applyCoupon = async (code, silent = false) => {
+  const applyCoupon = async (code, silent = false, couponObject = null) => {
     if (!code) return;
     
     try {
-      const response = await couponsAPI.getCoupon(code);
-      const coupon = response.coupon;
+      // Use provided coupon object if available, otherwise fetch it
+      let coupon = couponObject;
+      
+      if (!coupon) {
+        const response = await couponsAPI.getCoupon(code);
+        coupon = response.coupon;
+      }
       
       if (!coupon) {
         toast({
@@ -1396,7 +1401,7 @@ const Checkout = () => {
                                 setDiscountCode('');
                               } else if (isApplicable) {
                                 setDiscountCode(coupon.code);
-                                applyCoupon(coupon.code);
+                                applyCoupon(coupon.code, false, coupon);
                               } else {
                                 toast({
                                   title: "Coupon Not Applicable",
