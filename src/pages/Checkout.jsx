@@ -63,6 +63,8 @@ const Checkout = () => {
   const [discountCode, setDiscountCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponDiscount, setCouponDiscount] = useState(0);
+  const [availableCoupons, setAvailableCoupons] = useState([]);
+  const [loadingCoupons, setLoadingCoupons] = useState(false);
   const [designFiles, setDesignFiles] = useState([]);
   const [referenceLinks, setReferenceLinks] = useState("");
   const [citySuggestions, setCitySuggestions] = useState([]);
@@ -179,6 +181,25 @@ const Checkout = () => {
   useEffect(() => {
     if (isAuthenticated) {
       loadSavedAddresses();
+    }
+  }, [isAuthenticated]);
+
+  // Load available coupons
+  useEffect(() => {
+    const loadAvailableCoupons = async () => {
+      try {
+        setLoadingCoupons(true);
+        const response = await couponsAPI.getAllPublic();
+        setAvailableCoupons(response.coupons || []);
+      } catch (error) {
+        console.error('Error loading coupons:', error);
+      } finally {
+        setLoadingCoupons(false);
+      }
+    };
+    
+    if (isAuthenticated) {
+      loadAvailableCoupons();
     }
   }, [isAuthenticated]);
 
@@ -387,6 +408,58 @@ const Checkout = () => {
         variant: "destructive",
       });
     }
+  };
+
+  // Check if coupon is applicable based on current cart
+  const isCouponApplicable = (coupon) => {
+    if (!coupon.isActive) return false;
+    
+    // Check category
+    if (coupon.category && coupon.category !== 'All') {
+      const hasMatchingCategory = displayItems.some(item => item.category === coupon.category);
+      if (!hasMatchingCategory) return false;
+    }
+    
+    // Check minimum quantity
+    if (coupon.minQuantity) {
+      const totalQuantity = displayItems.reduce((sum, item) => sum + item.quantity, 0);
+      if (totalQuantity < coupon.minQuantity) return false;
+    }
+    
+    // Check minimum price
+    if (coupon.minPrice) {
+      if (displaySubtotal < coupon.minPrice) return false;
+    }
+    
+    return true;
+  };
+
+  // Calculate discount amount for display
+  const calculateCouponDiscount = (coupon) => {
+    if (coupon.discountType === 'percentage') {
+      const discountValue = parseFloat(coupon.discountValue) || 0;
+      return Math.round((displaySubtotal * discountValue) / 100);
+    } else if (coupon.discountType === 'fixed') {
+      const discountValue = parseFloat(coupon.discountValue) || 0;
+      if (coupon.applyTo === 'item') {
+        return discountValue * displayItems.reduce((sum, item) => sum + item.quantity, 0);
+      }
+      return discountValue;
+    } else if (coupon.discountType === 'price_override') {
+      const discountValue = parseFloat(coupon.discountValue) || 0;
+      let itemsToUse = displayItems;
+      if (coupon.category && coupon.category !== 'All') {
+        itemsToUse = displayItems.filter(item => item.category === coupon.category);
+      }
+      if (itemsToUse.length > 0) {
+        const totalMatchingQuantity = itemsToUse.reduce((sum, item) => sum + item.quantity, 0);
+        if (!coupon.minQuantity || totalMatchingQuantity >= coupon.minQuantity) {
+          return discountValue * totalMatchingQuantity;
+        }
+      }
+      return 0;
+    }
+    return 0;
   };
 
   const loadSavedAddresses = async () => {
@@ -1303,6 +1376,100 @@ const Checkout = () => {
                   Order subtotal ({displayItems.reduce((sum, item) => sum + item.quantity, 0)} {displayItems.reduce((sum, item) => sum + item.quantity, 0) === 1 ? 'item' : 'items'}): ₹{displaySubtotal.toLocaleString()}
                 </h2>
                 
+                {/* Available Coupons Section */}
+                {availableCoupons.length > 0 && (
+                  <div className="mb-6">
+                    <label className="block text-xs font-semibold uppercase tracking-wide text-gray-700 mb-3">AVAILABLE COUPONS</label>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {availableCoupons.map((coupon) => {
+                        const isApplicable = isCouponApplicable(coupon);
+                        const discountAmount = calculateCouponDiscount(coupon);
+                        const isApplied = appliedCoupon?.code === coupon.code;
+                        
+                        return (
+                          <button
+                            key={coupon._id || coupon.code}
+                            onClick={() => {
+                              if (isApplied) {
+                                setAppliedCoupon(null);
+                                setCouponDiscount(0);
+                                setDiscountCode('');
+                              } else if (isApplicable) {
+                                setDiscountCode(coupon.code);
+                                applyCoupon(coupon.code);
+                              } else {
+                                toast({
+                                  title: "Coupon Not Applicable",
+                                  description: coupon.minPrice 
+                                    ? `Minimum order value of ₹${coupon.minPrice} required`
+                                    : coupon.minQuantity
+                                    ? `Minimum quantity of ${coupon.minQuantity} required`
+                                    : coupon.category && coupon.category !== 'All'
+                                    ? `This coupon is only valid for ${coupon.category} category`
+                                    : "This coupon is not applicable to your cart",
+                                  variant: "destructive",
+                                });
+                              }
+                            }}
+                            disabled={!isApplicable && !isApplied}
+                            className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
+                              isApplied
+                                ? 'border-purple-500 bg-purple-50'
+                                : isApplicable
+                                ? 'border-purple-200 bg-white hover:border-purple-400 hover:bg-purple-50 cursor-pointer'
+                                : 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-semibold text-gray-900">{coupon.code}</span>
+                                  {isApplied && (
+                                    <span className="text-xs bg-purple-500 text-white px-2 py-0.5 rounded">Applied</span>
+                                  )}
+                                  {!isApplicable && !isApplied && (
+                                    <span className="text-xs bg-gray-400 text-white px-2 py-0.5 rounded">Not Applicable</span>
+                                  )}
+                                </div>
+                                {coupon.title && (
+                                  <p className="text-sm text-gray-700 mb-1">{coupon.title}</p>
+                                )}
+                                <div className="flex flex-wrap gap-2 text-xs text-gray-600">
+                                  {coupon.discountType === 'percentage' && (
+                                    <span>{coupon.discountValue}% OFF</span>
+                                  )}
+                                  {coupon.discountType === 'fixed' && (
+                                    <span>₹{coupon.discountValue} OFF</span>
+                                  )}
+                                  {coupon.discountType === 'price_override' && (
+                                    <span>₹{coupon.discountValue} OFF per item</span>
+                                  )}
+                                  {coupon.minPrice && (
+                                    <span>• Min ₹{coupon.minPrice}</span>
+                                  )}
+                                  {coupon.minQuantity && (
+                                    <span>• Min {coupon.minQuantity} items</span>
+                                  )}
+                                  {coupon.category && coupon.category !== 'All' && (
+                                    <span>• {coupon.category} only</span>
+                                  )}
+                                </div>
+                              </div>
+                              {isApplicable && discountAmount > 0 && (
+                                <div className="text-right">
+                                  <div className="text-sm font-semibold text-purple-600">
+                                    Save ₹{discountAmount.toLocaleString()}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {/* Summary Box */}
                 <div className="border border-gray-200 rounded-lg p-4 mb-6">
                   <div className="mb-4">
