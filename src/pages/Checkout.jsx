@@ -259,7 +259,7 @@ const Checkout = () => {
       let coupon = couponObject;
       
       if (!coupon) {
-        const response = await couponsAPI.getCoupon(code);
+      const response = await couponsAPI.getCoupon(code);
         coupon = response.coupon;
       }
       
@@ -1474,7 +1474,7 @@ const Checkout = () => {
                     </div>
                   </div>
                 )}
-
+                
                 {/* Summary Box */}
                 <div className="border border-gray-200 rounded-lg p-4 mb-6">
                   <div className="mb-4">

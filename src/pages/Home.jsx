@@ -89,7 +89,7 @@ const Home = () => {
         <div className="border-t border-border/50 my-12"></div>
 
         <section id="catalogue" className="space-y-6 sm:space-y-8 lg:space-y-12">
-          <div className="space-y-8 sm:space-y-12 lg:space-y-16">
+          <div className="space-y-8 sm:space-y-8 lg:space-y-16">
             {productTypes.map((type) => {
               const typeProducts = allProducts.filter((p) => p.category === type.key);
               
