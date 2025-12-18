@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ProductCard } from "@/components/ProductCard";
+import { ProductCardSkeleton } from "@/components/ProductCardSkeleton";
 import { productsAPI, getImageUrl } from "@/lib/api";
 
 export function FeaturedProducts() {
@@ -21,18 +22,6 @@ export function FeaturedProducts() {
     loadProducts();
   }, []);
 
-  if (loading) {
-    return (
-      <section className="py-20">
-        <div className="container mx-auto px-4 lg:px-8">
-          <div className="flex items-center justify-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          </div>
-        </div>
-      </section>
-    );
-  }
-
   return (
     <section className="py-20">
       <div className="container mx-auto px-4 lg:px-8">
@@ -46,23 +35,30 @@ export function FeaturedProducts() {
         </div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {products.map((product, index) => (
-            <div
-              key={product.id}
-              className="animate-fade-in"
-              style={{ animationDelay: `${index * 0.1}s` }}
-            >
-              <ProductCard
-                id={product.id}
-                name={product.name}
-                category={product.category}
-                price={product.price}
-                originalPrice={product.original || product.originalPrice}
-                image={getImageUrl(Array.isArray(product.gallery) ? product.gallery[0] : product.gallery || product.image)}
-                rating={4.8}
-              />
-            </div>
-          ))}
+          {loading ? (
+            // Show skeleton placeholders while loading
+            Array.from({ length: 4 }).map((_, index) => (
+              <ProductCardSkeleton key={`skeleton-${index}`} />
+            ))
+          ) : (
+            products.map((product, index) => (
+              <div
+                key={product.id}
+                className="animate-fade-in"
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
+                <ProductCard
+                  id={product.id}
+                  name={product.name}
+                  category={product.category}
+                  price={product.price}
+                  originalPrice={product.original || product.originalPrice}
+                  image={getImageUrl(Array.isArray(product.gallery) ? product.gallery[0] : product.gallery || product.image)}
+                  rating={4.8}
+                />
+              </div>
+            ))
+          )}
         </div>
       </div>
     </section>

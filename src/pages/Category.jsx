@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import Header from "@/components/Header";
 import ProductCard from "@/components/ProductCard";
+import { ProductCardSkeleton } from "@/components/ProductCardSkeleton";
 import { productsAPI, getImageUrl } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
 import { useWishlist } from "@/contexts/wishlist-context";
@@ -158,17 +159,6 @@ const Category = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(124,90,255,0.1),_transparent_65%)]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading products...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-white via-[#f8f7ff] to-white dark:from-[#0f0a1a] dark:via-[#1a1526] dark:to-[#0f0a1a]">
       <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-6">
@@ -218,7 +208,14 @@ const Category = () => {
           ))}
         </div>
 
-        {filteredProducts.length === 0 ? (
+        {loading ? (
+          // Show skeleton placeholders while loading
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
+              <ProductCardSkeleton key={`skeleton-${index}`} />
+            ))}
+          </div>
+        ) : filteredProducts.length === 0 ? (
           <div className="rounded-[16px] border border-[rgba(47,37,64,0.08)] dark:border-white/10 bg-white dark:bg-[#2a2538] p-12 text-center shadow-[0_4px_16px_rgba(47,37,64,0.04)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.2)]">
             <p className="text-gray-600 dark:text-gray-400">No products found in this category.</p>
           </div>

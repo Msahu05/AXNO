@@ -4,6 +4,7 @@ import { CheckCircle2, PhoneCall, UploadCloud, HeartHandshake, Truck, ArrowRight
 import { HeroSection } from "@/components/HeroSection";
 import Header from "@/components/Header";
 import ProductCard from "@/components/ProductCard";
+import { ProductCardSkeleton } from "@/components/ProductCardSkeleton";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/auth-context";
 import { useWishlist } from "@/contexts/wishlist-context";
@@ -143,28 +144,35 @@ const Home = () => {
                     </div>
                   </div>
                   <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                    {typeProducts.slice(0, 3).map((product) => (
-                      <ProductCard
-                        key={product._id || product.id}
-                        id={product._id || product.id}
-                        slug={product.slug}
-                        name={product.name}
-                        category={product.category}
-                        price={product.price}
-                        originalPrice={product.originalPrice}
-                        image={getImageUrl(Array.isArray(product.gallery) ? product.gallery[0]?.url || product.gallery[0] : product.gallery || product.image)}
-                        accent={product.accent}
-                        onView={() => {
-                          const url = product.slug ? `/product/${product.slug}` : `/product/${product._id || product.id}`;
-                          navigate(url);
-                        }}
-                        onAdd={() => {
-                          const url = product.slug ? `/product/${product.slug}` : `/product/${product._id || product.id}`;
-                          handleProtectedAction(url);
-                        }}
-                        onWishlist={() => handleWishlistNav()}
-                      />
-                    ))}
+                    {loading ? (
+                      // Show skeleton placeholders while loading
+                      Array.from({ length: 3 }).map((_, index) => (
+                        <ProductCardSkeleton key={`skeleton-${type.key}-${index}`} />
+                      ))
+                    ) : (
+                      typeProducts.slice(0, 3).map((product) => (
+                        <ProductCard
+                          key={product._id || product.id}
+                          id={product._id || product.id}
+                          slug={product.slug}
+                          name={product.name}
+                          category={product.category}
+                          price={product.price}
+                          originalPrice={product.originalPrice}
+                          image={getImageUrl(Array.isArray(product.gallery) ? product.gallery[0]?.url || product.gallery[0] : product.gallery || product.image)}
+                          accent={product.accent}
+                          onView={() => {
+                            const url = product.slug ? `/product/${product.slug}` : `/product/${product._id || product.id}`;
+                            navigate(url);
+                          }}
+                          onAdd={() => {
+                            const url = product.slug ? `/product/${product.slug}` : `/product/${product._id || product.id}`;
+                            handleProtectedAction(url);
+                          }}
+                          onWishlist={() => handleWishlistNav()}
+                        />
+                      ))
+                    )}
                   </div>
                   <div className="flex justify-center">
                     <Button
