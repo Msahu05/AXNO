@@ -209,9 +209,9 @@ const Category = () => {
 
         {loading ? (
           // Show centered loading spinner
-          <div className="flex flex-col items-center justify-center py-20">
-            <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent mb-4"></div>
-            <p className="text-muted-foreground text-lg">Loading...</p>
+          <div className="flex flex-col items-center justify-center py-20 min-h-[400px]">
+            <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#7c3aed] border-t-transparent mb-4"></div>
+            <p className="text-foreground text-lg font-medium">Loading...</p>
           </div>
         ) : filteredProducts.length === 0 ? (
           <div className="rounded-[16px] border border-[rgba(47,37,64,0.08)] dark:border-white/10 bg-white dark:bg-[#2a2538] p-12 text-center shadow-[0_4px_16px_rgba(47,37,64,0.04)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.2)]">

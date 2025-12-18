@@ -35,9 +35,9 @@ export function FeaturedProducts() {
 
         {loading ? (
           // Show centered loading spinner
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent mb-4"></div>
-            <p className="text-muted-foreground text-lg">Loading...</p>
+          <div className="flex flex-col items-center justify-center py-12 min-h-[300px]">
+            <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#7c3aed] border-t-transparent mb-4"></div>
+            <p className="text-foreground text-lg font-medium">Loading...</p>
           </div>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
