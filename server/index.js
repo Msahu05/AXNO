@@ -2462,7 +2462,7 @@ app.post('/api/admin/orders/create', authenticateAdmin, upload.array('designFile
       payment: {
         method: 'manual',
         transactionId: `ADMIN-${Date.now()}`,
-        amount: parsedTotals.total || 0,
+        amount: parsedTotals.subtotal || 0, // Amount = subtotal only (no shipping/tax)
         status: 'paid',
         paidAt: new Date()
       },
@@ -2477,10 +2477,10 @@ app.post('/api/admin/orders/create', authenticateAdmin, upload.array('designFile
           location: parsedShippingAddress.city || ''
         }]
       },
-      total: parsedTotals.total || 0,
+      total: parsedTotals.subtotal || 0, // Total = subtotal only (no shipping/tax)
       subtotal: parsedTotals.subtotal || 0,
-      shipping: parsedTotals.shipping || 0,
-      tax: parsedTotals.tax || 0
+      shipping: 0, // No shipping
+      tax: 0 // No tax
     });
 
     await order.save();
@@ -2704,8 +2704,8 @@ app.post('/api/admin/users/:userId/add-product', authenticateAdmin, upload.array
     };
 
     const subtotal = orderItem.price;
-    const shipping = 100; // Default shipping
-    const tax = subtotal * 0.18; // 18% tax
+    const shipping = 0; // No shipping
+    const tax = 0; // No tax
     const total = subtotal + shipping + tax;
 
     // Calculate estimated delivery (7-8 days from now)
