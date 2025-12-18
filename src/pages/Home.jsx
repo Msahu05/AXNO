@@ -83,7 +83,7 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-purple-soft/40 dark:bg-background">
       <Header />
-      <main className="container mx-auto px-4 lg:px-8 py-6 sm:py-8 lg:py-12 space-y-8 sm:space-y-12 lg:space-y-16">
+      <main className="container mx-auto px-4 lg:px-8 py-6 sm:py-8 lg:py-12 space-y-8 sm:space-y-8 lg:space-y-16">
         <HeroSection />
 
         <div className="border-t border-border/50 my-12"></div>
