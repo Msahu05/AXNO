@@ -307,20 +307,13 @@ const Admin = () => {
     // Remove from products list immediately (UI update)
     setProducts(prev => prev.filter(p => (p.id || p._id) !== productId));
     
-    // Store deleted product info for undo
-    const deletedProduct = {
-      ...productData,
-      id: productId,
-      deletedAt: new Date().toISOString(),
-      deleteTimeout: null
-    };
-    setDeletedProducts(prev => [...prev, deletedProduct]);
-    
     // Schedule actual backend deletion after 10 seconds
     const deleteTimeout = setTimeout(async () => {
       try {
+        console.log(`Deleting product ${productId} from database after 10 seconds...`);
         // Actually delete from backend after delay
         await adminAPI.deleteProduct(productId);
+        console.log(`Product ${productId} deleted successfully from database`);
         // Remove from deleted products list
         setDeletedProducts(prev => prev.filter(del => del.id !== productId));
       } catch (error) {
@@ -342,11 +335,14 @@ const Admin = () => {
       }
     }, 10000); // 10 second delay before actual deletion
     
-    // Store timeout ID
-    deletedProduct.deleteTimeout = deleteTimeout;
-    setDeletedProducts(prev => prev.map(del => 
-      del.id === productId ? { ...del, deleteTimeout } : del
-    ));
+    // Store deleted product info for undo with timeout ID
+    const deletedProduct = {
+      ...productData,
+      id: productId,
+      deletedAt: new Date().toISOString(),
+      deleteTimeout: deleteTimeout
+    };
+    setDeletedProducts(prev => [...prev, deletedProduct]);
     
     toast({
       title: 'Product Deleted',
@@ -587,13 +583,14 @@ const Admin = () => {
     try {
       const productId = deletedProduct.id;
       
-      // Cancel the scheduled deletion
-      if (deletedProduct.deleteTimeout) {
-        clearTimeout(deletedProduct.deleteTimeout);
-      }
-      
-      // Remove from deleted products list
-      setDeletedProducts(prev => prev.filter(del => del.id !== productId));
+      // Get the latest deleted product from state to ensure we have the correct timeout
+      setDeletedProducts(prev => {
+        const found = prev.find(del => del.id === productId);
+        if (found && found.deleteTimeout) {
+          clearTimeout(found.deleteTimeout);
+        }
+        return prev.filter(del => del.id !== productId);
+      });
       
       // Restore product to products list
       setProducts(prev => {
