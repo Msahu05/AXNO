@@ -1000,7 +1000,7 @@ const Product = () => {
                     <>
                       <p className="font-medium text-sm sm:text-base text-foreground">Free Shipping to {detectedLocation}</p>
                       <p className="text-xs sm:text-sm text-muted-foreground">
-                        Estimated delivery: 3-5 business days
+                        Estimated delivery:  Assured Delivery by 1-12 days
                       </p>
                     </>
                   ) : pincodeChecked && !detectedLocation ? (

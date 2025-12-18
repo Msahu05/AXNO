@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
 import { ProductCard } from "@/components/ProductCard";
 import { productsAPI, getImageUrl } from "@/lib/api";
 
@@ -36,7 +37,7 @@ export function FeaturedProducts() {
         {loading ? (
           // Show centered loading spinner
           <div className="flex flex-col items-center justify-center py-12 min-h-[300px]">
-            <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#7c3aed] border-t-transparent mb-4"></div>
+            <Loader2 className="h-12 w-12 animate-spin text-[#7c3aed] mb-4" style={{ animation: 'spin 1s linear infinite' }} />
             <p className="text-foreground text-lg font-medium">Loading...</p>
           </div>
         ) : (

@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -210,7 +210,7 @@ const Category = () => {
         {loading ? (
           // Show centered loading spinner
           <div className="flex flex-col items-center justify-center py-20 min-h-[400px]">
-            <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#7c3aed] border-t-transparent mb-4"></div>
+            <Loader2 className="h-12 w-12 animate-spin text-[#7c3aed] mb-4" style={{ animation: 'spin 1s linear infinite' }} />
             <p className="text-foreground text-lg font-medium">Loading...</p>
           </div>
         ) : filteredProducts.length === 0 ? (
