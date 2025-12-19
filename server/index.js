@@ -552,27 +552,89 @@ const generateOrderId = async () => {
 
 // Email transporter setup (SMTP Configuration)
 // ============================================
-// STEP 1: Choose your email service (Gmail, SendGrid, Mailgun, etc.)
-// STEP 2: Add your credentials to server/.env file:
-//   EMAIL_USER=your-email@gmail.com
-//   EMAIL_PASS=your-app-password-or-smtp-password
-// STEP 3: Restart your server
+// Using Brevo (formerly Sendinblue) SMTP for production
+// STEP 1: Sign up at https://www.brevo.com/
+// STEP 2: Go to Settings → SMTP & API → SMTP
+// STEP 3: Copy your SMTP server details and SMTP key
+// STEP 4: Add your credentials to server/.env file:
+//   EMAIL_USER=your-brevo-email@example.com
+//   EMAIL_PASS=your-brevo-smtp-key
+//   SMTP_HOST=smtp-relay.brevo.com
+//   SMTP_PORT=587
+// STEP 5: Restart your server
 // ============================================
 
 const transporter = nodemailer.createTransport({
-  service: 'gmail', // Options: 'gmail', 'outlook', 'yahoo', or use custom SMTP (see below)
-  
-  // For Gmail, Outlook, Yahoo - use 'service' above
-  // For custom SMTP, comment out 'service' and use:
-  // host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  // port: process.env.SMTP_PORT || 587,
-  // secure: false, // true for 465, false for 587
-  
+  host: process.env.SMTP_HOST || 'smtp-relay.brevo.com',
+  port: process.env.SMTP_PORT || 587,
+  secure: false, // true for 465, false for 587
   auth: {
-    user: process.env.EMAIL_USER, // Your email address (REQUIRED)
-    pass: process.env.EMAIL_PASS  // Your email password/app password (REQUIRED)
+    user: process.env.EMAIL_USER, // Your Brevo login email (REQUIRED)
+    pass: process.env.EMAIL_PASS  // Your Brevo SMTP key (REQUIRED)
   }
 });
+
+// Function to send order notification to all admins
+const notifyAdminsOfNewOrder = async (order, customer) => {
+  try {
+    // Find all admin users
+    const admins = await User.find({ isAdmin: true }).select('email name');
+    
+    if (!admins || admins.length === 0) {
+      console.log('⚠️  No admin users found. Skipping admin notification.');
+      return;
+    }
+
+    console.log(`📧 Sending order notification to ${admins.length} admin(s)...`);
+
+    // Prepare order data for email template
+    const orderData = {
+      orderId: order.orderId,
+      status: order.status,
+      total: order.total,
+      subtotal: order.subtotal,
+      shipping: order.shipping,
+      tax: order.tax,
+      items: order.items,
+      shippingAddress: order.shippingAddress,
+      createdAt: order.createdAt
+    };
+
+    const customerData = {
+      name: customer.name,
+      email: customer.email,
+      phone: customer.phone
+    };
+
+    // Get email template
+    const emailTemplate = emailTemplates.adminOrderNotification(orderData, customerData);
+
+    // Send email to all admins
+    const emailPromises = admins.map(admin => {
+      return sendEmail(transporter, admin.email, emailTemplate.subject, emailTemplate.html)
+        .then(result => {
+          if (result.success) {
+            console.log(`✅ Admin notification sent to ${admin.email}`);
+          } else {
+            console.error(`❌ Failed to send admin notification to ${admin.email}:`, result.error);
+          }
+          return result;
+        })
+        .catch(err => {
+          console.error(`❌ Error sending admin notification to ${admin.email}:`, err.message);
+          return { success: false, error: err.message };
+        });
+    });
+
+    // Wait for all emails to be sent (don't block if some fail)
+    await Promise.allSettled(emailPromises);
+    console.log(`✅ Admin notification process completed for order ${order.orderId}`);
+
+  } catch (error) {
+    console.error('❌ Error in notifyAdminsOfNewOrder:', error);
+    // Don't throw error - we don't want to break order creation if admin notification fails
+  }
+};
 
 // Test email connection on server start
 transporter.verify(function (error, success) {
@@ -1962,6 +2024,13 @@ app.post('/api/payments/confirm', authenticateToken, upload.array('designFiles',
       } else {
         console.log('⚠️  No phone number found for user. Skipping WhatsApp notification.');
       }
+
+      // Notify all admins about the new order
+      notifyAdminsOfNewOrder(order, {
+        name: populatedOrder.userId.name,
+        email: populatedOrder.userId.email,
+        phone: populatedOrder.userId.phone
+      }).catch(err => console.error('Failed to notify admins:', err));
     }
 
     res.json({
@@ -2106,6 +2175,13 @@ app.post('/api/orders', authenticateToken, upload.array('designFiles', 10), asyn
       } else {
         console.log('⚠️  No phone number found for user. Skipping WhatsApp notification.');
       }
+
+      // Notify all admins about the new order
+      notifyAdminsOfNewOrder(order, {
+        name: populatedOrder.userId.name,
+        email: populatedOrder.userId.email,
+        phone: populatedOrder.userId.phone
+      }).catch(err => console.error('Failed to notify admins:', err));
     }
 
     res.json({
@@ -2564,6 +2640,13 @@ app.post('/api/admin/orders/create', authenticateAdmin, upload.array('designFile
       } else {
         console.log('⚠️  No phone number found for user. Skipping WhatsApp notification.');
       }
+
+      // Notify all admins about the new order
+      notifyAdminsOfNewOrder(order, {
+        name: populatedOrder.userId.name,
+        email: populatedOrder.userId.email,
+        phone: populatedOrder.userId.phone
+      }).catch(err => console.error('Failed to notify admins:', err));
     }
 
     res.json({
@@ -2836,6 +2919,13 @@ app.post('/api/admin/users/:userId/add-product', authenticateAdmin, upload.array
       } else {
         console.log('⚠️  No phone number found for user. Skipping WhatsApp notification.');
       }
+
+      // Notify all admins about the new order
+      notifyAdminsOfNewOrder(order, {
+        name: populatedOrder.userId.name,
+        email: populatedOrder.userId.email,
+        phone: populatedOrder.userId.phone
+      }).catch(err => console.error('Failed to notify admins:', err));
     }
 
     res.json({

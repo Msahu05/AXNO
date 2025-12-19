@@ -93,6 +93,62 @@ const emailTemplates = {
         <p style="color: #666; font-size: 12px; margin-top: 30px;">Happy shopping!</p>
       </div>
     `
+  }),
+
+  // Admin order notification
+  adminOrderNotification: (order, customer) => ({
+    subject: `🆕 New Order Received - ${order.orderId}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #5c3d8a;">Looklyn - Admin Notification</h2>
+        <h3 style="color: #333; background: #f0f0f0; padding: 15px; border-radius: 8px;">🆕 New Order Placed!</h3>
+        <p>Dear Admin,</p>
+        <p>A new order has been placed on Looklyn. Please review the details below:</p>
+        <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h4 style="color: #5c3d8a; margin-top: 0;">Order Details</h4>
+          <p><strong>Order ID:</strong> ${order.orderId}</p>
+          <p><strong>Order Date:</strong> ${new Date(order.createdAt || Date.now()).toLocaleString()}</p>
+          <p><strong>Order Status:</strong> <span style="color: #5c3d8a; font-weight: bold;">${order.status || 'processing'}</span></p>
+          <p><strong>Total Amount:</strong> ₹${(order.total || 0).toLocaleString()}</p>
+          <p><strong>Subtotal:</strong> ₹${(order.subtotal || 0).toLocaleString()}</p>
+          <p><strong>Shipping:</strong> ₹${(order.shipping || 0).toLocaleString()}</p>
+          <p><strong>Tax:</strong> ₹${(order.tax || 0).toLocaleString()}</p>
+        </div>
+        <div style="background: #e8f4f8; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h4 style="color: #5c3d8a; margin-top: 0;">Customer Information</h4>
+          <p><strong>Name:</strong> ${customer.name || 'N/A'}</p>
+          <p><strong>Email:</strong> ${customer.email || 'N/A'}</p>
+          <p><strong>Phone:</strong> ${customer.phone || 'N/A'}</p>
+        </div>
+        ${order.shippingAddress ? `
+        <div style="background: #fff9e6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h4 style="color: #5c3d8a; margin-top: 0;">Shipping Address</h4>
+          <p>${order.shippingAddress.name || ''}</p>
+          <p>${order.shippingAddress.address || ''}</p>
+          <p>${order.shippingAddress.city || ''}, ${order.shippingAddress.state || ''} - ${order.shippingAddress.zipCode || order.shippingAddress.pincode || ''}</p>
+          <p>Phone: ${order.shippingAddress.phone || 'N/A'}</p>
+        </div>
+        ` : ''}
+        <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 20px 0;">
+          <p><strong>Items Count:</strong> ${order.items ? order.items.length : 0} item(s)</p>
+          ${order.items && order.items.length > 0 ? `
+            <ul style="margin: 10px 0; padding-left: 20px;">
+              ${order.items.slice(0, 3).map(item => `
+                <li>${item.name || 'Product'} - Qty: ${item.quantity || 1} - ₹${((item.price || 0) * (item.quantity || 1)).toLocaleString()}</li>
+              `).join('')}
+              ${order.items.length > 3 ? `<li>...and ${order.items.length - 3} more item(s)</li>` : ''}
+            </ul>
+          ` : ''}
+        </div>
+        <p style="margin-top: 30px;">
+          <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/admin?tab=orders" 
+             style="background-color: #5c3d8a; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
+            View Order in Admin Panel
+          </a>
+        </p>
+        <p style="color: #666; font-size: 12px; margin-top: 20px;">This is an automated notification from Looklyn admin system.</p>
+      </div>
+    `
   })
 };
 
@@ -105,20 +161,76 @@ const sendEmail = async (transporter, to, subject, html) => {
       return { success: false, error: 'Email service not configured' };
     }
 
+    // FROM_EMAIL is REQUIRED - must be a verified sender email in Brevo
+    // EMAIL_USER is the SMTP login and cannot be used as "from" address
+    if (!process.env.FROM_EMAIL) {
+      console.error('❌ FROM_EMAIL not configured! You must set FROM_EMAIL in server/.env');
+      console.error('   FROM_EMAIL must be a verified sender email in Brevo (not the SMTP login)');
+      console.error('   Go to Brevo Dashboard → Settings → Senders → Add and verify a sender');
+      return { 
+        success: false, 
+        error: 'FROM_EMAIL not configured. Please add a verified sender email in Brevo and set FROM_EMAIL in .env' 
+      };
+    }
+    
+    const fromEmail = process.env.FROM_EMAIL;
+    
     const mailOptions = {
-      from: process.env.EMAIL_USER, // Sender email address
+      from: `Looklyn <${fromEmail}>`, // Sender email with name (must be verified in Brevo)
       to, // Recipient email address
       subject, // Email subject
       html // Email body (HTML format)
     };
 
+    console.log(`📧 Attempting to send email to ${to} from ${fromEmail}`);
+    
     // Send email via SMTP
-    await transporter.sendMail(mailOptions);
+    const info = await transporter.sendMail(mailOptions);
+    
+    // Log detailed response from SMTP server
     console.log(`✅ Email sent successfully to ${to}`);
-    return { success: true, message: 'Email sent successfully' };
+    console.log(`   Message ID: ${info.messageId}`);
+    console.log(`   Response: ${info.response || 'No response'}`);
+    
+    return { 
+      success: true, 
+      message: 'Email sent successfully',
+      messageId: info.messageId,
+      response: info.response
+    };
   } catch (error) {
     console.error('❌ Email sending error:', error.message);
-    return { success: false, error: error.message };
+    console.error('   Error code:', error.code);
+    console.error('   Error command:', error.command);
+    
+    // Check for specific Brevo sender validation errors
+    if (error.message && error.message.includes('sender') && error.message.includes('not valid')) {
+      console.error('   ⚠️  SENDER VALIDATION ERROR:');
+      console.error('   The sender email is not verified in Brevo.');
+      console.error('   SOLUTION:');
+      console.error('   1. Go to Brevo Dashboard → Settings → Senders');
+      console.error('   2. Click "Add a sender" or "Create a new sender"');
+      console.error('   3. Add your email address (e.g., noreply@yourdomain.com)');
+      console.error('   4. Verify the email by clicking the verification link sent to that email');
+      console.error('   5. Set FROM_EMAIL in server/.env to the verified email');
+    }
+    
+    // Check for specific Brevo errors
+    if (error.response) {
+      console.error('   SMTP Response:', error.response);
+    }
+    if (error.responseCode) {
+      console.error('   SMTP Response Code:', error.responseCode);
+    }
+    
+    console.error('   Full error:', JSON.stringify(error, null, 2));
+    
+    return { 
+      success: false, 
+      error: error.message,
+      code: error.code,
+      response: error.response
+    };
   }
 };
 
