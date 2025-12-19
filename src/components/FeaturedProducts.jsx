@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
 import { ProductCard } from "@/components/ProductCard";
+import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import { productsAPI, getImageUrl } from "@/lib/api";
 
 export function FeaturedProducts() {
@@ -35,10 +35,11 @@ export function FeaturedProducts() {
         </div>
 
         {loading ? (
-          // Show centered loading spinner
-          <div className="flex flex-col items-center justify-center py-12 min-h-[300px]">
-            <Loader2 className="h-12 w-12 animate-spin text-[#7c3aed] mb-4" style={{ animation: 'spin 1s linear infinite' }} />
-            <p className="text-foreground text-lg font-medium">Loading...</p>
+          // Show skeleton placeholders
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <ProductCardSkeleton key={i} />
+            ))}
           </div>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">

@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Package, CheckCircle2, Clock, Truck, MapPin, Loader2 } from "lucide-react";
+import { ArrowLeft, Package, CheckCircle2, Clock, Truck, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import Header from "@/components/Header";
 import { useAuth } from "@/contexts/auth-context";
 import { ordersAPI } from "@/lib/api";
@@ -89,10 +90,22 @@ const Tracking = () => {
         <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-6">
           <Header />
         </div>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-            <p className="text-muted-foreground">Loading order details...</p>
+        <div className="px-4 sm:px-6 lg:px-16 max-w-4xl mx-auto">
+          <Skeleton className="h-10 w-32 mb-6" />
+          <div className="rounded-[24px] sm:rounded-[32px] border border-white/15 bg-[var(--card)]/95 p-6 sm:p-8 space-y-6">
+            <Skeleton className="h-8 w-48 mb-4" />
+            <Skeleton className="h-4 w-64 mb-6" />
+            <div className="space-y-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="flex gap-3">
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-48" />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

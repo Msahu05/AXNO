@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Package, CheckCircle2, Clock, XCircle, Truck, Loader2, MapPin, Star, Upload, X } from "lucide-react";
+import { ArrowLeft, Package, CheckCircle2, Clock, XCircle, Truck, MapPin, Star, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import Header from "@/components/Header";
 import { useAuth } from "@/contexts/auth-context";
 import { ordersAPI, reviewsAPI, getImageUrl } from "@/lib/api";
@@ -356,8 +357,19 @@ const Orders = () => {
         <div className="px-2 sm:px-4 lg:px-6 pb-4 sm:pb-8 lg:pb-12 pt-4 sm:pt-6">
           <Header />
         </div>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="px-2 sm:px-4 lg:px-6 py-6 sm:py-10">
+          <div className="mx-auto max-w-6xl space-y-6">
+            <Skeleton className="h-10 w-48" />
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="rounded-[32px] border border-white/15 bg-[var(--card)]/95 p-6">
+                  <Skeleton className="h-6 w-32 mb-4" />
+                  <Skeleton className="h-4 w-48 mb-2" />
+                  <Skeleton className="h-20 w-full" />
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -373,8 +385,19 @@ const Orders = () => {
         <div className="px-2 sm:px-4 lg:px-6 pb-4 sm:pb-8 lg:pb-12 pt-4 sm:pt-6">
           <Header />
         </div>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="px-2 sm:px-4 lg:px-6 py-6 sm:py-10">
+          <div className="mx-auto max-w-6xl space-y-6">
+            <Skeleton className="h-10 w-48" />
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="rounded-[32px] border border-white/15 bg-[var(--card)]/95 p-6">
+                  <Skeleton className="h-6 w-32 mb-4" />
+                  <Skeleton className="h-4 w-48 mb-2" />
+                  <Skeleton className="h-20 w-full" />
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     );

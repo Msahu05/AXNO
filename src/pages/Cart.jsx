@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Trash2, Plus, Minus, Loader2 } from "lucide-react";
+import { ArrowLeft, Trash2, Plus, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import Header from "@/components/Header";
 import { useCart } from "@/contexts/cart-context";
 import { useAuth } from "@/contexts/auth-context";
@@ -17,8 +18,30 @@ const Cart = () => {
         <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-6">
           <Header />
         </div>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="px-2 sm:px-4 lg:px-6 py-6 sm:py-10">
+          <div className="mx-auto max-w-6xl space-y-6 sm:space-y-8">
+            <Skeleton className="h-10 w-48" />
+            <div className="grid gap-6 sm:gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+              <div className="space-y-3 sm:space-y-4 rounded-[24px] sm:rounded-[32px] border border-white/10 bg-[var(--card)]/90 p-4 sm:p-6">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex flex-row gap-3 sm:gap-4 rounded-[16px] sm:rounded-[24px] border border-white/15 bg-background/70 p-3 sm:p-4">
+                    <Skeleton className="h-12 w-12 sm:h-16 sm:w-16 rounded-md sm:rounded-lg" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-3 w-1/2" />
+                      <Skeleton className="h-4 w-20" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="rounded-[24px] sm:rounded-[32px] border border-white/10 bg-[var(--card)]/90 p-4 sm:p-6">
+                <Skeleton className="h-6 w-32 mb-4" />
+                <Skeleton className="h-4 w-full mb-2" />
+                <Skeleton className="h-4 w-full mb-2" />
+                <Skeleton className="h-10 w-full mt-4" />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );

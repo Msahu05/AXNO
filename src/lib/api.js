@@ -493,6 +493,13 @@ export const adminAPI = {
     });
   },
 
+  updateProductOrder: async (productOrders) => {
+    return apiCall('/admin/products/order', {
+      method: 'PUT',
+      body: JSON.stringify({ productOrders }),
+    });
+  },
+
   // Slideshow Management
   getSlideshow: async () => {
     return apiCall('/admin/slideshow');

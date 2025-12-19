@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CheckCircle2, PhoneCall, UploadCloud, HeartHandshake, Truck, ArrowRight, Leaf, Sparkles, Zap, Award, Shield, Star, Instagram, Mail, Facebook, Loader2 } from "lucide-react";
+import { CheckCircle2, PhoneCall, UploadCloud, HeartHandshake, Truck, ArrowRight, Leaf, Sparkles, Zap, Award, Shield, Star, Instagram, Mail, Facebook } from "lucide-react";
 import { HeroSection } from "@/components/HeroSection";
 import Header from "@/components/Header";
 import ProductCard from "@/components/ProductCard";
+import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/auth-context";
 import { useWishlist } from "@/contexts/wishlist-context";
@@ -143,10 +144,11 @@ const Home = () => {
                     </div>
                   </div>
                   {loading ? (
-                    // Show centered loading spinner
-                    <div className="flex flex-col items-center justify-center py-12 min-h-[200px]">
-                      <Loader2 className="h-12 w-12 animate-spin text-[#7c3aed] mb-4" style={{ animation: 'spin 1s linear infinite' }} />
-                      <p className="text-foreground text-lg font-medium">Loading...</p>
+                    // Show skeleton placeholders
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                      {[1, 2, 3].map((i) => (
+                        <ProductCardSkeleton key={i} />
+                      ))}
                     </div>
                   ) : (
                     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

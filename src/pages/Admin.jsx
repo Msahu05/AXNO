@@ -121,6 +121,110 @@ const Admin = () => {
     };
   }, [deletedProducts]);
 
+  // Check for pending deletions on mount and complete them if past 10 seconds
+  useEffect(() => {
+    const checkPendingDeletions = async () => {
+      try {
+        const pendingDeletions = JSON.parse(localStorage.getItem('pendingProductDeletions') || '[]');
+        const now = Date.now();
+        const deletionsToComplete = [];
+        const deletionsToKeep = [];
+
+        for (const deletion of pendingDeletions) {
+          const deletedAt = new Date(deletion.deletedAt).getTime();
+          const timeElapsed = now - deletedAt;
+          
+          if (timeElapsed >= 10000) {
+            // More than 10 seconds have passed, complete the deletion
+            deletionsToComplete.push(deletion);
+          } else {
+            // Still within 10 seconds, keep it and set up timeout
+            deletionsToKeep.push(deletion);
+          }
+        }
+
+        // Complete deletions that are past 10 seconds
+        for (const deletion of deletionsToComplete) {
+          try {
+            console.log(`Completing pending deletion for product ${deletion.id}...`);
+            await adminAPI.deleteProduct(deletion.id);
+            console.log(`Product ${deletion.id} deleted successfully from database`);
+          } catch (error) {
+            console.error(`Error completing deletion for product ${deletion.id}:`, error);
+            // If deletion fails, restore the product
+            setProducts(prev => {
+              const exists = prev.find(p => (p.id || p._id) === deletion.id);
+              if (!exists) {
+                return [...prev, deletion];
+              }
+              return prev;
+            });
+          }
+        }
+
+        // Set up timeouts for deletions still within 10 seconds
+        const updatedDeletions = deletionsToKeep.map(deletion => {
+          const deletedAt = new Date(deletion.deletedAt).getTime();
+          const timeElapsed = now - deletedAt;
+          const remainingTime = 10000 - timeElapsed;
+
+          const deleteTimeout = setTimeout(async () => {
+            try {
+              console.log(`Deleting product ${deletion.id} from database after timeout...`);
+              await adminAPI.deleteProduct(deletion.id);
+              console.log(`Product ${deletion.id} deleted successfully from database`);
+              
+              // Remove from localStorage
+              const currentDeletions = JSON.parse(localStorage.getItem('pendingProductDeletions') || '[]');
+              const filtered = currentDeletions.filter(del => del.id !== deletion.id);
+              localStorage.setItem('pendingProductDeletions', JSON.stringify(filtered));
+              
+              // Remove from state
+              setDeletedProducts(prev => prev.filter(del => del.id !== deletion.id));
+            } catch (error) {
+              console.error('Error deleting product from backend:', error);
+              // If deletion fails, restore the product
+              setProducts(prev => {
+                const exists = prev.find(p => (p.id || p._id) === deletion.id);
+                if (!exists) {
+                  return [...prev, deletion];
+                }
+                return prev;
+              });
+              
+              // Remove from localStorage and state
+              const currentDeletions = JSON.parse(localStorage.getItem('pendingProductDeletions') || '[]');
+              const filtered = currentDeletions.filter(del => del.id !== deletion.id);
+              localStorage.setItem('pendingProductDeletions', JSON.stringify(filtered));
+              setDeletedProducts(prev => prev.filter(del => del.id !== deletion.id));
+            }
+          }, remainingTime);
+
+          return {
+            ...deletion,
+            deleteTimeout
+          };
+        });
+
+        // Update localStorage to only keep active deletions
+        localStorage.setItem('pendingProductDeletions', JSON.stringify(deletionsToKeep));
+
+        // Update state with active deletions
+        if (updatedDeletions.length > 0) {
+          setDeletedProducts(updatedDeletions);
+          // Remove these products from the products list
+          setProducts(prev => prev.filter(p => !updatedDeletions.some(del => del.id === (p.id || p._id))));
+        }
+      } catch (error) {
+        console.error('Error checking pending deletions:', error);
+      }
+    };
+
+    if (isAuthenticated && user?.isAdmin && !checkingAdmin && !authLoading) {
+      checkPendingDeletions();
+    }
+  }, [isAuthenticated, user, checkingAdmin, authLoading]);
+
   // Refresh user data on mount to get latest isAdmin status
   useEffect(() => {
     if (isAuthenticated) {
@@ -224,7 +328,23 @@ const Admin = () => {
       // Handle both response.products and direct array response
       const productsList = response.products || response || [];
       console.log('Setting products:', productsList);
-      setProducts(Array.isArray(productsList) ? productsList : []);
+      console.log('Sample product structure:', productsList[0] ? {
+        id: productsList[0].id,
+        _id: productsList[0]._id,
+        idType: typeof productsList[0].id,
+        _idType: typeof productsList[0]._id,
+        name: productsList[0].name
+      } : 'No products');
+      
+      // Filter out products that are pending deletion
+      const pendingDeletions = JSON.parse(localStorage.getItem('pendingProductDeletions') || '[]');
+      const pendingDeletionIds = pendingDeletions.map(del => del.id);
+      const filteredProducts = productsList.filter(p => {
+        const productId = p.id || p._id;
+        return !pendingDeletionIds.includes(productId);
+      });
+      
+      setProducts(Array.isArray(filteredProducts) ? filteredProducts : []);
     } catch (error) {
       console.error('Error loading products:', error);
       toast({
@@ -307,6 +427,19 @@ const Admin = () => {
     // Remove from products list immediately (UI update)
     setProducts(prev => prev.filter(p => (p.id || p._id) !== productId));
     
+    // Store deletion info with timestamp
+    const deletedAt = new Date().toISOString();
+    const deletedProduct = {
+      ...productData,
+      id: productId,
+      deletedAt: deletedAt
+    };
+    
+    // Store in localStorage for persistence across page refreshes
+    const pendingDeletions = JSON.parse(localStorage.getItem('pendingProductDeletions') || '[]');
+    pendingDeletions.push(deletedProduct);
+    localStorage.setItem('pendingProductDeletions', JSON.stringify(pendingDeletions));
+    
     // Schedule actual backend deletion after 10 seconds
     const deleteTimeout = setTimeout(async () => {
       try {
@@ -314,6 +447,12 @@ const Admin = () => {
         // Actually delete from backend after delay
         await adminAPI.deleteProduct(productId);
         console.log(`Product ${productId} deleted successfully from database`);
+        
+        // Remove from localStorage
+        const currentDeletions = JSON.parse(localStorage.getItem('pendingProductDeletions') || '[]');
+        const filtered = currentDeletions.filter(del => del.id !== productId);
+        localStorage.setItem('pendingProductDeletions', JSON.stringify(filtered));
+        
         // Remove from deleted products list
         setDeletedProducts(prev => prev.filter(del => del.id !== productId));
       } catch (error) {
@@ -326,7 +465,13 @@ const Admin = () => {
           }
           return prev;
         });
+        
+        // Remove from localStorage and state
+        const currentDeletions = JSON.parse(localStorage.getItem('pendingProductDeletions') || '[]');
+        const filtered = currentDeletions.filter(del => del.id !== productId);
+        localStorage.setItem('pendingProductDeletions', JSON.stringify(filtered));
         setDeletedProducts(prev => prev.filter(del => del.id !== productId));
+        
         toast({
           title: 'Deletion Failed',
           description: `Failed to delete "${productName}" from database. Product has been restored.`,
@@ -336,13 +481,11 @@ const Admin = () => {
     }, 10000); // 10 second delay before actual deletion
     
     // Store deleted product info for undo with timeout ID
-    const deletedProduct = {
-      ...productData,
-      id: productId,
-      deletedAt: new Date().toISOString(),
+    const deletedProductWithTimeout = {
+      ...deletedProduct,
       deleteTimeout: deleteTimeout
     };
-    setDeletedProducts(prev => [...prev, deletedProduct]);
+    setDeletedProducts(prev => [...prev, deletedProductWithTimeout]);
     
     toast({
       title: 'Product Deleted',
@@ -352,7 +495,7 @@ const Admin = () => {
           variant="outline"
           size="sm"
           onClick={() => {
-            handleUndoDelete(deletedProduct);
+            handleUndoDelete(deletedProductWithTimeout);
           }}
           className="ml-2"
         >
@@ -579,6 +722,147 @@ const Admin = () => {
     }
   };
 
+  const handleMoveProduct = async (product, categoryProducts, currentIndex, direction) => {
+    try {
+      console.log('handleMoveProduct called with:', { 
+        product: { id: product.id, _id: product._id, name: product.name },
+        currentIndex,
+        direction,
+        categoryProductsCount: categoryProducts.length
+      });
+      
+      const productId = product.id || product._id;
+      const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+      
+      if (newIndex < 0 || newIndex >= categoryProducts.length) {
+        return;
+      }
+
+      // Create new order array
+      const newOrder = [...categoryProducts];
+      const [movedProduct] = newOrder.splice(currentIndex, 1);
+      newOrder.splice(newIndex, 0, movedProduct);
+
+      // Prepare product orders for API - ensure we have valid IDs
+      // Products from API should have 'id' field (from _id.toString())
+      console.log('Full product objects:', newOrder.map((p, i) => ({ 
+        index: i,
+        id: p.id, 
+        _id: p._id, 
+        idType: typeof p.id,
+        _idType: typeof p._id,
+        name: p.name,
+        hasId: !!p.id,
+        has_id: !!p._id
+      })));
+      
+      const productOrders = newOrder
+        .map((p, idx) => {
+          // Prefer 'id' field as that's what the API returns
+          const pid = p.id || p._id || (p._id?.toString ? p._id.toString() : null);
+          
+          console.log(`Processing product ${idx} (${p.name}):`, { 
+            id: p.id, 
+            _id: p._id, 
+            pid, 
+            pidType: typeof pid,
+            pidValue: pid ? String(pid) : 'null',
+            name: p.name 
+          });
+          
+          if (!pid) {
+            console.error('Product has no ID field:', { product: p, idx, allKeys: Object.keys(p) });
+            return null;
+          }
+          
+          // Convert to string if it's an object
+          let productIdStr = null;
+          if (typeof pid === 'string') {
+            productIdStr = pid.trim();
+          } else if (pid && typeof pid === 'object' && pid.toString) {
+            productIdStr = pid.toString().trim();
+          } else if (pid) {
+            productIdStr = String(pid).trim();
+          }
+          
+          console.log(`Product ${idx} ID string:`, productIdStr, 'Length:', productIdStr?.length, 'Type:', typeof productIdStr);
+          
+          if (!productIdStr || productIdStr.length === 0) {
+            console.error('Product ID is empty after conversion:', { product: p, idx, originalPid: pid });
+            return null;
+          }
+          
+          // Validate MongoDB ObjectId format (24 hex characters)
+          const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(productIdStr);
+          console.log(`Product ${idx} ObjectId validation:`, isValidObjectId, 'ID:', productIdStr, 'Pattern match:', /^[0-9a-fA-F]{24}$/.test(productIdStr));
+          
+          if (!isValidObjectId) {
+            console.error('Product ID is not a valid MongoDB ObjectId:', { 
+              productIdStr, 
+              length: productIdStr.length,
+              firstChars: productIdStr.substring(0, 10),
+              product: p, 
+              idx 
+            });
+            return null;
+          }
+          
+          return {
+            productId: productIdStr,
+            displayOrder: idx
+          };
+        })
+        .filter(po => po !== null && po.productId && po.productId.length > 0); // Filter out null/empty IDs
+
+      if (productOrders.length === 0) {
+        throw new Error('No valid product IDs found after validation');
+      }
+
+      if (productOrders.length !== newOrder.length) {
+        console.warn(`Some products were filtered out. Expected ${newOrder.length}, got ${productOrders.length}`);
+      }
+
+      console.log('Sending product order update with IDs:', productOrders.map(po => ({ 
+        productId: po.productId, 
+        productIdLength: po.productId.length,
+        displayOrder: po.displayOrder 
+      })));
+
+      // Update order via API
+      try {
+        const response = await adminAPI.updateProductOrder(productOrders);
+        console.log('Product order update response:', response);
+      } catch (apiError) {
+        console.error('API Error details:', {
+          message: apiError.message,
+          error: apiError,
+          productOrders: productOrders
+        });
+        throw apiError;
+      }
+
+      // Refresh products to show new order
+      await fetchProducts();
+
+      toast({
+        title: 'Success',
+        description: `Product order updated successfully`,
+      });
+    } catch (error) {
+      console.error('Error updating product order:', error);
+      console.error('Error details:', error.details);
+      console.error('Error stack:', error.stack);
+      const errorMessage = error.details?.details 
+        ? `${error.message}. Details: ${JSON.stringify(error.details.details)}`
+        : error.message || 'Failed to update product order';
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleUndoDelete = async (deletedProduct) => {
     try {
       const productId = deletedProduct.id;
@@ -591,6 +875,11 @@ const Admin = () => {
         }
         return prev.filter(del => del.id !== productId);
       });
+      
+      // Remove from localStorage
+      const pendingDeletions = JSON.parse(localStorage.getItem('pendingProductDeletions') || '[]');
+      const filtered = pendingDeletions.filter(del => del.id !== productId);
+      localStorage.setItem('pendingProductDeletions', JSON.stringify(filtered));
       
       // Restore product to products list
       setProducts(prev => {
@@ -1177,59 +1466,117 @@ const Admin = () => {
                     </Button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {products.map((product, index) => {
-                      // Get the first image from gallery or use image field
-                      const productImage = product.gallery && product.gallery.length > 0
-                        ? (typeof product.gallery[0] === 'string' ? product.gallery[0] : product.gallery[0].url || product.gallery[0])
-                        : product.image || '';
-                      
-                      return (
-                      <div 
-                        key={product.id || product._id || index} 
-                        className="border rounded-lg p-4 cursor-pointer hover:shadow-lg transition-shadow"
-                        onClick={() => navigate(`/admin/products/${product.id || product._id}`)}
-                      >
-                        <img 
-                          src={getImageUrl(productImage) || 'https://via.placeholder.com/300'} 
-                          alt={product.name}
-                          className="w-full h-48 object-cover rounded mb-2"
-                          onError={(e) => {
-                            e.target.src = 'https://via.placeholder.com/300';
-                          }}
-                        />
-                        <h3 className="font-semibold">{product.name}</h3>
-                        <p className="text-sm text-gray-600">{product.category} - {product.audience || 'Unisex'}</p>
-                        <p className="text-lg font-bold mt-2">₹{product.price}</p>
-                        <div className="flex gap-2 mt-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="flex-1"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/admin/products/${product.id || product._id}`);
-                            }}
-                          >
-                            <Eye className="h-4 w-4 mr-2" />
-                            Manage
-                          </Button>
-                          <Button 
-                            variant="destructive" 
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (window.confirm(`Are you sure you want to delete "${product.name}"? This action can be undone within 10 seconds.`)) {
-                                handleDeleteProduct(product);
-                              }
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                  <div className="space-y-8">
+                    {(() => {
+                      // Group products by category
+                      const productsByCategory = products.reduce((acc, product) => {
+                        const category = product.category || 'Other';
+                        if (!acc[category]) {
+                          acc[category] = [];
+                        }
+                        acc[category].push(product);
+                        return acc;
+                      }, {});
+
+                      return Object.entries(productsByCategory).map(([category, categoryProducts]) => (
+                        <div key={category} className="space-y-4">
+                          <div className="flex items-center justify-between border-b pb-2">
+                            <h3 className="text-lg font-semibold">{category}</h3>
+                            <span className="text-sm text-gray-500">{categoryProducts.length} products</span>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {categoryProducts.map((product, index) => {
+                              // Get the first image from gallery or use image field
+                              const productImage = product.gallery && product.gallery.length > 0
+                                ? (typeof product.gallery[0] === 'string' ? product.gallery[0] : product.gallery[0].url || product.gallery[0])
+                                : product.image || '';
+                              
+                              const isFirst = index === 0;
+                              const isLast = index === categoryProducts.length - 1;
+                              
+                              return (
+                                <div 
+                                  key={product.id || product._id || index} 
+                                  className="border rounded-lg p-4 hover:shadow-lg transition-shadow relative"
+                                >
+                                  <div className="absolute top-2 right-2 flex flex-col gap-1 z-10">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-6 w-6 p-0"
+                                      disabled={isFirst}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleMoveProduct(product, categoryProducts, index, 'up');
+                                      }}
+                                    >
+                                      <ArrowUp className="h-3 w-3" />
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-6 w-6 p-0"
+                                      disabled={isLast}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleMoveProduct(product, categoryProducts, index, 'down');
+                                      }}
+                                    >
+                                      <ArrowDown className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                  <div 
+                                    className="cursor-pointer"
+                                    onClick={() => navigate(`/admin/products/${product.id || product._id}`)}
+                                  >
+                                    <div className="absolute top-2 left-2 bg-purple-500 text-white text-xs font-bold px-2 py-1 rounded">
+                                      #{index + 1}
+                                    </div>
+                                    <img 
+                                      src={getImageUrl(productImage) || 'https://via.placeholder.com/300'} 
+                                      alt={product.name}
+                                      className="w-full h-48 object-cover rounded mb-2"
+                                      onError={(e) => {
+                                        e.target.src = 'https://via.placeholder.com/300';
+                                      }}
+                                    />
+                                    <h3 className="font-semibold">{product.name}</h3>
+                                    <p className="text-sm text-gray-600">{product.category} - {product.audience || 'Unisex'}</p>
+                                    <p className="text-lg font-bold mt-2">₹{product.price}</p>
+                                  </div>
+                                  <div className="flex gap-2 mt-2">
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="flex-1"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        navigate(`/admin/products/${product.id || product._id}`);
+                                      }}
+                                    >
+                                      <Eye className="h-4 w-4 mr-2" />
+                                      Manage
+                                    </Button>
+                                    <Button 
+                                      variant="destructive" 
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (window.confirm(`Are you sure you want to delete "${product.name}"? This action can be undone within 10 seconds.`)) {
+                                          handleDeleteProduct(product);
+                                        }
+                                      }}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
-                      </div>
-                      );
-                    })}
+                      ));
+                    })()}
                   </div>
                 )}
               </CardContent>

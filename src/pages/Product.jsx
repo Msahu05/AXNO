@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { productsAPI, getImageUrl, sizeChartsAPI, reviewsAPI } from "@/lib/api";
 import { Heart, Minus, Plus, ShoppingBag, Star, Truck, Zap, Upload, X, Image as ImageIcon, ArrowLeft, ArrowRight } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/auth-context";
 import { useCart } from "@/contexts/cart-context";
 import { useWishlist } from "@/contexts/wishlist-context";
@@ -318,8 +319,24 @@ const Product = () => {
     return (
       <div className="min-h-screen bg-background">
         <Header />
-        <div className="container mx-auto flex min-h-[60vh] items-center justify-center px-4">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        <div className="container mx-auto px-4 py-8">
+          <div className="grid gap-8 lg:grid-cols-2">
+            <div className="space-y-4">
+              <Skeleton className="aspect-square w-full rounded-lg" />
+              <div className="flex gap-2">
+                {[1, 2, 3, 4].map((i) => (
+                  <Skeleton key={i} className="h-20 w-20 rounded-lg" />
+                ))}
+              </div>
+            </div>
+            <div className="space-y-6">
+              <Skeleton className="h-8 w-3/4" />
+              <Skeleton className="h-6 w-1/2" />
+              <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -1000,7 +1017,7 @@ const Product = () => {
                     <>
                       <p className="font-medium text-sm sm:text-base text-foreground">Free Shipping to {detectedLocation}</p>
                       <p className="text-xs sm:text-sm text-muted-foreground">
-                        Estimated delivery:  Assured Delivery by 1-12 days
+                        Estimated delivery:  Assured Delivery by 8-10 days
                       </p>
                     </>
                   ) : pincodeChecked && !detectedLocation ? (

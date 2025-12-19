@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
-import { ArrowLeft, UploadCloud, MessageCircle, ShieldCheck, Loader2, MapPin, Plus, Minus, ChevronRight, ChevronDown } from "lucide-react";
+import { ArrowLeft, UploadCloud, MessageCircle, ShieldCheck, MapPin, Plus, Minus, ChevronRight, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Checkbox } from "@/components/ui/checkbox";
 import Header from "@/components/Header";
 import { useAuth } from "@/contexts/auth-context";
 import { useCart } from "@/contexts/cart-context";
@@ -78,6 +80,7 @@ const Checkout = () => {
   const [isValidPincode, setIsValidPincode] = useState(true);
   const [isShippingOpen, setIsShippingOpen] = useState(true);
   const [isCustomDesignOpen, setIsCustomDesignOpen] = useState(false);
+  const [acceptedRefundPolicy, setAcceptedRefundPolicy] = useState(false);
   const descriptionRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -1016,8 +1019,20 @@ const Checkout = () => {
         <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-6">
           <Header />
         </div>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="px-2 sm:px-4 lg:px-6 py-6 sm:py-10">
+          <div className="mx-auto max-w-7xl">
+            <Skeleton className="h-10 w-32 mb-6" />
+            <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+              <div className="space-y-4">
+                <Skeleton className="h-64 w-full rounded-lg" />
+                <Skeleton className="h-48 w-full rounded-lg" />
+              </div>
+              <div className="space-y-6">
+                <Skeleton className="h-64 w-full rounded-lg" />
+                <Skeleton className="h-48 w-full rounded-lg" />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -1038,8 +1053,20 @@ const Checkout = () => {
         <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-6">
           <Header />
         </div>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="px-2 sm:px-4 lg:px-6 py-6 sm:py-10">
+          <div className="mx-auto max-w-7xl">
+            <Skeleton className="h-10 w-32 mb-6" />
+            <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+              <div className="space-y-4">
+                <Skeleton className="h-64 w-full rounded-lg" />
+                <Skeleton className="h-48 w-full rounded-lg" />
+              </div>
+              <div className="space-y-6">
+                <Skeleton className="h-64 w-full rounded-lg" />
+                <Skeleton className="h-48 w-full rounded-lg" />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -1219,7 +1246,6 @@ const Checkout = () => {
                 <div className="col-span-2 relative">
                       <label className="block text-xs font-semibold uppercase tracking-wide text-gray-700 mb-2">
                         ZIP CODE
-                        {loadingPincode && <Loader2 className="inline h-3 w-3 animate-spin ml-2" />}
                         <span className="text-xs font-normal text-gray-500 ml-2">(Ahmedabad/Gandhinagar only)</span>
                   </label>
                   <Input
@@ -1525,14 +1551,40 @@ const Checkout = () => {
             </div>
                 </div>
 
-                <p className="text-sm text-purple-600 font-medium mb-6 text-center">
-                  Assured delivery by 1-12 days
+                <p className="text-sm text-purple-600 font-medium mb-4 text-center">
+                  Assured delivery by 8-10 days
                 </p>
 
+                {/* Non-refundable and Non-exchangeable Policy Checkbox */}
+                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
+                  <div className="flex items-start gap-3">
+                    <Checkbox
+                      id="refund-policy"
+                      checked={acceptedRefundPolicy}
+                      onCheckedChange={(checked) => setAcceptedRefundPolicy(checked === true)}
+                      className="mt-0.5"
+                    />
+                    <label
+                      htmlFor="refund-policy"
+                      className="text-sm text-gray-800 cursor-pointer leading-relaxed"
+                    >
+                      <span className="font-semibold text-red-700">I understand and agree</span> that the products I am purchasing are{" "}
+                      <span className="font-semibold text-red-700">completely non-refundable</span> and{" "}
+                      <span className="font-semibold text-red-700">non-exchangeable</span>. I acknowledge that once the order is placed, 
+                      I cannot request a refund or exchange for any reason..
+                    </label>
+                  </div>
+                </div>
+
             <button 
-                  className="w-full bg-black hover:bg-gray-800 text-white font-semibold py-3 px-4 rounded-md transition-colors"
-              onClick={handlePlaceOrder}
-                  style={{ backgroundColor: '#000000' }}
+                  className={`w-full font-semibold py-3 px-4 rounded-md transition-all duration-200 ${
+                    acceptedRefundPolicy
+                      ? 'bg-black hover:bg-gray-800 text-white cursor-pointer'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-40'
+                  }`}
+              onClick={acceptedRefundPolicy ? handlePlaceOrder : undefined}
+              disabled={!acceptedRefundPolicy}
+                  style={acceptedRefundPolicy ? { backgroundColor: '#000000' } : { backgroundColor: '#d1d5db', opacity: 0.4 }}
             >
                   Continue to payment
             </button>

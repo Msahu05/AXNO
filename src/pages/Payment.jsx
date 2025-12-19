@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, CreditCard, ShieldCheck, Loader2, CheckCircle2, XCircle, TestTube } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import Header from "@/components/Header";
 import { useAuth } from "@/contexts/auth-context";
 import { useCart } from "@/contexts/cart-context";
@@ -366,8 +367,23 @@ const Payment = () => {
         <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-6">
           <Header />
         </div>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="px-2 sm:px-4 lg:px-6 py-6 sm:py-10">
+          <div className="mx-auto max-w-4xl space-y-4 sm:space-y-6">
+            <Skeleton className="h-10 w-32" />
+            <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+              <div className="rounded-[48px] border border-white/15 bg-[var(--card)]/95 p-8 space-y-6">
+                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-4 w-64" />
+                <Skeleton className="h-32 w-full" />
+              </div>
+              <div className="rounded-[48px] border border-white/15 bg-[var(--card)]/95 p-8 space-y-4">
+                <Skeleton className="h-6 w-32" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );

@@ -43,11 +43,42 @@ if (PAYMENT_MODE === 'production' && process.env.RAZORPAY_KEY_ID && process.env.
 }
 
 const app = express();
+// CORS configuration - allow localhost for development and production domains
+const allowedOrigins = [
+  "http://localhost:8080",
+  "http://localhost:3000",
+  "http://localhost:5173",
+  "https://looklyn.in",
+  "https://www.looklyn.in"
+];
+
+// In development, allow all localhost origins
+if (process.env.NODE_ENV !== 'production') {
+  allowedOrigins.push(/^http:\/\/localhost:\d+$/);
+}
+
 app.use(cors({
-  origin: [
-    "https://looklyn.in",
-    "https://www.looklyn.in"
-  ],
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Check if origin is in allowed list or matches regex pattern
+    const isAllowed = allowedOrigins.some(allowed => {
+      if (typeof allowed === 'string') {
+        return origin === allowed;
+      }
+      if (allowed instanceof RegExp) {
+        return allowed.test(origin);
+      }
+      return false;
+    });
+    
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 
@@ -382,11 +413,13 @@ const productSchema = new mongoose.Schema({
   stock: { type: Number, default: 0 }, // Stock quantity
   isActive: { type: Boolean, default: true }, // Product visibility
   tags: [{ type: String }], // Product tags for search
+  displayOrder: { type: Number, default: 0 }, // Display order within category
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });
 
 productSchema.index({ category: 1, audience: 1 });
+productSchema.index({ category: 1, displayOrder: 1 });
 productSchema.index({ isActive: 1 });
 productSchema.index({ name: 'text', description: 'text' });
 productSchema.index({ slug: 1 }); // Index for slug lookups
@@ -2934,7 +2967,7 @@ app.get('/api/products', async (req, res) => {
     
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const products = await Product.find(query)
-      .sort(search ? { score: { $meta: 'textScore' } } : { createdAt: -1 })
+      .sort(search ? { score: { $meta: 'textScore' } } : { category: 1, displayOrder: 1, createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit))
       .lean();
@@ -3028,7 +3061,7 @@ app.get('/api/admin/products', authenticateAdmin, async (req, res) => {
     
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const products = await Product.find(query)
-      .sort(search ? { score: { $meta: 'textScore' } } : { createdAt: -1 })
+      .sort(search ? { score: { $meta: 'textScore' } } : { category: 1, displayOrder: 1, createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit))
       .lean();
@@ -3132,6 +3165,13 @@ app.post('/api/admin/products', authenticateAdmin, async (req, res) => {
       }
     }
     
+    // Get the max displayOrder for this category to set the new product's order
+    const maxOrderProduct = await Product.findOne({ category })
+      .sort({ displayOrder: -1 })
+      .select('displayOrder')
+      .lean();
+    const nextDisplayOrder = maxOrderProduct ? (maxOrderProduct.displayOrder || 0) + 1 : 0;
+    
     const product = new Product({
       name,
       description: description || '',
@@ -3144,6 +3184,7 @@ app.post('/api/admin/products', authenticateAdmin, async (req, res) => {
       stock: parseInt(stock) || 0,
       colorOptions: colorOptionsArray,
       tags: tagsArray,
+      displayOrder: nextDisplayOrder,
       isActive: true
     });
     
@@ -3169,6 +3210,72 @@ app.post('/api/admin/products', authenticateAdmin, async (req, res) => {
     });
   } catch (error) {
     console.error('Create product error:', error);
+    res.status(500).json({ error: error.message || 'Server error' });
+  }
+});
+
+// Admin: Update product order (bulk update) - MUST BE BEFORE /:id route to avoid route conflict
+app.put('/api/admin/products/order', authenticateAdmin, async (req, res) => {
+  try {
+    const { productOrders } = req.body; // Array of { productId, displayOrder }
+    
+    if (!Array.isArray(productOrders)) {
+      return res.status(400).json({ error: 'productOrders must be an array' });
+    }
+    
+    if (productOrders.length === 0) {
+      return res.status(400).json({ error: 'productOrders array cannot be empty' });
+    }
+    
+    // Validate and filter product IDs
+    const invalidIds = [];
+    const validProductOrders = productOrders.filter(({ productId, displayOrder }, index) => {
+      if (!productId) {
+        console.warn(`Missing productId at index ${index}`);
+        invalidIds.push({ index, reason: 'Missing productId' });
+        return false;
+      }
+      
+      const productIdStr = String(productId).trim();
+      const isValid = mongoose.Types.ObjectId.isValid(productIdStr);
+      
+      if (!isValid) {
+        console.warn(`Invalid productId at index ${index}:`, productIdStr);
+        invalidIds.push({ index, productId: productIdStr, reason: 'Invalid ObjectId format' });
+        return false;
+      }
+      
+      return true;
+    });
+    
+    if (validProductOrders.length === 0) {
+      console.error('No valid product IDs found. Invalid IDs:', invalidIds);
+      return res.status(400).json({ 
+        error: 'No valid product IDs found in productOrders',
+        details: invalidIds
+      });
+    }
+    
+    if (validProductOrders.length !== productOrders.length) {
+      console.warn(`Filtered out ${productOrders.length - validProductOrders.length} invalid product IDs`);
+    }
+    
+    // Update all products in a single transaction
+    const bulkOps = validProductOrders.map(({ productId, displayOrder }) => ({
+      updateOne: {
+        filter: { _id: new mongoose.Types.ObjectId(String(productId).trim()) },
+        update: { $set: { displayOrder: parseInt(displayOrder) || 0, updatedAt: new Date() } }
+      }
+    }));
+    
+    const result = await Product.bulkWrite(bulkOps);
+    
+    res.json({
+      message: 'Product order updated successfully',
+      updated: result.modifiedCount || bulkOps.length
+    });
+  } catch (error) {
+    console.error('Update product order error:', error);
     res.status(500).json({ error: error.message || 'Server error' });
   }
 });
@@ -3548,7 +3655,7 @@ const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📡 API available at http://localhost:${PORT}/api`);
-  console.log(`🌐 CORS enabled for http://localhost:8080`);
+  console.log(`🌐 CORS enabled for: ${allowedOrigins.filter(o => typeof o === 'string').join(', ')}`);
   
   // Check WhatsApp configuration
   console.log('\n📱 WhatsApp Configuration Check:');
