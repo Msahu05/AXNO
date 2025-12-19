@@ -7,10 +7,35 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      # Add your other environment variables in Render dashboard:
-      # MONGODB_URI
-      # JWT_SECRET
-      # etc.
+      # IMPORTANT: Add these environment variables in Render Dashboard:
+      # Required:
+      # - MONGODB_URI
+      # - JWT_SECRET
+      # - ADMIN_SECRET
+      # 
+      # Email Configuration (Brevo SMTP):
+      # - EMAIL_USER (SMTP Login from Brevo dashboard)
+      # - EMAIL_PASS (SMTP Key from Brevo dashboard)
+      # - FROM_EMAIL (Verified sender email in Brevo)
+      # - SMTP_HOST=smtp-relay.brevo.com
+      # - SMTP_PORT=587
+      #
+      # Payment Configuration (if using):
+      # - RAZORPAY_KEY_ID
+      # - RAZORPAY_KEY_SECRET
+      # - RAZORPAY_WEBHOOK_SECRET
+      # - PAYMENT_MODE=production
+      #
+      # Frontend URL (for email links):
+      # - FRONTEND_URL=https://your-frontend-domain.com
+
+
+
+
+
+
+
+
 
 
 

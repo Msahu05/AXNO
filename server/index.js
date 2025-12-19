@@ -4,7 +4,7 @@ import cors from 'cors';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
-import nodemailer from 'nodemailer';
+// Brevo API is imported in emailTemplates.js
 import multer from 'multer';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -550,29 +550,33 @@ const generateOrderId = async () => {
   }
 };
 
-// Email transporter setup (SMTP Configuration)
+// Email Configuration (Brevo API)
 // ============================================
-// Using Brevo (formerly Sendinblue) SMTP for production
+// Using Brevo API for email delivery (better than SMTP)
 // STEP 1: Sign up at https://www.brevo.com/
-// STEP 2: Go to Settings → SMTP & API → SMTP
-// STEP 3: Copy your SMTP server details and SMTP key
-// STEP 4: Add your credentials to server/.env file:
-//   EMAIL_USER=your-brevo-email@example.com
-//   EMAIL_PASS=your-brevo-smtp-key
-//   SMTP_HOST=smtp-relay.brevo.com
-//   SMTP_PORT=587
-// STEP 5: Restart your server
+// STEP 2: Go to Settings → SMTP & API → API Keys
+// STEP 3: Create or copy your API key
+// STEP 4: Go to Settings → Senders → Add and verify a sender email
+// STEP 5: Add these to server/.env:
+//   BREVO_API_KEY=your-brevo-api-key-here
+//   FROM_EMAIL=your-verified-sender-email@example.com
+//   FROM_NAME=Looklyn (optional)
+// STEP 6: Restart your server
 // ============================================
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp-relay.brevo.com',
-  port: process.env.SMTP_PORT || 587,
-  secure: false, // true for 465, false for 587
-  auth: {
-    user: process.env.EMAIL_USER, // Your Brevo login email (REQUIRED)
-    pass: process.env.EMAIL_PASS  // Your Brevo SMTP key (REQUIRED)
+// Test Brevo API configuration on server start
+if (process.env.BREVO_API_KEY && process.env.FROM_EMAIL) {
+  console.log('✅ Brevo API configured - emails will be sent via API');
+} else {
+  console.log('⚠️  Brevo API not configured:');
+  if (!process.env.BREVO_API_KEY) {
+    console.log('   - BREVO_API_KEY is missing (get from Brevo Dashboard → Settings → SMTP & API → API Keys)');
   }
-});
+  if (!process.env.FROM_EMAIL) {
+    console.log('   - FROM_EMAIL is missing (must be verified sender in Brevo Dashboard → Settings → Senders)');
+  }
+  console.log('⚠️  Emails will not be sent until both are configured');
+}
 
 // Function to send order notification to all admins
 const notifyAdminsOfNewOrder = async (order, customer) => {
@@ -611,7 +615,7 @@ const notifyAdminsOfNewOrder = async (order, customer) => {
 
     // Send email to all admins
     const emailPromises = admins.map(admin => {
-      return sendEmail(transporter, admin.email, emailTemplate.subject, emailTemplate.html)
+      return sendEmail(admin.email, emailTemplate.subject, emailTemplate.html)
         .then(result => {
           if (result.success) {
             console.log(`✅ Admin notification sent to ${admin.email}`);
@@ -636,15 +640,7 @@ const notifyAdminsOfNewOrder = async (order, customer) => {
   }
 };
 
-// Test email connection on server start
-transporter.verify(function (error, success) {
-  if (error) {
-    console.log('❌ Email configuration error:', error.message);
-    console.log('⚠️  Emails will not be sent until EMAIL_USER and EMAIL_PASS are configured in server/.env');
-  } else {
-    console.log('✅ Email server is ready to send messages');
-  }
-});
+// Brevo API configuration is checked above on server start
 
 // JWT Secret
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
@@ -773,7 +769,7 @@ app.post('/api/auth/send-otp', async (req, res) => {
 
     // Send via email if email provided
     if (email) {
-      const emailResult = await sendEmail(transporter, email,
+      const emailResult = await sendEmail(email,
         'Looklyn - Email Verification OTP',
         `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -885,7 +881,7 @@ app.post('/api/auth/signup', async (req, res) => {
     await user.save();
 
     // Send welcome email
-    sendEmail(transporter, user.email,
+    sendEmail(user.email,
       emailTemplates.welcomeEmail(user.name).subject,
       emailTemplates.welcomeEmail(user.name).html
     ).catch(err => console.error('Failed to send welcome email:', err));
@@ -972,7 +968,7 @@ app.post('/api/auth/signup-otp', async (req, res) => {
     await otpRecord.save();
 
     // Send welcome email
-    sendEmail(transporter, user.email,
+    sendEmail(user.email,
       emailTemplates.welcomeEmail(user.name).subject,
       emailTemplates.welcomeEmail(user.name).html
     ).catch(err => console.error('Failed to send welcome email:', err));
@@ -1034,7 +1030,7 @@ app.post('/api/auth/google', async (req, res) => {
       await user.save();
 
       // Send welcome email
-      sendEmail(transporter, user.email,
+      sendEmail(user.email,
         emailTemplates.welcomeEmail(user.name).subject,
         emailTemplates.welcomeEmail(user.name).html
       ).catch(err => console.error('Failed to send welcome email:', err));
@@ -1059,7 +1055,7 @@ app.post('/api/auth/google', async (req, res) => {
 
     // Send login notification email with recovery link
     const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:8080'}/reset-password?token=${resetToken}`;
-    sendEmail(transporter, user.email,
+    sendEmail(user.email,
       emailTemplates.loginNotification(user, new Date(), resetLink).subject,
       emailTemplates.loginNotification(user, new Date(), resetLink).html
     ).catch(err => console.error('Failed to send login notification:', err));
@@ -1130,7 +1126,7 @@ app.post('/api/auth/login', async (req, res) => {
 
     // Send login notification email with recovery link
     const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:8080'}/reset-password?token=${resetToken}`;
-    sendEmail(transporter, user.email, 
+    sendEmail(user.email, 
       emailTemplates.loginNotification(user, new Date(), resetLink).subject,
       emailTemplates.loginNotification(user, new Date(), resetLink).html
     ).catch(err => console.error('Failed to send login notification:', err));
@@ -1209,7 +1205,7 @@ app.post('/api/auth/login-otp', async (req, res) => {
 
     // Send login notification email with recovery link
     const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:8080'}/reset-password?token=${resetToken}`;
-    sendEmail(transporter, user.email,
+    sendEmail(user.email,
       emailTemplates.loginNotification(user, new Date(), resetLink).subject,
       emailTemplates.loginNotification(user, new Date(), resetLink).html
     ).catch(err => console.error('Failed to send login notification:', err));
@@ -1261,8 +1257,8 @@ app.post('/api/auth/send-login-otp', async (req, res) => {
 
     await otp.save();
 
-    // Send email via SMTP
-    const emailResult = await sendEmail(transporter, email,
+    // Send email via Brevo API
+    const emailResult = await sendEmail(email,
       'Looklyn - Login OTP',
       `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -1312,7 +1308,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:8080'}/reset-password?token=${resetToken}`;
 
     // Send email with reset link
-    const emailResult = await sendEmail(transporter, email,
+    const emailResult = await sendEmail(email,
       emailTemplates.passwordResetLink(user.name, resetLink).subject,
       emailTemplates.passwordResetLink(user.name, resetLink).html
     );
@@ -1984,7 +1980,7 @@ app.post('/api/payments/confirm', authenticateToken, upload.array('designFiles',
     
     if (populatedOrder && populatedOrder.userId) {
       // Send email
-      sendEmail(transporter, populatedOrder.userId.email,
+      sendEmail(populatedOrder.userId.email,
         emailTemplates.orderConfirmation({
           orderId: order.orderId,
           userName: populatedOrder.userId.name,
@@ -2135,7 +2131,7 @@ app.post('/api/orders', authenticateToken, upload.array('designFiles', 10), asyn
     
     if (populatedOrder && populatedOrder.userId) {
       // Send email
-      sendEmail(transporter, populatedOrder.userId.email,
+      sendEmail(populatedOrder.userId.email,
         emailTemplates.orderConfirmation({
           orderId: order.orderId,
           userName: populatedOrder.userId.name,
@@ -2259,7 +2255,7 @@ app.put('/api/admin/orders/:orderId/status', authenticateAdmin, async (req, res)
     
     if (populatedOrder && populatedOrder.userId) {
       // Send email
-      sendEmail(transporter, populatedOrder.userId.email,
+      sendEmail(populatedOrder.userId.email,
         emailTemplates.orderStatusUpdate(populatedOrder, oldStatus).subject,
         emailTemplates.orderStatusUpdate(populatedOrder, oldStatus).html
       ).catch(err => console.error('Failed to send order status email:', err));
@@ -2362,7 +2358,7 @@ app.put('/api/admin/orders/:orderId/tracking', authenticateAdmin, async (req, re
     
     if (populatedOrder && populatedOrder.userId) {
       // Send email
-      sendEmail(transporter, populatedOrder.userId.email,
+      sendEmail(populatedOrder.userId.email,
         emailTemplates.orderStatusUpdate(populatedOrder, oldTrackingStatus).subject,
         emailTemplates.orderStatusUpdate(populatedOrder, oldTrackingStatus).html
       ).catch(err => console.error('Failed to send tracking update email:', err));
@@ -2600,7 +2596,7 @@ app.post('/api/admin/orders/create', authenticateAdmin, upload.array('designFile
     
     if (populatedOrder && populatedOrder.userId) {
       // Send email
-      sendEmail(transporter, populatedOrder.userId.email,
+      sendEmail(populatedOrder.userId.email,
         emailTemplates.orderConfirmation({
           orderId: order.orderId,
           userName: populatedOrder.userId.name,
@@ -2879,7 +2875,7 @@ app.post('/api/admin/users/:userId/add-product', authenticateAdmin, upload.array
     
     if (populatedOrder && populatedOrder.userId) {
       // Send email
-      sendEmail(transporter, populatedOrder.userId.email,
+      sendEmail(populatedOrder.userId.email,
         emailTemplates.orderConfirmation({
           orderId: order.orderId,
           userName: populatedOrder.userId.name,

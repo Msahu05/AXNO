@@ -152,20 +152,22 @@ const emailTemplates = {
   })
 };
 
-// Helper function to send emails via SMTP
-const sendEmail = async (transporter, to, subject, html) => {
+// Helper function to send emails via Brevo API
+import * as brevo from '@getbrevo/brevo';
+
+const sendEmail = async (to, subject, html) => {
   try {
-    // Check if email credentials are configured
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      console.error('❌ Email not configured: EMAIL_USER and EMAIL_PASS must be set in server/.env');
-      return { success: false, error: 'Email service not configured' };
+    // Check if Brevo API key is configured
+    if (!process.env.BREVO_API_KEY) {
+      console.error('❌ Email not configured: BREVO_API_KEY must be set in server/.env');
+      console.error('   Get your API key from: Brevo Dashboard → Settings → SMTP & API → API Keys');
+      return { success: false, error: 'Email service not configured - BREVO_API_KEY missing' };
     }
 
     // FROM_EMAIL is REQUIRED - must be a verified sender email in Brevo
-    // EMAIL_USER is the SMTP login and cannot be used as "from" address
     if (!process.env.FROM_EMAIL) {
       console.error('❌ FROM_EMAIL not configured! You must set FROM_EMAIL in server/.env');
-      console.error('   FROM_EMAIL must be a verified sender email in Brevo (not the SMTP login)');
+      console.error('   FROM_EMAIL must be a verified sender email in Brevo');
       console.error('   Go to Brevo Dashboard → Settings → Senders → Add and verify a sender');
       return { 
         success: false, 
@@ -174,37 +176,52 @@ const sendEmail = async (transporter, to, subject, html) => {
     }
     
     const fromEmail = process.env.FROM_EMAIL;
+    const fromName = process.env.FROM_NAME || 'Looklyn';
     
-    const mailOptions = {
-      from: `Looklyn <${fromEmail}>`, // Sender email with name (must be verified in Brevo)
-      to, // Recipient email address
-      subject, // Email subject
-      html // Email body (HTML format)
-    };
+    // Initialize Brevo API client
+    const apiInstance = new brevo.TransactionalEmailsApi();
+    
+    // Set API key using the setApiKey method
+    apiInstance.setApiKey(brevo.TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY);
 
-    console.log(`📧 Attempting to send email to ${to} from ${fromEmail}`);
+    // Prepare email data
+    const sendSmtpEmail = new brevo.SendSmtpEmail();
+    sendSmtpEmail.subject = subject;
+    sendSmtpEmail.htmlContent = html;
+    sendSmtpEmail.sender = { 
+      name: fromName, 
+      email: fromEmail 
+    };
+    sendSmtpEmail.to = [{ email: to }];
+
+    console.log(`📧 Attempting to send email to ${to} from ${fromEmail} via Brevo API`);
     
-    // Send email via SMTP
-    const info = await transporter.sendMail(mailOptions);
+    // Send email via Brevo API
+    const data = await apiInstance.sendTransacEmail(sendSmtpEmail);
     
-    // Log detailed response from SMTP server
+    // Log success
     console.log(`✅ Email sent successfully to ${to}`);
-    console.log(`   Message ID: ${info.messageId}`);
-    console.log(`   Response: ${info.response || 'No response'}`);
+    console.log(`   Message ID: ${data.messageId || 'N/A'}`);
     
     return { 
       success: true, 
       message: 'Email sent successfully',
-      messageId: info.messageId,
-      response: info.response
+      messageId: data.messageId
     };
   } catch (error) {
     console.error('❌ Email sending error:', error.message);
-    console.error('   Error code:', error.code);
-    console.error('   Error command:', error.command);
     
-    // Check for specific Brevo sender validation errors
-    if (error.message && error.message.includes('sender') && error.message.includes('not valid')) {
+    // Check for specific Brevo API errors
+    if (error.response) {
+      console.error('   API Response:', JSON.stringify(error.response.body || error.response, null, 2));
+    }
+    
+    if (error.statusCode) {
+      console.error('   Status Code:', error.statusCode);
+    }
+    
+    // Check for sender validation errors
+    if (error.message && (error.message.includes('sender') || error.message.includes('not valid'))) {
       console.error('   ⚠️  SENDER VALIDATION ERROR:');
       console.error('   The sender email is not verified in Brevo.');
       console.error('   SOLUTION:');
@@ -215,20 +232,22 @@ const sendEmail = async (transporter, to, subject, html) => {
       console.error('   5. Set FROM_EMAIL in server/.env to the verified email');
     }
     
-    // Check for specific Brevo errors
-    if (error.response) {
-      console.error('   SMTP Response:', error.response);
-    }
-    if (error.responseCode) {
-      console.error('   SMTP Response Code:', error.responseCode);
+    // Check for API key errors
+    if (error.message && (error.message.includes('api') || error.message.includes('key') || error.message.includes('unauthorized'))) {
+      console.error('   ⚠️  API KEY ERROR:');
+      console.error('   Invalid or missing Brevo API key.');
+      console.error('   SOLUTION:');
+      console.error('   1. Go to Brevo Dashboard → Settings → SMTP & API → API Keys');
+      console.error('   2. Create a new API key or copy existing one');
+      console.error('   3. Set BREVO_API_KEY in server/.env');
     }
     
     console.error('   Full error:', JSON.stringify(error, null, 2));
     
     return { 
       success: false, 
-      error: error.message,
-      code: error.code,
+      error: error.message || 'Failed to send email',
+      statusCode: error.statusCode,
       response: error.response
     };
   }
