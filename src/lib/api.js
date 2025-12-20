@@ -61,10 +61,10 @@ export const authAPI = {
     });
   },
 
-  signup: async (name, email, password, phone) => {
+  signup: async (name, email, password, phone, termsAccepted = false) => {
     return apiCall('/auth/signup', {
       method: 'POST',
-      body: JSON.stringify({ name, email, password, phone }),
+      body: JSON.stringify({ name, email, password, phone, termsAccepted }),
     });
   },
 
@@ -111,17 +111,23 @@ export const authAPI = {
     });
   },
 
-  signupWithOtp: async (name, email, otp, phone) => {
+  signupWithOtp: async (name, email, otp, phone, termsAccepted = false) => {
     return apiCall('/auth/signup-otp', {
       method: 'POST',
-      body: JSON.stringify({ name, email, otp, phone }),
+      body: JSON.stringify({ name, email, otp, phone, termsAccepted }),
     });
   },
 
-  googleSignIn: async (googleId, email, name, image) => {
+  googleSignIn: async (googleId, email, name, image, termsAccepted = false) => {
     return apiCall('/auth/google', {
       method: 'POST',
-      body: JSON.stringify({ googleId, email, name, image }),
+      body: JSON.stringify({ googleId, email, name, image, termsAccepted }),
+    });
+  },
+
+  acceptTerms: async () => {
+    return apiCall('/auth/accept-terms', {
+      method: 'POST',
     });
   },
 };

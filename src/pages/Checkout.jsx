@@ -148,9 +148,10 @@ const Checkout = () => {
   };
 
   // Use buy now product if available, otherwise use cart items
+  // Create a snapshot of checkout items to ensure coupons validate against actual checkout items, not live cart
   const displayItems = isBuyNow && buyNowProduct 
     ? [buyNowProduct] // Only the buy now product, not from cart
-    : cartItems;
+    : [...cartItems]; // Create a copy/snapshot of cart items for checkout
   
   // Shipping cost (always 0 for free shipping)
   const shipping = 0;
@@ -418,23 +419,24 @@ const Checkout = () => {
     }
   };
 
-  // Check if coupon is applicable based on current cart
+  // Check if coupon is applicable based on checkout items (displayItems), NOT cart items
   const isCouponApplicable = (coupon) => {
     if (!coupon.isActive) return false;
     
+    // Validate only against checkout items (displayItems), not cart items
     // Check category
     if (coupon.category && coupon.category !== 'All') {
       const hasMatchingCategory = displayItems.some(item => item.category === coupon.category);
       if (!hasMatchingCategory) return false;
     }
     
-    // Check minimum quantity
+    // Check minimum quantity - using checkout items only
     if (coupon.minQuantity) {
       const totalQuantity = displayItems.reduce((sum, item) => sum + item.quantity, 0);
       if (totalQuantity < coupon.minQuantity) return false;
     }
     
-    // Check minimum price
+    // Check minimum price - using checkout subtotal only
     if (coupon.minPrice) {
       if (displaySubtotal < coupon.minPrice) return false;
     }

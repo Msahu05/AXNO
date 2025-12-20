@@ -7,6 +7,8 @@ import Header from "@/components/Header";
 import { useAuth } from "@/contexts/auth-context";
 import { toast } from "@/hooks/use-toast";
 import { authAPI, userAPI } from "@/lib/api";
+import TermsAndConditions from "@/components/TermsAndConditions";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -18,7 +20,7 @@ import {
 const Auth = () => {
   const [mode, setMode] = useState("login"); // "login", "signup", "forgot-password", "reset-password", "login-otp", "signup-otp"
   const [authMethod, setAuthMethod] = useState("password"); // "password" or "otp"
-  const [form, setForm] = useState({ name: "", email: "", password: "", phone: "", otp: "", newPassword: "", confirmPassword: "" });
+  const [form, setForm] = useState({ name: "", email: "", password: "", phone: "", otp: "", newPassword: "", confirmPassword: "", termsAccepted: false });
   const [loading, setLoading] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -26,6 +28,9 @@ const Auth = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showPhoneModal, setShowPhoneModal] = useState(false);
   const [pendingGoogleUser, setPendingGoogleUser] = useState(null);
+  const [showTermsDialog, setShowTermsDialog] = useState(false);
+  const [pendingGoogleSignIn, setPendingGoogleSignIn] = useState(null);
+  const [pendingLogin, setPendingLogin] = useState(null); // Store login credentials when Terms required
   const navigate = useNavigate();
   const location = useLocation();
   const { login, signup, googleLogin, isAuthenticated, refreshUser } = useAuth();
@@ -58,18 +63,19 @@ const Auth = () => {
         
         const googleUser = JSON.parse(jsonPayload);
         
-        // Call backend with Google user info
+        // For new users, we need Terms acceptance
+        // Try login first - if it fails with Terms error, show Terms dialog
         const result = await googleLogin(
           googleUser.sub,
           googleUser.email,
           googleUser.name,
-          googleUser.picture
+          googleUser.picture,
+          false // Don't send termsAccepted yet - backend will check if user exists
         );
 
         if (result.success) {
-          // Check if user has phone number
+          // User exists - proceed normally
           if (!result.user?.phone || result.user.phone === '') {
-            // Show phone collection modal
             setPendingGoogleUser({ 
               ...googleUser, 
               token: result.token, 
@@ -89,12 +95,23 @@ const Auth = () => {
           setTimeout(() => {
             navigate(targetPath, { replace: true });
           }, 1000);
+        } else if (result.error && result.error.includes('Terms')) {
+          // New user - Terms required
+          setPendingGoogleSignIn({
+            googleId: googleUser.sub,
+            email: googleUser.email,
+            name: googleUser.name,
+            image: googleUser.picture
+          });
+          setShowTermsDialog(true);
+          setLoading(false);
         } else {
           toast({
             title: "Authentication Failed",
             description: result.error || "Please try again",
             variant: "destructive",
           });
+          setLoading(false);
         }
       } catch (error) {
         toast({
@@ -189,12 +206,23 @@ const Auth = () => {
           return;
         } else {
           // Verify OTP and login
-          const response = await authAPI.loginWithOtp(form.email, form.otp);
-          if (response.token && response.user) {
-            localStorage.setItem('authToken', response.token);
-            result = { success: true };
-          } else {
-            result = { success: false, error: response.error || 'Login failed' };
+          try {
+            const response = await authAPI.loginWithOtp(form.email, form.otp);
+            if (response.token && response.user) {
+              localStorage.setItem('authToken', response.token);
+              result = { success: true };
+            } else {
+              result = { success: false, error: response.error || 'Login failed' };
+            }
+          } catch (error) {
+            result = { success: false, error: error.message || 'Login failed' };
+            // Check if Terms acceptance is required
+            if (error.message && (error.message.includes('Terms') || error.message.includes('terms'))) {
+              setPendingLogin({ email: form.email, otp: form.otp, mode: 'login-otp' });
+              setShowTermsDialog(true);
+              setLoading(false);
+              return;
+            }
           }
         }
       } else if (mode === "signup-otp") {
@@ -219,7 +247,16 @@ const Auth = () => {
             setLoading(false);
             return;
           }
-          const response = await authAPI.signupWithOtp(form.name, form.email, form.otp, form.phone);
+          if (!form.termsAccepted) {
+            toast({
+              title: "Terms & Conditions Required",
+              description: "You must accept the Terms & Conditions to create an account",
+              variant: "destructive",
+            });
+            setLoading(false);
+            return;
+          }
+          const response = await authAPI.signupWithOtp(form.name, form.email, form.otp, form.phone, form.termsAccepted);
           if (response.token && response.user) {
             localStorage.setItem('authToken', response.token);
             result = { success: true };
@@ -229,6 +266,13 @@ const Auth = () => {
         }
       } else if (mode === "login") {
         result = await login({ email: form.email, password: form.password });
+        // Check if Terms acceptance is required
+        if (!result.success && result.error && (result.error.includes('Terms') || result.error.includes('terms'))) {
+          setPendingLogin({ email: form.email, password: form.password });
+          setShowTermsDialog(true);
+          setLoading(false);
+          return;
+        }
       } else if (mode === "signup") {
         if (!form.phone) {
           toast({
@@ -239,7 +283,16 @@ const Auth = () => {
           setLoading(false);
           return;
         }
-        result = await signup({ name: form.name, email: form.email, password: form.password, phone: form.phone });
+        if (!form.termsAccepted) {
+          toast({
+            title: "Terms & Conditions Required",
+            description: "You must accept the Terms & Conditions to create an account",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
+        result = await signup({ name: form.name, email: form.email, password: form.password, phone: form.phone, termsAccepted: form.termsAccepted });
       }
 
       if (result && result.success) {
@@ -502,6 +555,32 @@ const Auth = () => {
             </div>
           )}
 
+          {/* Terms & Conditions Checkbox - only for signup modes */}
+          {(mode === "signup" || mode === "signup-otp") && (
+            <div className="flex items-start space-x-3 pt-2">
+              <Checkbox
+                id="terms"
+                checked={form.termsAccepted}
+                onCheckedChange={(checked) => setForm({ ...form, termsAccepted: checked === true })}
+                className="mt-1"
+                required
+              />
+              <label
+                htmlFor="terms"
+                className="text-xs text-muted-foreground leading-relaxed cursor-pointer"
+              >
+                I agree to the{" "}
+                <button
+                  type="button"
+                  onClick={() => setShowTermsDialog(true)}
+                  className="text-primary hover:underline font-medium"
+                >
+                  Terms & Conditions
+                </button>
+              </label>
+            </div>
+          )}
+
           {/* Login CTA Button */}
           <div style={{ marginTop: '8px' }}>
           <Button 
@@ -713,6 +792,152 @@ const Auth = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Terms & Conditions Dialog */}
+      <TermsAndConditions
+        open={showTermsDialog}
+        onAccept={async () => {
+          if (pendingGoogleSignIn) {
+            // Google sign-in flow - create account after Terms acceptance
+            setShowTermsDialog(false);
+            try {
+              setLoading(true);
+              const result = await googleLogin(
+                pendingGoogleSignIn.googleId,
+                pendingGoogleSignIn.email,
+                pendingGoogleSignIn.name,
+                pendingGoogleSignIn.image,
+                true // Terms accepted
+              );
+
+              if (result.success) {
+                if (!result.user?.phone || result.user.phone === '') {
+                  setPendingGoogleUser({
+                    googleId: pendingGoogleSignIn.googleId,
+                    email: pendingGoogleSignIn.email,
+                    name: pendingGoogleSignIn.name,
+                    token: result.token,
+                    user: result.user
+                  });
+                  setShowPhoneModal(true);
+                  setPendingGoogleSignIn(null);
+                  setLoading(false);
+                } else {
+                  toast({
+                    title: "Login Successful",
+                    description: `Welcome to Looklyn, ${pendingGoogleSignIn.name}!`,
+                  });
+                  const targetPath = redirect.startsWith("/") ? redirect : "/";
+                  setPendingGoogleSignIn(null);
+                  setTimeout(() => {
+                    navigate(targetPath, { replace: true });
+                  }, 1000);
+                }
+              } else {
+                toast({
+                  title: "Authentication Failed",
+                  description: result.error || "Please try again",
+                  variant: "destructive",
+                });
+                setLoading(false);
+              }
+            } catch (error) {
+              toast({
+                title: "Error",
+                description: error.message || "Something went wrong",
+                variant: "destructive",
+              });
+              setLoading(false);
+            }
+          } else if (pendingLogin) {
+            // First-time login - accept Terms and retry login
+            setShowTermsDialog(false);
+            try {
+              setLoading(true);
+              // First accept Terms
+              await authAPI.acceptTerms();
+              
+              // Then retry login
+              if (pendingLogin.mode === 'login-otp') {
+                // For OTP login, we need to verify OTP again
+                const response = await authAPI.loginWithOtp(pendingLogin.email, pendingLogin.otp);
+                if (response.token && response.user) {
+                  localStorage.setItem('authToken', response.token);
+                  await refreshUser();
+                  toast({
+                    title: "Login Successful",
+                    description: `Welcome to Looklyn!`,
+                  });
+                  const targetPath = redirect.startsWith("/") ? redirect : "/";
+                  setPendingLogin(null);
+                  setTimeout(() => {
+                    window.location.href = targetPath;
+                  }, 1000);
+                } else {
+                  toast({
+                    title: "Authentication Failed",
+                    description: response.error || "Please try again",
+                    variant: "destructive",
+                  });
+                  setPendingLogin(null);
+                  setLoading(false);
+                }
+              } else {
+                // Regular password login
+                const result = await login({ email: pendingLogin.email, password: pendingLogin.password });
+                if (result.success) {
+                  toast({
+                    title: "Login Successful",
+                    description: `Welcome to Looklyn!`,
+                  });
+                  const targetPath = redirect.startsWith("/") ? redirect : "/";
+                  setPendingLogin(null);
+                  setTimeout(() => {
+                    window.location.href = targetPath;
+                  }, 1000);
+                } else {
+                  toast({
+                    title: "Authentication Failed",
+                    description: result.error || "Please try again",
+                    variant: "destructive",
+                  });
+                  setPendingLogin(null);
+                  setLoading(false);
+                }
+              }
+            } catch (error) {
+              toast({
+                title: "Error",
+                description: error.message || "Something went wrong",
+                variant: "destructive",
+              });
+              setPendingLogin(null);
+              setLoading(false);
+            }
+          } else {
+            // Just viewing Terms (from checkbox link) - close dialog
+            setShowTermsDialog(false);
+          }
+        }}
+        onReject={() => {
+          setShowTermsDialog(false);
+          if (pendingGoogleSignIn) {
+            setPendingGoogleSignIn(null);
+            toast({
+              title: "Terms & Conditions Required",
+              description: "You must accept the Terms & Conditions to create an account",
+              variant: "destructive",
+            });
+          } else if (pendingLogin) {
+            setPendingLogin(null);
+            toast({
+              title: "Terms & Conditions Required",
+              description: "You must accept the Terms & Conditions to continue",
+              variant: "destructive",
+            });
+          }
+        }}
+      />
     </div>
   );
 };

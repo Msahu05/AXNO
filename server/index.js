@@ -281,7 +281,9 @@ const userSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
   lastLogin: { type: Date },
   passwordResetToken: { type: String, default: '' },
-  passwordResetExpires: { type: Date }
+  passwordResetExpires: { type: Date },
+  termsAccepted: { type: Boolean, default: false },
+  termsAcceptedAt: { type: Date }
 });
 
 const User = mongoose.model('User', userSchema);
@@ -847,10 +849,14 @@ app.post('/api/auth/verify-otp', async (req, res) => {
 // Signup
 app.post('/api/auth/signup', async (req, res) => {
   try {
-    const { name, email, password, phone } = req.body;
+    const { name, email, password, phone, termsAccepted } = req.body;
 
     if (!name || !email || !password || !phone) {
       return res.status(400).json({ error: 'All fields including phone number are required' });
+    }
+
+    if (!termsAccepted) {
+      return res.status(400).json({ error: 'You must accept the Terms & Conditions to create an account' });
     }
 
     // Check if user exists
@@ -875,7 +881,9 @@ app.post('/api/auth/signup', async (req, res) => {
       email,
       password: hashedPassword,
       phone: formattedPhone,
-      addresses: []
+      addresses: [],
+      termsAccepted: true,
+      termsAcceptedAt: new Date()
     });
 
     await user.save();
@@ -914,10 +922,14 @@ app.post('/api/auth/signup', async (req, res) => {
 // OTP-based Signup
 app.post('/api/auth/signup-otp', async (req, res) => {
   try {
-    const { name, email, otp, phone } = req.body;
+    const { name, email, otp, phone, termsAccepted } = req.body;
 
     if (!name || !email || !otp || !phone) {
       return res.status(400).json({ error: 'All fields including phone number are required' });
+    }
+
+    if (!termsAccepted) {
+      return res.status(400).json({ error: 'You must accept the Terms & Conditions to create an account' });
     }
 
     // Find OTP
@@ -958,7 +970,9 @@ app.post('/api/auth/signup-otp', async (req, res) => {
       password: '', // No password for OTP-based signup
       phone: formattedPhone,
       authMethod: 'email',
-      addresses: []
+      addresses: [],
+      termsAccepted: true,
+      termsAcceptedAt: new Date()
     });
 
     await user.save();
@@ -1001,7 +1015,7 @@ app.post('/api/auth/signup-otp', async (req, res) => {
 // Google OAuth Sign-in
 app.post('/api/auth/google', async (req, res) => {
   try {
-    const { googleId, email, name, image } = req.body;
+    const { googleId, email, name, image, termsAccepted } = req.body;
 
     if (!googleId || !email || !name) {
       return res.status(400).json({ error: 'Google ID, email, and name are required' });
@@ -1018,6 +1032,11 @@ app.post('/api/auth/google', async (req, res) => {
         await user.save();
       }
     } else {
+      // New user - Terms & Conditions must be accepted
+      if (!termsAccepted) {
+        return res.status(400).json({ error: 'You must accept the Terms & Conditions to create an account' });
+      }
+
       // Create new user
       user = new User({
         name,
@@ -1025,7 +1044,9 @@ app.post('/api/auth/google', async (req, res) => {
         googleId,
         password: '', // No password for Google OAuth
         authMethod: 'google',
-        addresses: []
+        addresses: [],
+        termsAccepted: true,
+        termsAcceptedAt: new Date()
       });
       await user.save();
 
@@ -1107,6 +1128,14 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
+    // Check if user has accepted Terms & Conditions
+    if (!user.termsAccepted) {
+      return res.status(403).json({ 
+        error: 'You must accept the Terms & Conditions to continue. Please accept the Terms & Conditions to proceed.',
+        requiresTermsAcceptance: true
+      });
+    }
+
     // Update last login
     user.lastLogin = new Date();
     await user.save();
@@ -1180,6 +1209,16 @@ app.post('/api/auth/login-otp', async (req, res) => {
     let user = await User.findOne({ email });
     if (!user) {
       return res.status(404).json({ error: 'User not found. Please sign up first.' });
+    }
+
+    // Check if user has accepted Terms & Conditions
+    if (!user.termsAccepted) {
+      // Don't mark OTP as verified yet - user needs to accept Terms first
+      // They can reuse the same OTP after accepting Terms
+      return res.status(403).json({ 
+        error: 'You must accept the Terms & Conditions to continue. Please accept the Terms & Conditions to proceed.',
+        requiresTermsAcceptance: true
+      });
     }
 
     // Mark OTP as verified
@@ -1443,10 +1482,43 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
       email: user.email,
       phone: user.phone || '',
       isAdmin: isAdminValue,
-      addresses: user.addresses
+      addresses: user.addresses,
+      termsAccepted: user.termsAccepted || false
     });
   } catch (error) {
     console.error('Get user error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Accept Terms & Conditions
+app.post('/api/auth/accept-terms', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Update user to accept terms
+    user.termsAccepted = true;
+    user.termsAcceptedAt = new Date();
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Terms & Conditions accepted successfully',
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone || '',
+        isAdmin: user.isAdmin || false,
+        addresses: user.addresses,
+        termsAccepted: true
+      }
+    });
+  } catch (error) {
+    console.error('Accept terms error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });

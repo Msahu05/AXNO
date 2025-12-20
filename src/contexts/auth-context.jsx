@@ -61,7 +61,7 @@ export const AuthProvider = ({ children }) => {
 
   const signup = async (credentials) => {
     try {
-      const response = await authAPI.signup(credentials.name, credentials.email, credentials.password, credentials.phone);
+      const response = await authAPI.signup(credentials.name, credentials.email, credentials.password, credentials.phone, credentials.termsAccepted || false);
       localStorage.setItem('authToken', response.token);
       setUser(response.user);
       setIsAuthenticated(true);
@@ -71,9 +71,9 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const googleLogin = async (googleId, email, name, image) => {
+  const googleLogin = async (googleId, email, name, image, termsAccepted = false) => {
     try {
-      const response = await authAPI.googleSignIn(googleId, email, name, image);
+      const response = await authAPI.googleSignIn(googleId, email, name, image, termsAccepted);
       // Store token temporarily but don't set authenticated yet if phone is missing
       localStorage.setItem('authToken', response.token);
       // Only set authenticated if phone number exists

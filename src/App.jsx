@@ -24,6 +24,7 @@ import Tracking from './pages/Tracking';
 import OrderManagement from './pages/OrderManagement';
 import ProductManagement from './pages/ProductManagement';
 import ErrorBoundary from './components/ErrorBoundary';
+import ScrollToTop from './components/ScrollToTop';
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ const App = () => (
             <CartProvider>
               <WishlistProvider>
                 <BrowserRouter>
+                <ScrollToTop />
                 <Routes>
                   <Route path="/" element={<Home />} />
                   <Route path="/product/:slug" element={<Product />} />
