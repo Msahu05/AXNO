@@ -65,7 +65,8 @@ const Admin = () => {
     discountType: 'price_override',
     discountValue: '',
     applyTo: 'total',
-    isActive: true
+    isActive: true,
+    firstOrderOnly: false
   });
   const [statusFilter, setStatusFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -529,7 +530,8 @@ const Admin = () => {
         discountType: couponForm.discountType,
         discountValue: parseFloat(couponForm.discountValue) || 0,
         applyTo: couponForm.applyTo,
-        isActive: couponForm.isActive
+        isActive: couponForm.isActive,
+        firstOrderOnly: couponForm.firstOrderOnly || false
       };
 
       if (editingCoupon) {
@@ -558,7 +560,8 @@ const Admin = () => {
         discountType: 'price_override',
         discountValue: '',
         applyTo: 'total',
-        isActive: true
+        isActive: true,
+        firstOrderOnly: false
       });
       await fetchCoupons();
     } catch (error) {
@@ -607,7 +610,8 @@ const Admin = () => {
         discountType: coupon.discountType || 'price_override',
         discountValue: coupon.discountValue || '',
         applyTo: coupon.applyTo || 'total',
-        isActive: coupon.isActive !== undefined ? coupon.isActive : true
+        isActive: coupon.isActive !== undefined ? coupon.isActive : true,
+        firstOrderOnly: coupon.firstOrderOnly || false
       });
     setShowCouponForm(true);
   };
@@ -2211,6 +2215,18 @@ const Admin = () => {
                     onChange={(e) => setCouponForm({ ...couponForm, minPrice: e.target.value })}
                     placeholder="Optional"
                   />
+                </div>
+
+                <div>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={couponForm.firstOrderOnly}
+                      onChange={(e) => setCouponForm({ ...couponForm, firstOrderOnly: e.target.checked })}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-sm font-medium">First Order Only (10% off on first shopping)</span>
+                  </label>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

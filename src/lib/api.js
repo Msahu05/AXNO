@@ -596,6 +596,13 @@ export const couponsAPI = {
     return apiCall(`/coupons/${couponCode}`);
   },
 
+  validateCoupon: async (couponCode, cartTotal) => {
+    return apiCall('/coupons/validate', {
+      method: 'POST',
+      body: JSON.stringify({ code: couponCode, cartTotal }),
+    });
+  },
+
   createCoupon: async (couponData) => {
     return apiCall('/admin/coupons', {
       method: 'POST',

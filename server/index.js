@@ -267,7 +267,7 @@ const userSchema = new mongoose.Schema({
   password: { type: String, default: '' }, // Optional for Google OAuth users
   googleId: { type: String, default: '' }, // For Google OAuth
   authMethod: { type: String, enum: ['email', 'google'], default: 'email' }, // How user registered
-  phone: { type: String, default: '' },
+  phone: { type: String, default: '', sparse: true, unique: true }, // Unique phone number (sparse allows empty strings)
   isAdmin: { type: Boolean, default: false },
   addresses: [{
     name: String,
@@ -477,7 +477,8 @@ const couponSchema = new mongoose.Schema({
   applyTo: { type: String, enum: ['total', 'item'], default: 'total' },
   isActive: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
+  updatedAt: { type: Date, default: Date.now },
+  firstOrderOnly: { type: Boolean, default: false },
 });
 
 const Coupon = mongoose.model('Coupon', couponSchema);
@@ -859,10 +860,10 @@ app.post('/api/auth/signup', async (req, res) => {
       return res.status(400).json({ error: 'You must accept the Terms & Conditions to create an account' });
     }
 
-    // Check if user exists
+    // Check if user exists by email
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ error: 'User already exists' });
+      return res.status(400).json({ error: 'User already exists with this email' });
     }
 
     // Format phone number
@@ -870,6 +871,14 @@ app.post('/api/auth/signup', async (req, res) => {
     if (formattedPhone && !formattedPhone.startsWith('+91')) {
       const cleaned = formattedPhone.replace(/^\+91\s*/, '').replace(/^91\s*/, '').trim();
       formattedPhone = '+91 ' + cleaned;
+    }
+
+    // Check if phone number already exists (if provided)
+    if (formattedPhone) {
+      const existingPhoneUser = await User.findOne({ phone: formattedPhone });
+      if (existingPhoneUser) {
+        return res.status(400).json({ error: 'This phone number is already registered. Please use a different phone number.' });
+      }
     }
 
     // Hash password
@@ -886,7 +895,15 @@ app.post('/api/auth/signup', async (req, res) => {
       termsAcceptedAt: new Date()
     });
 
-    await user.save();
+    try {
+      await user.save();
+    } catch (error) {
+      // Handle duplicate phone number error
+      if (error.code === 11000 && error.keyPattern && error.keyPattern.phone) {
+        return res.status(400).json({ error: 'This phone number is already registered. Please use a different phone number.' });
+      }
+      throw error;
+    }
 
     // Send welcome email
     sendEmail(user.email,
@@ -950,10 +967,10 @@ app.post('/api/auth/signup-otp', async (req, res) => {
       return res.status(400).json({ error: 'OTP has expired' });
     }
 
-    // Check if user already exists
+    // Check if user already exists by email
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ error: 'User already exists' });
+      return res.status(400).json({ error: 'User already exists with this email' });
     }
 
     // Format phone number
@@ -961,6 +978,14 @@ app.post('/api/auth/signup-otp', async (req, res) => {
     if (formattedPhone && !formattedPhone.startsWith('+91')) {
       const cleaned = formattedPhone.replace(/^\+91\s*/, '').replace(/^91\s*/, '').trim();
       formattedPhone = '+91 ' + cleaned;
+    }
+
+    // Check if phone number already exists (if provided)
+    if (formattedPhone) {
+      const existingPhoneUser = await User.findOne({ phone: formattedPhone });
+      if (existingPhoneUser) {
+        return res.status(400).json({ error: 'This phone number is already registered. Please use a different phone number.' });
+      }
     }
 
     // Create user (no password for OTP signup)
@@ -975,7 +1000,15 @@ app.post('/api/auth/signup-otp', async (req, res) => {
       termsAcceptedAt: new Date()
     });
 
-    await user.save();
+    try {
+      await user.save();
+    } catch (error) {
+      // Handle duplicate phone number error
+      if (error.code === 11000 && error.keyPattern && error.keyPattern.phone) {
+        return res.status(400).json({ error: 'This phone number is already registered. Please use a different phone number.' });
+      }
+      throw error;
+    }
 
     // Mark OTP as verified
     otpRecord.verified = true;
@@ -1593,17 +1626,34 @@ app.put('/api/user/profile', authenticateToken, async (req, res) => {
       user.name = name;
     }
     if (phone !== undefined) {
-      // Ensure phone starts with +91
-      if (phone && !phone.startsWith('+91')) {
+      // Format phone number
+      let formattedPhone = phone || '';
+      if (formattedPhone && !formattedPhone.startsWith('+91')) {
         // Remove any existing +91 or country code
-        const cleaned = phone.replace(/^\+91\s*/, '').replace(/^91\s*/, '').trim();
-        user.phone = '+91 ' + cleaned;
-      } else {
-        user.phone = phone || '';
+        const cleaned = formattedPhone.replace(/^\+91\s*/, '').replace(/^91\s*/, '').trim();
+        formattedPhone = '+91 ' + cleaned;
       }
+
+      // Check if phone number already exists for another user (if provided and different from current)
+      if (formattedPhone && formattedPhone !== user.phone) {
+        const existingPhoneUser = await User.findOne({ phone: formattedPhone });
+        if (existingPhoneUser && existingPhoneUser._id.toString() !== user._id.toString()) {
+          return res.status(400).json({ error: 'This phone number is already registered by another user. Please use a different phone number.' });
+        }
+      }
+
+      user.phone = formattedPhone;
     }
 
-    await user.save();
+    try {
+      await user.save();
+    } catch (error) {
+      // Handle duplicate phone number error
+      if (error.code === 11000 && error.keyPattern && error.keyPattern.phone) {
+        return res.status(400).json({ error: 'This phone number is already registered. Please use a different phone number.' });
+      }
+      throw error;
+    }
 
     res.json({
       id: user._id,
@@ -1942,7 +1992,7 @@ app.post('/api/payments/verify', authenticateToken, async (req, res) => {
 // Payment Confirmation - Create order after payment
 app.post('/api/payments/confirm', authenticateToken, upload.array('designFiles', 10), async (req, res) => {
   try {
-    const { orderId: paymentOrderId, transactionId, items, shippingAddress, customDesign, totals } = req.body;
+    const { orderId: paymentOrderId, transactionId, items, shippingAddress, customDesign, totals, couponCode } = req.body;
 
     if (!paymentOrderId) {
       return res.status(400).json({ error: 'Order ID is required' });
@@ -1989,6 +2039,39 @@ app.post('/api/payments/confirm', authenticateToken, upload.array('designFiles',
     const user = await User.findById(req.user.userId);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Validate coupon if provided (especially for firstOrderOnly coupons)
+    if (couponCode) {
+      const coupon = await Coupon.findOne({
+        code: couponCode.toUpperCase(),
+        isActive: true
+      });
+
+      if (!coupon) {
+        return res.status(400).json({ error: 'Invalid coupon code' });
+      }
+
+      // Validate first order only coupon
+      if (coupon.firstOrderOnly) {
+        const paidOrdersCount = await Order.countDocuments({
+          userId: req.user.userId,
+          'payment.status': 'paid'
+        });
+
+        if (paidOrdersCount > 0) {
+          return res.status(400).json({
+            error: 'This coupon is valid only on your first order. You have already placed a paid order.'
+          });
+        }
+      }
+
+      // Validate minimum order value if specified
+      if (coupon.minPrice && parsedTotals.subtotal < coupon.minPrice) {
+        return res.status(400).json({
+          error: `Minimum order value should be ₹${coupon.minPrice}`
+        });
+      }
     }
 
     // Process custom design files if uploaded
@@ -2120,7 +2203,7 @@ app.post('/api/payments/confirm', authenticateToken, upload.array('designFiles',
 // Create order (legacy endpoint - for non-payment orders)
 app.post('/api/orders', authenticateToken, upload.array('designFiles', 10), async (req, res) => {
   try {
-    const { items, shippingAddress, customDesign, payment, totals } = req.body;
+    const { items, shippingAddress, customDesign, payment, totals, couponCode } = req.body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: 'Order items are required' });
@@ -2139,6 +2222,46 @@ app.post('/api/orders', authenticateToken, upload.array('designFiles', 10), asyn
       return res.status(404).json({ error: 'User not found' });
     }
 
+    // Parse JSON fields if they're strings
+    const parsedItems = typeof items === 'string' ? JSON.parse(items) : items;
+    const parsedShippingAddress = typeof shippingAddress === 'string' ? JSON.parse(shippingAddress) : shippingAddress;
+    const parsedCustomDesign = customDesign ? (typeof customDesign === 'string' ? JSON.parse(customDesign) : customDesign) : {};
+    const parsedPayment = payment ? (typeof payment === 'string' ? JSON.parse(payment) : payment) : {};
+    const parsedTotals = typeof totals === 'string' ? JSON.parse(totals) : totals;
+
+    // Validate coupon if provided (especially for firstOrderOnly coupons)
+    if (couponCode) {
+      const coupon = await Coupon.findOne({
+        code: couponCode.toUpperCase(),
+        isActive: true
+      });
+
+      if (!coupon) {
+        return res.status(400).json({ error: 'Invalid coupon code' });
+      }
+
+      // Validate first order only coupon
+      if (coupon.firstOrderOnly) {
+        const paidOrdersCount = await Order.countDocuments({
+          userId: req.user.userId,
+          'payment.status': 'paid'
+        });
+
+        if (paidOrdersCount > 0) {
+          return res.status(400).json({
+            error: 'This coupon is valid only on your first order. You have already placed a paid order.'
+          });
+        }
+      }
+
+      // Validate minimum order value if specified
+      if (coupon.minPrice && parsedTotals.subtotal < coupon.minPrice) {
+        return res.status(400).json({
+          error: `Minimum order value should be ₹${coupon.minPrice}`
+        });
+      }
+    }
+
     // Process custom design files if uploaded
     const designFiles = [];
     if (req.files && req.files.length > 0) {
@@ -2146,13 +2269,6 @@ app.post('/api/orders', authenticateToken, upload.array('designFiles', 10), asyn
         designFiles.push(`/uploads/${file.filename}`);
       });
     }
-
-    // Parse JSON fields if they're strings
-    const parsedItems = typeof items === 'string' ? JSON.parse(items) : items;
-    const parsedShippingAddress = typeof shippingAddress === 'string' ? JSON.parse(shippingAddress) : shippingAddress;
-    const parsedCustomDesign = customDesign ? (typeof customDesign === 'string' ? JSON.parse(customDesign) : customDesign) : {};
-    const parsedPayment = payment ? (typeof payment === 'string' ? JSON.parse(payment) : payment) : {};
-    const parsedTotals = typeof totals === 'string' ? JSON.parse(totals) : totals;
 
     // Calculate estimated delivery (7-8 days from now)
     const estimatedDelivery = new Date();
@@ -3675,10 +3791,56 @@ app.get('/api/coupons/:code', async (req, res) => {
   }
 });
 
+app.post('/api/coupons/validate', authenticateToken, async (req, res) => {
+  try {
+    const { code, cartTotal } = req.body;
+
+    if (!code) {
+      return res.status(400).json({ error: 'Coupon code is required' });
+    }
+
+    const coupon = await Coupon.findOne({
+      code: code.toUpperCase(),
+      isActive: true
+    });
+
+    if (!coupon) {
+      return res.status(404).json({ error: 'Invalid coupon code' });
+    }
+
+    // ✅ FIRST ORDER CHECK
+    if (coupon.firstOrderOnly) {
+      const paidOrdersCount = await Order.countDocuments({
+        userId: req.user.userId,
+        'payment.status': 'paid'
+      });
+
+      if (paidOrdersCount > 0) {
+        return res.status(400).json({
+          error: 'This coupon is valid only on your first order'
+        });
+      }
+    }
+
+    // Optional: minimum order value
+    if (coupon.minPrice && cartTotal < coupon.minPrice) {
+      return res.status(400).json({
+        error: `Minimum order value should be ₹${coupon.minPrice}`
+      });
+    }
+
+    res.json({ success: true, coupon });
+  } catch (error) {
+    console.error('Coupon validation error:', error);
+    res.status(500).json({ error: 'Failed to validate coupon' });
+  }
+});
+
+
 // Create coupon (admin)
 app.post('/api/admin/coupons', authenticateAdmin, async (req, res) => {
   try {
-    const { code, category, price, salePrice, minQuantity, minPrice, discountType, discountValue, applyTo, isActive } = req.body;
+    const { code, category, price, salePrice, minQuantity, minPrice, discountType, discountValue, applyTo, isActive, firstOrderOnly } = req.body;
     
     if (!code) {
       return res.status(400).json({ error: 'Coupon code is required' });
@@ -3694,7 +3856,8 @@ app.post('/api/admin/coupons', authenticateAdmin, async (req, res) => {
       discountType: discountType || 'price_override',
       discountValue: discountValue ? parseFloat(discountValue) : 0,
       applyTo: applyTo || 'total',
-      isActive: isActive !== undefined ? isActive : true
+      isActive: isActive !== undefined ? isActive : true,
+      firstOrderOnly: firstOrderOnly !== undefined ? firstOrderOnly : false
     });
 
     await coupon.save();
@@ -3712,7 +3875,7 @@ app.post('/api/admin/coupons', authenticateAdmin, async (req, res) => {
 app.put('/api/admin/coupons/:id', authenticateAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const { code, category, price, salePrice, minQuantity, minPrice, discountType, discountValue, applyTo, isActive } = req.body;
+    const { code, category, price, salePrice, minQuantity, minPrice, discountType, discountValue, applyTo, isActive, firstOrderOnly } = req.body;
     
     const updateData = {
       category: category || 'All',
@@ -3724,6 +3887,7 @@ app.put('/api/admin/coupons/:id', authenticateAdmin, async (req, res) => {
       discountValue: discountValue ? parseFloat(discountValue) : 0,
       applyTo: applyTo || 'total',
       isActive: isActive !== undefined ? isActive : true,
+      firstOrderOnly: firstOrderOnly !== undefined ? firstOrderOnly : false,
       updatedAt: Date.now()
     };
 

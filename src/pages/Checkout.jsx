@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import Header from "@/components/Header";
 import { useAuth } from "@/contexts/auth-context";
 import { useCart } from "@/contexts/cart-context";
-import { userAPI, couponsAPI, paymentsAPI } from "@/lib/api";
+import { userAPI, couponsAPI, paymentsAPI, ordersAPI } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
 // Indian cities and states data
@@ -67,6 +67,7 @@ const Checkout = () => {
   const [couponDiscount, setCouponDiscount] = useState(0);
   const [availableCoupons, setAvailableCoupons] = useState([]);
   const [loadingCoupons, setLoadingCoupons] = useState(false);
+  const [hasPreviousPaidOrders, setHasPreviousPaidOrders] = useState(false);
   const [designFiles, setDesignFiles] = useState([]);
   const [referenceLinks, setReferenceLinks] = useState("");
   const [citySuggestions, setCitySuggestions] = useState([]);
@@ -188,6 +189,30 @@ const Checkout = () => {
     }
   }, [isAuthenticated]);
 
+  // Check if user has previous paid orders
+  useEffect(() => {
+    const checkPreviousOrders = async () => {
+      if (!isAuthenticated) {
+        setHasPreviousPaidOrders(false);
+        return;
+      }
+
+      try {
+        const response = await ordersAPI.getOrders();
+        const orders = response.orders || [];
+        // Check if user has any paid orders
+        const hasPaidOrders = orders.some(order => order.payment?.status === 'paid');
+        setHasPreviousPaidOrders(hasPaidOrders);
+      } catch (error) {
+        console.error('Error checking previous orders:', error);
+        // If error, assume no previous orders to be safe
+        setHasPreviousPaidOrders(false);
+      }
+    };
+
+    checkPreviousOrders();
+  }, [isAuthenticated]);
+
   // Load available coupons
   useEffect(() => {
     const loadAvailableCoupons = async () => {
@@ -202,10 +227,10 @@ const Checkout = () => {
       }
     };
     
-    if (isAuthenticated) {
+    if (displayItems.length > 0) {
       loadAvailableCoupons();
     }
-  }, [isAuthenticated]);
+  }, [displayItems]);
 
   // Auto-apply coupon from sessionStorage or based on quantity
   useEffect(() => {
@@ -230,8 +255,15 @@ const Checkout = () => {
       const totalQuantity = displayItems.reduce((sum, item) => sum + item.quantity, 0);
       
       // Find matching coupon based on quantity and category
+      // Skip firstOrderOnly coupons if user is not authenticated (will be validated at checkout)
       const matchingCoupon = coupons.find(coupon => {
         if (!coupon.isActive) return false;
+        
+        // Skip firstOrderOnly coupons if user is not authenticated (they need validation)
+        // They can still be applied manually, but won't auto-apply
+        if (coupon.firstOrderOnly && !isAuthenticated) {
+          return false;
+        }
         
         // Check if quantity matches
         if (coupon.minQuantity && totalQuantity >= coupon.minQuantity) {
@@ -247,7 +279,8 @@ const Checkout = () => {
       
       if (matchingCoupon && (!appliedCoupon || appliedCoupon.code !== matchingCoupon.code)) {
         setDiscountCode(matchingCoupon.code);
-        applyCoupon(matchingCoupon.code);
+        // Pass silent: true to suppress errors during auto-apply
+        applyCoupon(matchingCoupon.code, true, matchingCoupon);
       }
     } catch (error) {
       console.error('Error auto-applying coupon:', error);
@@ -284,6 +317,32 @@ const Checkout = () => {
         });
         return;
       }
+
+      // Validate first order only coupon if user is authenticated and has valid token
+      // If user is not authenticated, allow coupon to be applied (will be validated at checkout)
+      if (coupon.firstOrderOnly && isAuthenticated) {
+        // Check if token exists before validating
+        const token = localStorage.getItem('authToken');
+        if (token) {
+          try {
+            await couponsAPI.validateCoupon(code, displaySubtotal);
+          } catch (error) {
+            // Only show error if not in silent mode (auto-apply)
+            if (!silent) {
+              toast({
+                title: "Coupon Not Applicable",
+                description: error.message || "This coupon is valid only on your first order",
+                variant: "destructive",
+              });
+            }
+            return;
+          }
+        }
+        // If no token, skip validation - will be validated at checkout
+      }
+      
+      // If coupon is firstOrderOnly but user is not authenticated, allow it
+      // Validation will happen at checkout time when user is authenticated
 
       // Validate coupon conditions
       let isValid = true;
@@ -422,6 +481,17 @@ const Checkout = () => {
   // Check if coupon is applicable based on checkout items (displayItems), NOT cart items
   const isCouponApplicable = (coupon) => {
     if (!coupon.isActive) return false;
+    
+    // For firstOrderOnly coupons: if user has previous paid orders, coupon is not applicable
+    if (coupon.firstOrderOnly) {
+      // If user is not authenticated, allow it (will be validated at checkout)
+      if (!isAuthenticated) {
+        // Allow it for now, will be validated at checkout
+      } else if (hasPreviousPaidOrders) {
+        // User has previous paid orders, so firstOrderOnly coupon is not applicable
+        return false;
+      }
+    }
     
     // Validate only against checkout items (displayItems), not cart items
     // Check category
@@ -1410,14 +1480,25 @@ const Checkout = () => {
                 </h2>
                 
                 {/* Available Coupons Section */}
-                {availableCoupons.length > 0 && (
-                  <div className="mb-6">
-                    <label className="block text-xs font-semibold uppercase tracking-wide text-gray-700 mb-3">AVAILABLE COUPONS</label>
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {availableCoupons.map((coupon) => {
-                        const isApplicable = isCouponApplicable(coupon);
-                        const discountAmount = calculateCouponDiscount(coupon);
-                        const isApplied = appliedCoupon?.code === coupon.code;
+                {availableCoupons.length > 0 && (() => {
+                  // Filter to show only applicable coupons, but always include the applied coupon
+                  const applicableCoupons = availableCoupons.filter(coupon => {
+                    const isApplicable = isCouponApplicable(coupon);
+                    const isApplied = appliedCoupon?.code === coupon.code;
+                    // Show if applicable OR if it's the currently applied coupon
+                    return isApplicable || isApplied;
+                  });
+                  
+                  if (applicableCoupons.length === 0) return null;
+                  
+                  return (
+                    <div className="mb-6">
+                      <label className="block text-xs font-semibold uppercase tracking-wide text-gray-700 mb-3">AVAILABLE COUPONS</label>
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {applicableCoupons.map((coupon) => {
+                          const isApplicable = isCouponApplicable(coupon);
+                          const discountAmount = calculateCouponDiscount(coupon);
+                          const isApplied = appliedCoupon?.code === coupon.code;
                         
                         return (
                           <button
@@ -1501,7 +1582,8 @@ const Checkout = () => {
                       })}
                     </div>
                   </div>
-                )}
+                  );
+                })()}
                 
                 {/* Summary Box */}
                 <div className="border border-gray-200 rounded-lg p-4 mb-6">
