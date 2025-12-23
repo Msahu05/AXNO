@@ -24,6 +24,13 @@ import {
   sendTrackingUpdate,
   isWhatsAppConfigured 
 } from './whatsappService.js';
+import { 
+  uploadBase64Image, 
+  uploadMultipleBase64Images, 
+  deleteCloudinaryImage,
+  extractPublicIdFromUrl,
+  isCloudinaryUrl 
+} from './cloudinaryService.js';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 
@@ -3260,10 +3267,15 @@ app.get('/api/products', async (req, res) => {
         original: p.originalPrice,
         slug: p.slug || generateSlug(p.name),
         gallery: p.gallery.map(g => {
+          // Return Cloudinary URL if available (preferred)
+          if (g.url) {
+            return g.url;
+          }
+          // Fallback to base64 for backward compatibility (during migration)
           if (g.data) {
             return `data:${g.mimeType || 'image/jpeg'};base64,${g.data}`;
           }
-          return g.url || '';
+          return '';
         })
       };
     });
@@ -3354,10 +3366,15 @@ app.get('/api/admin/products', authenticateAdmin, async (req, res) => {
         original: p.originalPrice,
         slug: p.slug || generateSlug(p.name),
         gallery: p.gallery.map(g => {
+          // Return Cloudinary URL if available (preferred)
+          if (g.url) {
+            return g.url;
+          }
+          // Fallback to base64 for backward compatibility (during migration)
           if (g.data) {
             return `data:${g.mimeType || 'image/jpeg'};base64,${g.data}`;
           }
-          return g.url || '';
+          return '';
         })
       };
     });
@@ -3378,32 +3395,53 @@ app.post('/api/admin/products', authenticateAdmin, async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
     
-    // Process gallery images - accept base64 images from request body
+    // Process gallery images - upload to Cloudinary instead of storing base64
     const gallery = [];
     if (galleryImages && Array.isArray(galleryImages) && galleryImages.length > 0) {
-      galleryImages.forEach((imageData, index) => {
-        // imageData should be { data: 'data:image/jpeg;base64,...', mimeType: 'image/jpeg' }
-        if (imageData.data) {
-          // Extract base64 data and mime type
-          const base64Match = imageData.data.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
-          if (base64Match) {
+      try {
+        // Prepare images for Cloudinary upload
+        const imagesToUpload = [];
+        galleryImages.forEach((imageData, index) => {
+          if (imageData.data) {
+            // Extract base64 data and mime type
+            const base64Match = imageData.data.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
+            if (base64Match) {
+              imagesToUpload.push({
+                data: base64Match[2], // Base64 without data URI prefix
+                mimeType: base64Match[1] || imageData.mimeType || 'image/jpeg'
+              });
+            } else if (typeof imageData.data === 'string' && imageData.data.length > 0) {
+              // Already base64 without data URI prefix
+              imagesToUpload.push({
+                data: imageData.data,
+                mimeType: imageData.mimeType || 'image/jpeg'
+              });
+            }
+          } else if (imageData.url && isCloudinaryUrl(imageData.url)) {
+            // If it's already a Cloudinary URL, keep it
             gallery.push({
-              data: base64Match[2], // Store only base64 string without data URI prefix
-              mimeType: base64Match[1] || imageData.mimeType || 'image/jpeg',
-              isMain: index === 0,
-              order: index
-            });
-          } else if (typeof imageData.data === 'string' && imageData.data.length > 0) {
-            // Already base64 without data URI prefix
-            gallery.push({
-              data: imageData.data,
-              mimeType: imageData.mimeType || 'image/jpeg',
+              url: imageData.url,
               isMain: index === 0,
               order: index
             });
           }
+        });
+
+        // Upload new images to Cloudinary
+        if (imagesToUpload.length > 0) {
+          const cloudinaryResults = await uploadMultipleBase64Images(imagesToUpload, 'looklyn/products');
+          cloudinaryResults.forEach((result, index) => {
+            gallery.push({
+              url: result.secure_url,
+              isMain: index === 0,
+              order: index
+            });
+          });
         }
-      });
+      } catch (uploadError) {
+        console.error('Error uploading images to Cloudinary:', uploadError);
+        return res.status(500).json({ error: 'Failed to upload images: ' + uploadError.message });
+      }
     }
     
     if (gallery.length === 0) {
@@ -3612,48 +3650,91 @@ app.put('/api/admin/products/:id', authenticateAdmin, async (req, res) => {
       }
     }
     
-    // Update gallery if new images uploaded (base64 from request body)
+    // Update gallery if new images uploaded - upload to Cloudinary
     if (galleryImages && Array.isArray(galleryImages) && galleryImages.length > 0) {
-      const newGallery = [];
-      galleryImages.forEach((imageData, index) => {
-        if (imageData.data) {
-          const base64Match = imageData.data.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
-          if (base64Match) {
-            newGallery.push({
-              data: base64Match[2],
-              mimeType: base64Match[1] || imageData.mimeType || 'image/jpeg',
-              isMain: index === 0,
-              order: index
-            });
-          } else if (typeof imageData.data === 'string' && imageData.data.length > 0) {
-            newGallery.push({
-              data: imageData.data,
-              mimeType: imageData.mimeType || 'image/jpeg',
+      try {
+        // Delete old Cloudinary images if they exist
+        if (product.gallery && product.gallery.length > 0) {
+          for (const oldImage of product.gallery) {
+            if (oldImage.url && isCloudinaryUrl(oldImage.url)) {
+              const publicId = extractPublicIdFromUrl(oldImage.url);
+              if (publicId) {
+                await deleteCloudinaryImage(publicId);
+              }
+            }
+          }
+        }
+
+        // Prepare new images for upload
+        const imagesToUpload = [];
+        const existingUrls = [];
+        
+        galleryImages.forEach((imageData, index) => {
+          if (imageData.data) {
+            // Extract base64 data and mime type
+            const base64Match = imageData.data.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
+            if (base64Match) {
+              imagesToUpload.push({
+                data: base64Match[2],
+                mimeType: base64Match[1] || imageData.mimeType || 'image/jpeg'
+              });
+            } else if (typeof imageData.data === 'string' && imageData.data.length > 0) {
+              imagesToUpload.push({
+                data: imageData.data,
+                mimeType: imageData.mimeType || 'image/jpeg'
+              });
+            }
+          } else if (imageData.url && isCloudinaryUrl(imageData.url)) {
+            // Keep existing Cloudinary URLs
+            existingUrls.push({
+              url: imageData.url,
               isMain: index === 0,
               order: index
             });
           }
+        });
+
+        // Upload new images to Cloudinary
+        const newGallery = [...existingUrls];
+        if (imagesToUpload.length > 0) {
+          const cloudinaryResults = await uploadMultipleBase64Images(imagesToUpload, 'looklyn/products');
+          cloudinaryResults.forEach((result, index) => {
+            newGallery.push({
+              url: result.secure_url,
+              isMain: existingUrls.length === 0 && index === 0,
+              order: existingUrls.length + index
+            });
+          });
         }
-      });
-      if (newGallery.length > 0) {
-        product.gallery = newGallery;
+
+        if (newGallery.length > 0) {
+          product.gallery = newGallery;
+        }
+      } catch (uploadError) {
+        console.error('Error uploading images to Cloudinary:', uploadError);
+        return res.status(500).json({ error: 'Failed to upload images: ' + uploadError.message });
       }
     }
     
     product.updatedAt = new Date();
     await product.save();
     
-    // Format response - return data URLs for images
+    // Format response - return Cloudinary URLs or data URLs (for backward compatibility)
     const formattedProduct = {
       ...product.toObject(),
       id: product._id.toString(),
       original: product.originalPrice,
       slug: product.slug || generateSlug(product.name),
       gallery: product.gallery.map(g => {
+        // Return Cloudinary URL if available
+        if (g.url) {
+          return g.url;
+        }
+        // Fallback to base64 for backward compatibility (during migration)
         if (g.data) {
           return `data:${g.mimeType || 'image/jpeg'};base64,${g.data}`;
         }
-        return g.url || '';
+        return '';
       })
     };
     
@@ -3958,11 +4039,80 @@ app.put('/api/admin/slideshow', authenticateAdmin, async (req, res) => {
   try {
     const { slideshow: slideshowData } = req.body;
     
+    if (!slideshowData || !Array.isArray(slideshowData)) {
+      return res.status(400).json({ error: 'Invalid slideshow data' });
+    }
+    
+    // Process slideshow images - upload base64 to Cloudinary
+    const processedSlideshow = [];
+    for (let i = 0; i < slideshowData.length; i++) {
+      const slide = slideshowData[i];
+      
+      // If already a Cloudinary URL, keep it
+      if (slide.image && isCloudinaryUrl(slide.image)) {
+        processedSlideshow.push({
+          image: slide.image,
+          redirectUrl: slide.redirectUrl || '/category/all',
+          order: slide.order !== undefined ? slide.order : i
+        });
+        continue;
+      }
+      
+      // If it's base64, upload to Cloudinary
+      if (slide.image && (slide.image.startsWith('data:image/') || slide.image.length > 1000)) {
+        try {
+          // Extract base64 data and mime type
+          const base64Match = slide.image.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
+          if (base64Match) {
+            const result = await uploadBase64Image(
+              base64Match[2],
+              base64Match[1] || 'image/jpeg',
+              'looklyn/slideshow',
+              `slideshow_${Date.now()}_${i}`
+            );
+            processedSlideshow.push({
+              image: result.secure_url,
+              redirectUrl: slide.redirectUrl || '/category/all',
+              order: slide.order !== undefined ? slide.order : i
+            });
+          } else {
+            // Already base64 without data URI prefix
+            const result = await uploadBase64Image(
+              slide.image,
+              'image/jpeg',
+              'looklyn/slideshow',
+              `slideshow_${Date.now()}_${i}`
+            );
+            processedSlideshow.push({
+              image: result.secure_url,
+              redirectUrl: slide.redirectUrl || '/category/all',
+              order: slide.order !== undefined ? slide.order : i
+            });
+          }
+        } catch (uploadError) {
+          console.error('Error uploading slideshow image to Cloudinary:', uploadError);
+          // Keep the base64 as fallback if upload fails
+          processedSlideshow.push({
+            image: slide.image,
+            redirectUrl: slide.redirectUrl || '/category/all',
+            order: slide.order !== undefined ? slide.order : i
+          });
+        }
+      } else if (slide.image) {
+        // Keep existing URL if it's not base64
+        processedSlideshow.push({
+          image: slide.image,
+          redirectUrl: slide.redirectUrl || '/category/all',
+          order: slide.order !== undefined ? slide.order : i
+        });
+      }
+    }
+    
     let slideshow = await Slideshow.findOne();
     if (!slideshow) {
-      slideshow = new Slideshow({ slideshow: slideshowData || [] });
+      slideshow = new Slideshow({ slideshow: processedSlideshow });
     } else {
-      slideshow.slideshow = slideshowData || [];
+      slideshow.slideshow = processedSlideshow;
     }
     
     await slideshow.save();
