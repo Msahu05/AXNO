@@ -173,7 +173,7 @@ const Category = () => {
           >
             <ArrowLeft className="h-4 w-4" /> Back
           </button>
-          <h1 className="text-4xl font-heading font-bold text-gray-900 dark:text-white">{displayName}</h1>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-heading font-bold text-gray-900 dark:text-white">{displayName}</h1>
           <div className="ml-auto">
             <Select value={category || 'hoodies'} onValueChange={handleCategoryChange}>
               <SelectTrigger className="w-[180px] bg-white dark:bg-[#2a2538] border border-gray-200 dark:border-white/10">

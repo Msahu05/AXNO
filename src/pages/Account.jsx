@@ -113,16 +113,47 @@ const Account = () => {
     }
   };
 
+  // Helper function to format and validate phone number
+  const formatPhoneNumber = (phone) => {
+    if (!phone || phone.trim() === '') {
+      throw new Error('Phone number is required');
+    }
+
+    // Check if phone starts with +91
+    if (phone.trim().startsWith('+91')) {
+      // Extract digits after +91
+      const afterPrefix = phone.replace(/^\+91\s*/, '');
+      const digits = afterPrefix.replace(/\D/g, '');
+      
+      if (digits.length !== 10) {
+        throw new Error('Phone number must have exactly 10 digits after +91');
+      }
+      
+      return '+91 ' + digits;
+    } else {
+      // Extract all digits
+      const digits = phone.replace(/\D/g, '');
+      let cleanedDigits = digits;
+      
+      // Remove leading 91 if present
+      if (cleanedDigits.startsWith('91') && cleanedDigits.length > 10) {
+        cleanedDigits = cleanedDigits.substring(2);
+      }
+      
+      if (cleanedDigits.length !== 10) {
+        throw new Error('Phone number must have exactly 10 digits');
+      }
+      
+      return '+91 ' + cleanedDigits;
+    }
+  };
+
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      // Format phone number to ensure +91 prefix
-      let formattedPhone = profileData.phone || '';
-      if (formattedPhone && !formattedPhone.startsWith('+91')) {
-        const cleaned = formattedPhone.replace(/^\+91\s*/, '').replace(/^91\s*/, '').trim();
-        formattedPhone = '+91 ' + cleaned;
-      }
+      // Format and validate phone number
+      const formattedPhone = formatPhoneNumber(profileData.phone);
 
       const updatedUser = await userAPI.updateProfile({
         name: profileData.name,
@@ -145,7 +176,7 @@ const Account = () => {
       });
     } catch (error) {
       toast({
-        title: "Update Failed",
+        title: error.message?.includes('10 digits') ? "Invalid Phone Number" : "Update Failed",
         description: error.message || "Failed to update profile",
         variant: "destructive",
       });
@@ -169,13 +200,10 @@ const Account = () => {
   const handleSaveAddress = async (addressData) => {
     setLoading(true);
     try {
-      // Format phone number to ensure +91 prefix
-      let formattedPhone = addressData.phone || '';
-      if (formattedPhone && !formattedPhone.startsWith('+91')) {
-        const cleaned = formattedPhone.replace(/^\+91\s*/, '').replace(/^91\s*/, '').trim();
-        formattedPhone = '+91 ' + cleaned;
+      // Format and validate phone number
+      if (addressData.phone) {
+        addressData.phone = formatPhoneNumber(addressData.phone);
       }
-      addressData.phone = formattedPhone;
 
       if (editingAddress._id) {
         await userAPI.updateAddress(editingAddress._id, addressData);
@@ -194,7 +222,7 @@ const Account = () => {
       await loadAddresses();
     } catch (error) {
       toast({
-        title: "Failed",
+        title: error.message?.includes('10 digits') ? "Invalid Phone Number" : "Failed",
         description: error.message || "Failed to save address",
         variant: "destructive",
       });
@@ -302,18 +330,7 @@ const Account = () => {
                     id="phone"
                     type="tel"
                     value={profileData.phone}
-                    onChange={(e) => {
-                      let value = e.target.value;
-                      // Auto-format to +91 if user types number
-                      if (value && !value.startsWith('+91') && !value.startsWith('+')) {
-                        // Remove any non-digit characters except + and space
-                        const digits = value.replace(/\D/g, '');
-                        if (digits) {
-                          value = '+91 ' + digits;
-                        }
-                      }
-                      setProfileData({ ...profileData, phone: value });
-                    }}
+                    onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
                     className="mt-2"
                     placeholder="+91 1234567890"
                   />
@@ -605,18 +622,7 @@ const AddressForm = ({ address, onSave, onCancel, loading }) => {
             <Label>Phone</Label>
             <Input
               value={formData.phone}
-              onChange={(e) => {
-                let value = e.target.value;
-                // Auto-format to +91 if user types number
-                if (value && !value.startsWith('+91') && !value.startsWith('+')) {
-                  // Remove any non-digit characters except + and space
-                  const digits = value.replace(/\D/g, '');
-                  if (digits) {
-                    value = '+91 ' + digits;
-                  }
-                }
-                setFormData({ ...formData, phone: value });
-              }}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               placeholder="+91 1234567890"
               required
             />

@@ -28,9 +28,9 @@ import {
   Trash2,
   Undo2,
   Tag,
-  Image as ImageIcon,
   ArrowUp,
   ArrowDown,
+  Image as ImageIcon,
   X,
   Upload
 } from 'lucide-react';
@@ -52,6 +52,8 @@ const Admin = () => {
   const [sizeCharts, setSizeCharts] = useState([]);
   const [coupons, setCoupons] = useState([]);
   const [slideshow, setSlideshow] = useState([]);
+  const [isSequenceEditing, setIsSequenceEditing] = useState(false);
+  const [sequencePositions, setSequencePositions] = useState({}); // { category: { productId: position } }
   const [selectedUser, setSelectedUser] = useState(null);
   const [showCouponForm, setShowCouponForm] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState(null);
@@ -726,26 +728,43 @@ const Admin = () => {
     }
   };
 
-  const handleMoveProduct = async (product, categoryProducts, currentIndex, direction) => {
+  // Update product position directly by number (optimized - no page reload)
+  const handleUpdateProductPosition = async (product, categoryProducts, newPosition, currentIndex) => {
     try {
-      console.log('handleMoveProduct called with:', { 
-        product: { id: product.id, _id: product._id, name: product.name },
-        currentIndex,
-        direction,
-        categoryProductsCount: categoryProducts.length
-      });
-      
-      const productId = product.id || product._id;
-      const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-      
-      if (newIndex < 0 || newIndex >= categoryProducts.length) {
+      const position = parseInt(newPosition);
+      if (isNaN(position) || position < 1 || position > categoryProducts.length) {
+        toast({
+          title: 'Invalid Position',
+          description: `Position must be between 1 and ${categoryProducts.length}`,
+          variant: 'destructive',
+        });
         return;
+      }
+
+      const newIndex = position - 1; // Convert to 0-based index
+      if (newIndex === currentIndex) {
+        return; // No change needed
       }
 
       // Create new order array
       const newOrder = [...categoryProducts];
       const [movedProduct] = newOrder.splice(currentIndex, 1);
       newOrder.splice(newIndex, 0, movedProduct);
+
+      // Optimistically update local state immediately (no page reload)
+      const category = product.category || 'Other';
+      setProducts(prevProducts => {
+        const updated = prevProducts.map(p => {
+          if (p.category === category) {
+            const productIndex = newOrder.findIndex(np => (np.id || np._id) === (p.id || p._id));
+            if (productIndex !== -1) {
+              return { ...p, displayOrder: productIndex };
+            }
+          }
+          return p;
+        });
+        return updated;
+      });
 
       // Prepare product orders for API - ensure we have valid IDs
       // Products from API should have 'id' field (from _id.toString())
@@ -832,36 +851,142 @@ const Admin = () => {
         displayOrder: po.displayOrder 
       })));
 
-      // Update order via API
+      // Update order via API (silently in background, no page reload)
       try {
-        const response = await adminAPI.updateProductOrder(productOrders);
-        console.log('Product order update response:', response);
+        await adminAPI.updateProductOrder(productOrders);
+        toast({
+          title: 'Success',
+          description: `Product position updated to ${position}`,
+        });
       } catch (apiError) {
+        // Revert optimistic update on error
+        setProducts(prevProducts => {
+          const updated = prevProducts.map(p => {
+            if (p.category === category) {
+              const originalIndex = categoryProducts.findIndex(op => (op.id || op._id) === (p.id || p._id));
+              if (originalIndex !== -1) {
+                return { ...p, displayOrder: originalIndex };
+              }
+            }
+            return p;
+          });
+          return updated;
+        });
+        
         console.error('API Error details:', {
           message: apiError.message,
           error: apiError,
           productOrders: productOrders
         });
-        throw apiError;
+        toast({
+          title: 'Error',
+          description: apiError.message || 'Failed to update product order',
+          variant: 'destructive',
+        });
       }
-
-      // Refresh products to show new order
-      await fetchProducts();
-
-      toast({
-        title: 'Success',
-        description: `Product order updated successfully`,
-      });
     } catch (error) {
       console.error('Error updating product order:', error);
-      console.error('Error details:', error.details);
-      console.error('Error stack:', error.stack);
-      const errorMessage = error.details?.details 
-        ? `${error.message}. Details: ${JSON.stringify(error.details.details)}`
-        : error.message || 'Failed to update product order';
       toast({
         title: 'Error',
-        description: errorMessage,
+        description: error.message || 'Failed to update product order',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleMoveProduct = async (product, categoryProducts, currentIndex, direction) => {
+    try {
+      const productId = product.id || product._id;
+      const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+      
+      if (newIndex < 0 || newIndex >= categoryProducts.length) {
+        return;
+      }
+
+      // Create new order array
+      const newOrder = [...categoryProducts];
+      const [movedProduct] = newOrder.splice(currentIndex, 1);
+      newOrder.splice(newIndex, 0, movedProduct);
+
+      // Optimistically update local state immediately (no page reload)
+      const category = product.category || 'Other';
+      setProducts(prevProducts => {
+        const updated = prevProducts.map(p => {
+          if (p.category === category) {
+            const productIndex = newOrder.findIndex(np => (np.id || np._id) === (p.id || p._id));
+            if (productIndex !== -1) {
+              return { ...p, displayOrder: productIndex };
+            }
+          }
+          return p;
+        });
+        return updated;
+      });
+
+      // Prepare product orders for API
+      const productOrders = newOrder
+        .map((p, idx) => {
+          const pid = p.id || p._id || (p._id?.toString ? p._id.toString() : null);
+          if (!pid) return null;
+          
+          let productIdStr = null;
+          if (typeof pid === 'string') {
+            productIdStr = pid.trim();
+          } else if (pid && typeof pid === 'object' && pid.toString) {
+            productIdStr = pid.toString().trim();
+          } else if (pid) {
+            productIdStr = String(pid).trim();
+          }
+          
+          if (!productIdStr || productIdStr.length === 0) return null;
+          const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(productIdStr);
+          if (!isValidObjectId) return null;
+          
+          return {
+            productId: productIdStr,
+            displayOrder: idx
+          };
+        })
+        .filter(po => po !== null && po.productId && po.productId.length > 0);
+
+      if (productOrders.length === 0) {
+        throw new Error('No valid product IDs found');
+      }
+
+      // Update order via API (silently in background, no page reload)
+      try {
+        await adminAPI.updateProductOrder(productOrders);
+        toast({
+          title: 'Success',
+          description: `Product moved ${direction === 'up' ? 'up' : 'down'}`,
+        });
+      } catch (apiError) {
+        // Revert optimistic update on error
+        setProducts(prevProducts => {
+          const updated = prevProducts.map(p => {
+            if (p.category === category) {
+              const originalIndex = categoryProducts.findIndex(op => (op.id || op._id) === (p.id || p._id));
+              if (originalIndex !== -1) {
+                return { ...p, displayOrder: originalIndex };
+              }
+            }
+            return p;
+          });
+          return updated;
+        });
+        
+        console.error('API Error:', apiError);
+        toast({
+          title: 'Error',
+          description: apiError.message || 'Failed to update product order',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Error updating product order:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update product order',
         variant: 'destructive',
       });
     }
@@ -1443,16 +1568,135 @@ const Admin = () => {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle>All Products</CardTitle>
-                  <Button
-                    onClick={() => {
-                      console.log('Navigating to /admin/products/new');
-                      navigate('/admin/products/new');
-                    }}
-                    className="flex items-center gap-2"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add Product
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    {!isSequenceEditing ? (
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setIsSequenceEditing(true);
+                          // Initialize sequence positions with current positions
+                          const positions = {};
+                          const productsByCategory = products.reduce((acc, product) => {
+                            const category = product.category || 'Other';
+                            if (!acc[category]) {
+                              acc[category] = [];
+                            }
+                            acc[category].push(product);
+                            return acc;
+                          }, {});
+                          
+                          Object.entries(productsByCategory).forEach(([category, categoryProducts]) => {
+                            positions[category] = {};
+                            categoryProducts.forEach((product, index) => {
+                              const productId = product.id || product._id;
+                              positions[category][productId] = index + 1;
+                            });
+                          });
+                          setSequencePositions(positions);
+                        }}
+                        className="flex items-center gap-2"
+                      >
+                        <Edit className="h-4 w-4" />
+                        Change Sequence
+                      </Button>
+                    ) : (
+                      <>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setIsSequenceEditing(false);
+                            setSequencePositions({});
+                          }}
+                          className="flex items-center gap-2"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={async () => {
+                            try {
+                              setLoading(true);
+                              // Process all category changes
+                              const allProductOrders = [];
+                              
+                              Object.entries(sequencePositions).forEach(([category, positions]) => {
+                                const categoryProducts = products.filter(p => (p.category || 'Other') === category);
+                                
+                                // Sort by new positions
+                                const sortedProducts = categoryProducts.sort((a, b) => {
+                                  const idA = a.id || a._id;
+                                  const idB = b.id || b._id;
+                                  const posA = positions[idA] || 999;
+                                  const posB = positions[idB] || 999;
+                                  return posA - posB;
+                                });
+                                
+                                // Create product orders
+                                sortedProducts.forEach((product, idx) => {
+                                  const pid = product.id || product._id || (product._id?.toString ? product._id.toString() : null);
+                                  if (!pid) return;
+                                  
+                                  let productIdStr = null;
+                                  if (typeof pid === 'string') {
+                                    productIdStr = pid.trim();
+                                  } else if (pid && typeof pid === 'object' && pid.toString) {
+                                    productIdStr = pid.toString().trim();
+                                  } else if (pid) {
+                                    productIdStr = String(pid).trim();
+                                  }
+                                  
+                                  if (!productIdStr || productIdStr.length === 0) return;
+                                  const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(productIdStr);
+                                  if (!isValidObjectId) return;
+                                  
+                                  allProductOrders.push({
+                                    productId: productIdStr,
+                                    displayOrder: idx
+                                  });
+                                });
+                              });
+                              
+                              if (allProductOrders.length > 0) {
+                                await adminAPI.updateProductOrder(allProductOrders);
+                                
+                                toast({
+                                  title: 'Success',
+                                  description: 'Product sequence updated successfully',
+                                });
+                                
+                                // Refresh products to show new order
+                                await fetchProducts();
+                              }
+                              
+                              setIsSequenceEditing(false);
+                              setSequencePositions({});
+                            } catch (error) {
+                              console.error('Error updating sequence:', error);
+                              toast({
+                                title: 'Error',
+                                description: error.message || 'Failed to update product sequence',
+                                variant: 'destructive',
+                              });
+                            } finally {
+                              setLoading(false);
+                            }
+                          }}
+                          className="flex items-center gap-2"
+                        >
+                          OK
+                        </Button>
+                      </>
+                    )}
+                    <Button
+                      onClick={() => {
+                        console.log('Navigating to /admin/products/new');
+                        navigate('/admin/products/new');
+                      }}
+                      className="flex items-center gap-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add Product
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -1533,8 +1777,55 @@ const Admin = () => {
                                     className="cursor-pointer"
                                     onClick={() => navigate(`/admin/products/${product.id || product._id}`)}
                                   >
-                                    <div className="absolute top-2 left-2 bg-purple-500 text-white text-xs font-bold px-2 py-1 rounded">
-                                      #{index + 1}
+                                    <div className="absolute top-2 left-2 flex items-center gap-1 z-20" onClick={(e) => e.stopPropagation()}>
+                                      <span className="bg-purple-500 text-white text-xs font-bold px-2 py-1 rounded">
+                                        #
+                                      </span>
+                                      <Input
+                                        type="number"
+                                        min="1"
+                                        max={categoryProducts.length}
+                                        value={
+                                          isSequenceEditing 
+                                            ? (sequencePositions[category]?.[product.id || product._id] ?? index + 1)
+                                            : index + 1
+                                        }
+                                        onChange={(e) => {
+                                          e.stopPropagation();
+                                          if (isSequenceEditing) {
+                                            const newPos = parseInt(e.target.value);
+                                            if (!isNaN(newPos) && newPos >= 1 && newPos <= categoryProducts.length) {
+                                              setSequencePositions(prev => ({
+                                                ...prev,
+                                                [category]: {
+                                                  ...prev[category],
+                                                  [product.id || product._id]: newPos
+                                                }
+                                              }));
+                                            }
+                                          }
+                                        }}
+                                        disabled={!isSequenceEditing}
+                                        onKeyDown={(e) => {
+                                          e.stopPropagation();
+                                          if (e.key === 'Enter' && isSequenceEditing) {
+                                            e.preventDefault();
+                                            e.target.blur();
+                                          }
+                                        }}
+                                        onFocus={(e) => {
+                                          e.stopPropagation();
+                                          if (isSequenceEditing) {
+                                            e.target.select();
+                                          }
+                                        }}
+                                        className={`w-12 h-6 text-xs text-center font-bold border-purple-500 focus:border-purple-600 focus:ring-1 focus:ring-purple-500 ${
+                                          isSequenceEditing 
+                                            ? 'bg-yellow-50 border-yellow-400 cursor-text' 
+                                            : 'bg-white cursor-default'
+                                        }`}
+                                        style={{ pointerEvents: 'auto' }}
+                                      />
                                     </div>
                                     <img 
                                       src={getImageUrl(productImage) || 'https://via.placeholder.com/300'} 

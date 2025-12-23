@@ -873,11 +873,24 @@ app.post('/api/auth/signup', async (req, res) => {
       return res.status(400).json({ error: 'User already exists with this email' });
     }
 
-    // Format phone number
+    // Format phone number - ensure 10 digits and +91 prefix
     let formattedPhone = phone || '';
-    if (formattedPhone && !formattedPhone.startsWith('+91')) {
-      const cleaned = formattedPhone.replace(/^\+91\s*/, '').replace(/^91\s*/, '').trim();
-      formattedPhone = '+91 ' + cleaned;
+    if (formattedPhone) {
+      // Remove all non-digit characters
+      let digits = formattedPhone.replace(/\D/g, '');
+      
+      // If starts with 91, remove it (don't consider as +91)
+      if (digits.startsWith('91') && digits.length > 10) {
+        digits = digits.substring(2);
+      }
+      
+      // Validate exactly 10 digits
+      if (digits.length !== 10) {
+        return res.status(400).json({ error: 'Phone number must have exactly 10 digits' });
+      }
+      
+      // Format as +91 <10 digits>
+      formattedPhone = '+91 ' + digits;
     }
 
     // Check if phone number already exists (if provided)
@@ -980,11 +993,24 @@ app.post('/api/auth/signup-otp', async (req, res) => {
       return res.status(400).json({ error: 'User already exists with this email' });
     }
 
-    // Format phone number
+    // Format phone number - ensure 10 digits and +91 prefix
     let formattedPhone = phone || '';
-    if (formattedPhone && !formattedPhone.startsWith('+91')) {
-      const cleaned = formattedPhone.replace(/^\+91\s*/, '').replace(/^91\s*/, '').trim();
-      formattedPhone = '+91 ' + cleaned;
+    if (formattedPhone) {
+      // Remove all non-digit characters
+      let digits = formattedPhone.replace(/\D/g, '');
+      
+      // If starts with 91, remove it (don't consider as +91)
+      if (digits.startsWith('91') && digits.length > 10) {
+        digits = digits.substring(2);
+      }
+      
+      // Validate exactly 10 digits
+      if (digits.length !== 10) {
+        return res.status(400).json({ error: 'Phone number must have exactly 10 digits' });
+      }
+      
+      // Format as +91 <10 digits>
+      formattedPhone = '+91 ' + digits;
     }
 
     // Check if phone number already exists (if provided)
@@ -1633,12 +1659,24 @@ app.put('/api/user/profile', authenticateToken, async (req, res) => {
       user.name = name;
     }
     if (phone !== undefined) {
-      // Format phone number
+      // Format phone number - ensure 10 digits and +91 prefix
       let formattedPhone = phone || '';
-      if (formattedPhone && !formattedPhone.startsWith('+91')) {
-        // Remove any existing +91 or country code
-        const cleaned = formattedPhone.replace(/^\+91\s*/, '').replace(/^91\s*/, '').trim();
-        formattedPhone = '+91 ' + cleaned;
+      if (formattedPhone) {
+        // Remove all non-digit characters
+        let digits = formattedPhone.replace(/\D/g, '');
+        
+        // If starts with 91, remove it (don't consider as +91)
+        if (digits.startsWith('91') && digits.length > 10) {
+          digits = digits.substring(2);
+        }
+        
+        // Validate exactly 10 digits
+        if (digits.length !== 10) {
+          return res.status(400).json({ error: 'Phone number must have exactly 10 digits' });
+        }
+        
+        // Format as +91 <10 digits>
+        formattedPhone = '+91 ' + digits;
       }
 
       // Check if phone number already exists for another user (if provided and different from current)
@@ -1699,11 +1737,24 @@ app.put('/api/user/addresses/:addressId', authenticateToken, async (req, res) =>
       });
     }
 
-    // Format phone number
+    // Format phone number - ensure 10 digits and +91 prefix
     let formattedPhone = phone || '';
-    if (formattedPhone && !formattedPhone.startsWith('+91')) {
-      const cleaned = formattedPhone.replace(/^\+91\s*/, '').replace(/^91\s*/, '').trim();
-      formattedPhone = '+91 ' + cleaned;
+    if (formattedPhone) {
+      // Remove all non-digit characters
+      let digits = formattedPhone.replace(/\D/g, '');
+      
+      // If starts with 91, remove it (don't consider as +91)
+      if (digits.startsWith('91') && digits.length > 10) {
+        digits = digits.substring(2);
+      }
+      
+      // Validate exactly 10 digits
+      if (digits.length !== 10) {
+        return res.status(400).json({ error: 'Phone number must have exactly 10 digits' });
+      }
+      
+      // Format as +91 <10 digits>
+      formattedPhone = '+91 ' + digits;
     }
 
     user.addresses[addressIndex] = {
@@ -3403,6 +3454,19 @@ app.post('/api/admin/products', authenticateAdmin, async (req, res) => {
         const imagesToUpload = [];
         galleryImages.forEach((imageData, index) => {
           if (imageData.data) {
+            // Skip if data is actually a URL (Cloudinary or HTTP/HTTPS)
+            if (isCloudinaryUrl(imageData.data) || imageData.data.startsWith('http://') || imageData.data.startsWith('https://')) {
+              // Treat as URL, not base64
+              if (isCloudinaryUrl(imageData.data)) {
+                gallery.push({
+                  url: imageData.data,
+                  isMain: index === 0,
+                  order: index
+                });
+              }
+              return; // Skip this image
+            }
+            
             // Extract base64 data and mime type
             const base64Match = imageData.data.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
             if (base64Match) {
@@ -3411,19 +3475,34 @@ app.post('/api/admin/products', authenticateAdmin, async (req, res) => {
                 mimeType: base64Match[1] || imageData.mimeType || 'image/jpeg'
               });
             } else if (typeof imageData.data === 'string' && imageData.data.length > 0) {
-              // Already base64 without data URI prefix
-              imagesToUpload.push({
-                data: imageData.data,
-                mimeType: imageData.mimeType || 'image/jpeg'
+              // Only add if it looks like base64 (alphanumeric, long enough, no URL patterns)
+              const looksLikeBase64 = /^[A-Za-z0-9+/=]+$/.test(imageData.data) && imageData.data.length > 100;
+              if (looksLikeBase64) {
+                imagesToUpload.push({
+                  data: imageData.data,
+                  mimeType: imageData.mimeType || 'image/jpeg'
+                });
+              } else {
+                console.warn('Skipping invalid image data (not base64 and not URL):', imageData.data.substring(0, 50));
+              }
+            }
+          } else if (imageData.url) {
+            // Handle URL field
+            if (isCloudinaryUrl(imageData.url)) {
+              // If it's already a Cloudinary URL, keep it
+              gallery.push({
+                url: imageData.url,
+                isMain: index === 0,
+                order: index
+              });
+            } else if (imageData.url.startsWith('http://') || imageData.url.startsWith('https://')) {
+              // Other URLs - keep as is
+              gallery.push({
+                url: imageData.url,
+                isMain: index === 0,
+                order: index
               });
             }
-          } else if (imageData.url && isCloudinaryUrl(imageData.url)) {
-            // If it's already a Cloudinary URL, keep it
-            gallery.push({
-              url: imageData.url,
-              isMain: index === 0,
-              order: index
-            });
           }
         });
 
@@ -3671,6 +3750,19 @@ app.put('/api/admin/products/:id', authenticateAdmin, async (req, res) => {
         
         galleryImages.forEach((imageData, index) => {
           if (imageData.data) {
+            // Skip if data is actually a URL (Cloudinary or HTTP/HTTPS)
+            if (isCloudinaryUrl(imageData.data) || imageData.data.startsWith('http://') || imageData.data.startsWith('https://')) {
+              // Treat as URL, not base64
+              if (isCloudinaryUrl(imageData.data)) {
+                existingUrls.push({
+                  url: imageData.data,
+                  isMain: index === 0,
+                  order: index
+                });
+              }
+              return; // Skip this image
+            }
+            
             // Extract base64 data and mime type
             const base64Match = imageData.data.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
             if (base64Match) {
@@ -3679,18 +3771,34 @@ app.put('/api/admin/products/:id', authenticateAdmin, async (req, res) => {
                 mimeType: base64Match[1] || imageData.mimeType || 'image/jpeg'
               });
             } else if (typeof imageData.data === 'string' && imageData.data.length > 0) {
-              imagesToUpload.push({
-                data: imageData.data,
-                mimeType: imageData.mimeType || 'image/jpeg'
+              // Only add if it looks like base64 (alphanumeric, long enough, no URL patterns)
+              const looksLikeBase64 = /^[A-Za-z0-9+/=]+$/.test(imageData.data) && imageData.data.length > 100;
+              if (looksLikeBase64) {
+                imagesToUpload.push({
+                  data: imageData.data,
+                  mimeType: imageData.mimeType || 'image/jpeg'
+                });
+              } else {
+                console.warn('Skipping invalid image data (not base64 and not URL):', imageData.data.substring(0, 50));
+              }
+            }
+          } else if (imageData.url) {
+            // Handle URL field
+            if (isCloudinaryUrl(imageData.url)) {
+              // Keep existing Cloudinary URLs
+              existingUrls.push({
+                url: imageData.url,
+                isMain: index === 0,
+                order: index
+              });
+            } else if (imageData.url.startsWith('http://') || imageData.url.startsWith('https://')) {
+              // Other URLs - keep as is
+              existingUrls.push({
+                url: imageData.url,
+                isMain: index === 0,
+                order: index
               });
             }
-          } else if (imageData.url && isCloudinaryUrl(imageData.url)) {
-            // Keep existing Cloudinary URLs
-            existingUrls.push({
-              url: imageData.url,
-              isMain: index === 0,
-              order: index
-            });
           }
         });
 

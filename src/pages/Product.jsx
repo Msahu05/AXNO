@@ -13,6 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { productsAPI, getImageUrl, sizeChartsAPI, reviewsAPI } from "@/lib/api";
 import { Heart, Minus, Plus, ShoppingBag, Star, Truck, Zap, Upload, X, Image as ImageIcon, ArrowLeft, ArrowRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -288,9 +289,9 @@ const Product = () => {
         if (productData.category) {
           const relatedData = await productsAPI.getAll({ 
             category: productData.category,
-            limit: 4 
+            limit: 3 
           });
-          const filtered = relatedData.products.filter(item => item.id !== id).slice(0, 4);
+          const filtered = relatedData.products.filter(item => item.id !== id).slice(0, 3);
           setRelated(filtered);
         }
         
@@ -748,7 +749,12 @@ const Product = () => {
                   {/* Left Arrow */}
                   <button
                     onClick={prevImage}
-                    className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white/90 active:bg-white text-gray-800 rounded-full p-2 sm:p-3 transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 z-10 shadow-lg backdrop-blur-sm"
+                    className="absolute left-2 sm:left-4 bg-white/80 hover:bg-white/90 active:bg-white text-gray-800 rounded-full p-2 sm:p-3 transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 z-10 shadow-lg backdrop-blur-sm flex items-center justify-center"
+                    style={{ 
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      height: 'fit-content'
+                    }}
                     aria-label="Previous image"
                   >
                     <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -757,7 +763,12 @@ const Product = () => {
                   {/* Right Arrow */}
                   <button
                     onClick={nextImage}
-                    className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white/90 active:bg-white text-gray-800 rounded-full p-2 sm:p-3 transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 z-10 shadow-lg backdrop-blur-sm"
+                    className="absolute right-2 sm:right-4 bg-white/80 hover:bg-white/90 active:bg-white text-gray-800 rounded-full p-2 sm:p-3 transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 z-10 shadow-lg backdrop-blur-sm flex items-center justify-center"
+                    style={{ 
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      height: 'fit-content'
+                    }}
                     aria-label="Next image"
                   >
                     <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -1405,12 +1416,49 @@ const Product = () => {
                 View All
             </Button>
           </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {/* Mobile: Carousel (one at a time) */}
+            <div className="block md:hidden">
+              <Carousel
+                opts={{
+                  align: "start",
+                  loop: false,
+                }}
+                className="w-full"
+              >
+                <CarouselContent>
+                  {related.map((item, index) => (
+                    <CarouselItem key={item.id} className="basis-full">
+                      <div className="animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
+                        <ProductCard
+                          id={item.id}
+                          name={item.name}
+                          category={item.category}
+                          price={item.price}
+                          originalPrice={item.original || item.originalPrice}
+                          image={getImageUrl(Array.isArray(item.gallery) ? item.gallery[0] : item.gallery || item.image)}
+                          rating={4.8}
+                        />
+                      </div>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                <CarouselPrevious />
+                <CarouselNext />
+              </Carousel>
+            </div>
+            {/* Desktop: Grid (3 items side by side) */}
+            <div className="hidden md:flex md:flex-row md:justify-center md:items-start" style={{ gap: '64px', alignItems: 'stretch' }}>
               {related.map((item, index) => (
                 <div
                   key={item.id}
-                  className="animate-fade-in"
-                  style={{ animationDelay: `${index * 0.1}s` }}
+                  className="animate-fade-in flex-shrink-0"
+                  style={{ 
+                    animationDelay: `${index * 0.1}s`,
+                    width: '320px',
+                    minWidth: '320px',
+                    maxWidth: '320px',
+                    display: 'flex'
+                  }}
                 >
                   <ProductCard
                     id={item.id}
@@ -1421,9 +1469,9 @@ const Product = () => {
                     image={getImageUrl(Array.isArray(item.gallery) ? item.gallery[0] : item.gallery || item.image)}
                     rating={4.8}
                   />
-              </div>
-            ))}
-          </div>
+                </div>
+              ))}
+            </div>
           </section>
         )}
       </main>

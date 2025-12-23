@@ -37,6 +37,41 @@ const Auth = () => {
   const searchParams = new URLSearchParams(location.search);
   const redirect = searchParams.get("redirect") || "/";
 
+  // Helper function to format and validate phone number
+  const formatPhoneNumber = (phone) => {
+    if (!phone || phone.trim() === '') {
+      throw new Error('Phone number is required');
+    }
+
+    // Check if phone starts with +91
+    if (phone.trim().startsWith('+91')) {
+      // Extract digits after +91
+      const afterPrefix = phone.replace(/^\+91\s*/, '');
+      const digits = afterPrefix.replace(/\D/g, '');
+      
+      if (digits.length !== 10) {
+        throw new Error('Phone number must have exactly 10 digits after +91');
+      }
+      
+      return '+91 ' + digits;
+    } else {
+      // Extract all digits
+      const digits = phone.replace(/\D/g, '');
+      let cleanedDigits = digits;
+      
+      // Remove leading 91 if present
+      if (cleanedDigits.startsWith('91') && cleanedDigits.length > 10) {
+        cleanedDigits = cleanedDigits.substring(2);
+      }
+      
+      if (cleanedDigits.length !== 10) {
+        throw new Error('Phone number must have exactly 10 digits');
+      }
+      
+      return '+91 ' + cleanedDigits;
+    }
+  };
+
   // Redirect if already authenticated (but not if phone modal is showing)
   useEffect(() => {
     // Only redirect if authenticated, not showing phone modal, and not already on target path
@@ -256,7 +291,9 @@ const Auth = () => {
             setLoading(false);
             return;
           }
-          const response = await authAPI.signupWithOtp(form.name, form.email, form.otp, form.phone, form.termsAccepted);
+          // Format and validate phone number
+          const formattedPhone = formatPhoneNumber(form.phone);
+          const response = await authAPI.signupWithOtp(form.name, form.email, form.otp, formattedPhone, form.termsAccepted);
           if (response.token && response.user) {
             localStorage.setItem('authToken', response.token);
             result = { success: true };
@@ -292,7 +329,9 @@ const Auth = () => {
           setLoading(false);
           return;
         }
-        result = await signup({ name: form.name, email: form.email, password: form.password, phone: form.phone, termsAccepted: form.termsAccepted });
+        // Format and validate phone number
+        const formattedPhone = formatPhoneNumber(form.phone);
+        result = await signup({ name: form.name, email: form.email, password: form.password, phone: formattedPhone, termsAccepted: form.termsAccepted });
       }
 
       if (result && result.success) {
@@ -421,7 +460,7 @@ const Auth = () => {
               <Input 
                 type="tel" 
                 value={form.phone} 
-                onChange={(event) => setForm({ ...form, phone: event.target.value })} 
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
                 placeholder="+91 9876543210" 
                 required
                 autoComplete="tel"
@@ -699,14 +738,21 @@ const Auth = () => {
 
       {/* Phone Number Collection Modal for Google OAuth */}
       <Dialog open={showPhoneModal} onOpenChange={(open) => {
-        // Prevent closing without phone number
-        if (!open && (!form.phone || form.phone.trim() === '')) {
-          toast({
-            title: "Phone Number Required",
-            description: "You must provide a phone number to continue",
-            variant: "destructive",
-          });
-          return;
+        // Prevent closing without valid phone number (10 digits)
+        if (!open) {
+          const digits = form.phone ? form.phone.replace(/\D/g, '') : '';
+          let cleanedDigits = digits;
+          if (cleanedDigits.startsWith('91') && cleanedDigits.length > 10) {
+            cleanedDigits = cleanedDigits.substring(2);
+          }
+          if (cleanedDigits.length !== 10) {
+            toast({
+              title: "Phone Number Required",
+              description: "You must provide a valid 10-digit phone number to continue",
+              variant: "destructive",
+            });
+            return;
+          }
         }
         setShowPhoneModal(open);
       }}>
@@ -720,19 +766,14 @@ const Auth = () => {
           <form
             onSubmit={async (e) => {
               e.preventDefault();
-              if (!form.phone || form.phone.trim() === '') {
-                toast({
-                  title: "Phone Number Required",
-                  description: "Please enter your phone number",
-                  variant: "destructive",
-                });
-                return;
-              }
-
+              
               try {
+                // Format and validate phone number
+                const formattedPhone = formatPhoneNumber(form.phone);
+                
                 setLoading(true);
                 // Update user profile with phone number
-                await userAPI.updateProfile({ phone: form.phone });
+                await userAPI.updateProfile({ phone: formattedPhone });
                 
                 // Refresh user data to get updated profile and set authenticated
                 if (pendingGoogleUser?.token) {
@@ -753,7 +794,7 @@ const Auth = () => {
                 }
               } catch (error) {
                 toast({
-                  title: "Error",
+                  title: error.message?.includes('10 digits') ? "Invalid Phone Number" : "Error",
                   description: error.message || "Failed to save phone number. Please try again.",
                   variant: "destructive",
                 });
@@ -767,7 +808,7 @@ const Auth = () => {
               <Input
                 type="tel"
                 value={form.phone}
-                onChange={(event) => setForm({ ...form, phone: event.target.value })}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
                 placeholder="+91 9876543210"
                 required
                 autoComplete="tel"

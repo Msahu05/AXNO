@@ -96,13 +96,14 @@ export function ProductCard({
   return (
     <Link
       to={productUrl}
-      className="group block overflow-hidden rounded-lg bg-card shadow-soft transition-all duration-300 hover:shadow-elevated"
+      className="group block h-full overflow-hidden rounded-lg bg-card shadow-soft transition-all duration-300 hover:shadow-elevated flex flex-col"
     >
-      <div className="relative aspect-square w-full overflow-hidden bg-secondary">
+      <div className="relative w-full overflow-hidden bg-secondary" style={{ aspectRatio: '1 / 1', position: 'relative' }}>
         <img
           src={image}
           alt={name}
-          className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
+          className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
+          style={{ objectFit: 'cover' }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
         
@@ -155,11 +156,11 @@ export function ProductCard({
         )}
       </div>
 
-      <div className="p-4">
+      <div className="p-4 flex flex-col flex-grow" style={{ minHeight: '180px' }}>
         <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
           {category}
         </p>
-        <h3 className="mt-1 font-medium text-foreground line-clamp-1">{name}</h3>
+        <h3 className="mt-1 font-medium text-foreground line-clamp-2 min-h-[2.5rem]">{name}</h3>
 
         <div className="mt-2 flex items-center gap-2">
           <span className="font-semibold text-foreground">₹{price}</span>
@@ -171,7 +172,7 @@ export function ProductCard({
         </div>
 
         {/* Buy Now and Add to Cart Buttons */}
-        <div className="mt-3 flex gap-2">
+        <div className="mt-auto pt-3 flex gap-2">
           <Button
             onClick={handleBuyNow}
             className="flex-1 gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
