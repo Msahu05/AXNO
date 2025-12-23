@@ -446,13 +446,24 @@ const OrderManagement = () => {
                         <div className="space-y-2">
                           {order.customDesign.files.map((file, index) => {
                             // Handle both string paths and file objects
-                            const filePath = typeof file === 'string' ? file : (file.url || file.path || file);
+                            let filePath = typeof file === 'string' ? file : (file?.url || file?.path || file);
                             const fileName = typeof file === 'string' 
                               ? file.split('/').pop() || `File ${index + 1}`
-                              : (file.name || file.originalName || file.filename || `File ${index + 1}`);
-                            const fileUrl = typeof file === 'string' 
-                              ? getImageUrl(filePath)
-                              : (file.url || getImageUrl(file.path || file));
+                              : (file?.name || file?.originalName || file?.filename || `File ${index + 1}`);
+                            
+                            // Validate and get file URL safely
+                            let fileUrl = '';
+                            if (typeof file === 'string') {
+                              fileUrl = filePath ? getImageUrl(filePath) : '';
+                            } else {
+                              fileUrl = file?.url || (file?.path ? getImageUrl(file.path) : '');
+                            }
+                            
+                            // Skip invalid URLs
+                            if (!fileUrl || fileUrl === 'https://via.placeholder.com/500' || fileUrl.includes('data:;base64,=')) {
+                              console.warn('Invalid file URL for order:', order.orderId, 'file:', file);
+                              return null;
+                            }
                             
                             return (
                               <div key={index} className="flex items-center gap-2 p-2 rounded border bg-muted/50 hover:bg-muted transition-colors">
@@ -464,6 +475,10 @@ const OrderManagement = () => {
                                   rel="noopener noreferrer"
                                   download
                                   className="text-xs text-primary hover:underline flex-shrink-0 px-2 py-1 rounded hover:bg-primary/10 transition-colors"
+                                  onError={(e) => {
+                                    console.error('Failed to load file:', fileUrl);
+                                    e.preventDefault();
+                                  }}
                                 >
                                   Download
                                 </a>

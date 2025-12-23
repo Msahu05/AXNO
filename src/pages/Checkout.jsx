@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { ArrowLeft, UploadCloud, MessageCircle, ShieldCheck, MapPin, Plus, Minus, ChevronRight, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -150,9 +150,12 @@ const Checkout = () => {
 
   // Use buy now product if available, otherwise use cart items
   // Create a snapshot of checkout items to ensure coupons validate against actual checkout items, not live cart
-  const displayItems = isBuyNow && buyNowProduct 
-    ? [buyNowProduct] // Only the buy now product, not from cart
-    : [...cartItems]; // Create a copy/snapshot of cart items for checkout
+  // Memoize to prevent unnecessary re-renders and infinite loops
+  const displayItems = useMemo(() => {
+    return isBuyNow && buyNowProduct 
+      ? [buyNowProduct] // Only the buy now product, not from cart
+      : [...cartItems]; // Create a copy/snapshot of cart items for checkout
+  }, [isBuyNow, buyNowProduct, cartItems]);
   
   // Shipping cost (always 0 for free shipping)
   const shipping = 0;
@@ -213,43 +216,74 @@ const Checkout = () => {
     checkPreviousOrders();
   }, [isAuthenticated]);
 
-  // Load available coupons
+  // Track if we've already attempted to load coupons to prevent infinite loops
+  const couponsLoadedRef = useRef(false);
+  const autoApplyAttemptedRef = useRef(false);
+
+  // Load available coupons (only once when displayItems is ready)
   useEffect(() => {
     const loadAvailableCoupons = async () => {
+      // Prevent multiple simultaneous calls
+      if (loadingCoupons || couponsLoadedRef.current) {
+        return;
+      }
+      
       try {
         setLoadingCoupons(true);
+        couponsLoadedRef.current = true;
         const response = await couponsAPI.getAllPublic();
         setAvailableCoupons(response.coupons || []);
       } catch (error) {
         console.error('Error loading coupons:', error);
+        couponsLoadedRef.current = false; // Reset on error so we can retry
       } finally {
         setLoadingCoupons(false);
       }
     };
     
-    if (displayItems.length > 0) {
+    if (displayItems.length > 0 && !couponsLoadedRef.current) {
       loadAvailableCoupons();
     }
-  }, [displayItems]);
+  }, [displayItems.length, loadingCoupons]); // Only depend on length, not the array itself
 
-  // Auto-apply coupon from sessionStorage or based on quantity
+  // Auto-apply coupon from sessionStorage or based on quantity (only once)
   useEffect(() => {
-    const autoApplyCouponCode = sessionStorage.getItem('autoApplyCoupon');
-    if (autoApplyCouponCode) {
-      setDiscountCode(autoApplyCouponCode);
-      applyCoupon(autoApplyCouponCode);
-      sessionStorage.removeItem('autoApplyCoupon'); // Clear after applying
-    } else {
-      // Auto-apply coupon based on quantity
-      autoApplyCouponByQuantity();
+    // Prevent multiple attempts or if coupon already applied
+    if (autoApplyAttemptedRef.current || loadingCoupons || displayItems.length === 0 || appliedCoupon) {
+      return;
     }
-  }, [displayItems]);
+    
+    const autoApplyCoupon = async () => {
+      autoApplyAttemptedRef.current = true;
+      
+      const autoApplyCouponCode = sessionStorage.getItem('autoApplyCoupon');
+      if (autoApplyCouponCode) {
+        setDiscountCode(autoApplyCouponCode);
+        applyCoupon(autoApplyCouponCode);
+        sessionStorage.removeItem('autoApplyCoupon'); // Clear after applying
+      } else {
+        // Auto-apply coupon based on quantity (use already loaded coupons)
+        await autoApplyCouponByQuantity();
+      }
+    };
+    
+    // Wait for coupons to load before auto-applying (or if loading failed, try anyway after a delay)
+    if (availableCoupons.length > 0 || (!loadingCoupons && couponsLoadedRef.current)) {
+      autoApplyCoupon();
+    }
+  }, [availableCoupons.length, displayItems.length, loadingCoupons, appliedCoupon]); // Only depend on lengths and appliedCoupon
 
   const autoApplyCouponByQuantity = async () => {
     try {
-      // Get all active coupons
-      const response = await couponsAPI.getAllPublic();
-      const coupons = response.coupons || [];
+      // Use already loaded coupons instead of fetching again
+      const coupons = availableCoupons.length > 0 
+        ? availableCoupons 
+        : [];
+      
+      // If no coupons loaded yet, skip auto-apply (will retry when coupons load)
+      if (coupons.length === 0) {
+        return;
+      }
       
       // Get total quantity
       const totalQuantity = displayItems.reduce((sum, item) => sum + item.quantity, 0);

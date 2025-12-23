@@ -295,12 +295,23 @@ const ProductReviews = ({ productId }) => {
                 </div>
               </div>
               <p className="text-sm sm:text-base text-foreground mb-3">{review.comment}</p>
-              {review.attachments && review.attachments.length > 0 && (
+                  {review.attachments && review.attachments.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-3">
                   {review.attachments.map((attachment, index) => {
-                    const fileUrl = attachment.url.startsWith('http') 
-                      ? attachment.url 
-                      : `${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3001'}${attachment.url}`;
+                    // Handle attachment URL safely
+                    let fileUrl = '';
+                    if (attachment && attachment.url) {
+                      if (attachment.url.startsWith('http://') || attachment.url.startsWith('https://')) {
+                        fileUrl = attachment.url;
+                      } else {
+                        let baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+                        baseUrl = baseUrl.replace(/\/api\/?$/, '').replace(/\/$/, '');
+                        fileUrl = `${baseUrl}${attachment.url.startsWith('/') ? attachment.url : '/' + attachment.url}`;
+                      }
+                    } else {
+                      console.warn('Invalid attachment:', attachment);
+                      continue; // Skip invalid attachments
+                    }
                     return (
                       <div key={index} className="rounded-lg overflow-hidden border border-white/20">
                         {attachment.type === "image" ? (
