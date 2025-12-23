@@ -8,7 +8,11 @@
     "seed:products": "node seedProducts.js",
     "migrate:cloudinary": "node migrateToCloudinary.js",
     "migrate:slideshow": "node migrateSlideshowToCloudinary.js",
-    "verify:cloudinary": "node verifyCloudinary.js"
+    "migrate:userfiles": "node migrateUserFilesToCloudinary.js",
+    "verify:cloudinary": "node verifyCloudinary.js",
+    "find:remaining": "node findRemainingFiles.js",
+    "report:duplicates": "node reportCloudinaryDuplicates.js",
+    "cleanup:cloudinary": "node cleanupCloudinaryDuplicates.js"
   },
   "dependencies": {
     "@getbrevo/brevo": "^3.0.1",

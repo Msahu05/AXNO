@@ -288,16 +288,30 @@ const Admin = () => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const data = await adminAPI.getAllOrders(statusFilter || undefined, page, 20);
-      setOrders(data.orders);
-      setPagination(data.pagination);
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout')), 30000)
+      );
+      
+      const data = await Promise.race([
+        adminAPI.getAllOrders(statusFilter || undefined, page, 20),
+        timeoutPromise
+      ]);
+      
+      setOrders(data.orders || []);
+      setPagination(data.pagination || { page: 1, limit: 20, total: 0, pages: 1 });
     } catch (error) {
       console.error('Error fetching orders:', error);
       toast({
         title: 'Error',
-        description: 'Failed to load orders',
+        description: error.message === 'Request timeout' 
+          ? 'Orders are taking too long to load. Please try again.'
+          : 'Failed to load orders',
         variant: 'destructive',
       });
+      // Set empty state on error
+      setOrders([]);
+      setPagination({ page: 1, limit: 20, total: 0, pages: 1 });
     } finally {
       setLoading(false);
     }

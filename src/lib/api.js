@@ -626,26 +626,66 @@ export const couponsAPI = {
 
 // Helper function to get full image URL
 export function getImageUrl(imagePath) {
-  if (!imagePath) return 'https://via.placeholder.com/500';
+  // Handle null, undefined, or empty string
+  if (!imagePath) {
+    return 'https://via.placeholder.com/500';
+  }
+  
+  // Handle objects (e.g., {url: "...", data: "..."})
+  if (typeof imagePath === 'object') {
+    // If it has a url property, use that
+    if (imagePath.url) {
+      imagePath = imagePath.url;
+    } else if (imagePath.data) {
+      // If it has data (base64), use that
+      imagePath = imagePath.data;
+    } else {
+      // Invalid object, return placeholder
+      console.warn('Invalid image object:', imagePath);
+      return 'https://via.placeholder.com/500';
+    }
+  }
+  
+  // Ensure it's a string
+  if (typeof imagePath !== 'string') {
+    console.warn('Image path is not a string:', imagePath);
+    return 'https://via.placeholder.com/500';
+  }
+  
+  // Trim whitespace
+  imagePath = imagePath.trim();
+  
+  // If empty after trimming, return placeholder
+  if (!imagePath) {
+    return 'https://via.placeholder.com/500';
+  }
+  
   // If it's a data URL (base64 image), return as is (fallback for migration)
   if (imagePath.startsWith('data:image/')) {
     return imagePath;
   }
+  
   // If already a full URL (including Cloudinary URLs), return as is
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
     return imagePath;
   }
+  
+  // Get server base URL and clean it up
+  let SERVER_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+  // Remove trailing slashes and /api if present
+  SERVER_BASE_URL = SERVER_BASE_URL.replace(/\/api\/?$/, '').replace(/\/$/, '');
+  
   // If starts with /uploads, prepend server base URL
   if (imagePath.startsWith('/uploads/')) {
-    const SERVER_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
     return `${SERVER_BASE_URL}${imagePath}`;
   }
+  
   // If just a filename, assume it's in uploads
   if (!imagePath.startsWith('/')) {
-    const SERVER_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
     return `${SERVER_BASE_URL}/uploads/${imagePath}`;
   }
-  const SERVER_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+  
+  // Otherwise, prepend server base URL
   return `${SERVER_BASE_URL}${imagePath}`;
 }
 

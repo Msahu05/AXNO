@@ -27,9 +27,12 @@ import {
 import { 
   uploadBase64Image, 
   uploadMultipleBase64Images, 
+  uploadFileBuffer,
+  uploadLocalFile,
   deleteCloudinaryImage,
   extractPublicIdFromUrl,
-  isCloudinaryUrl 
+  isCloudinaryUrl,
+  isLocalFilePath
 } from './cloudinaryService.js';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
@@ -231,7 +234,11 @@ if (!fs.existsSync(uploadsDir)) {
 app.use('/uploads', express.static(uploadsDir));
 
 // Configure multer for file uploads
-const storage = multer.diskStorage({
+// Use memory storage for Cloudinary uploads (we'll upload directly from buffer)
+const memoryStorage = multer.memoryStorage();
+
+// Keep disk storage for backward compatibility (fallback)
+const diskStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadsDir);
   },
@@ -242,7 +249,7 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ 
-  storage,
+  storage: memoryStorage, // Use memory storage for Cloudinary
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
   fileFilter: (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|gif|pdf|doc|docx/;
@@ -1788,16 +1795,34 @@ app.post('/api/reviews/:productId', authenticateToken, upload.array('files', 5),
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Process uploaded files
-    const attachments = files.map(file => {
-      const fileUrl = `/uploads/${file.filename}`;
-      const isImage = file.mimetype.startsWith('image/');
-      return {
-        type: isImage ? 'image' : 'file',
-        url: fileUrl,
-        name: file.originalname
-      };
-    });
+    // Process uploaded files - upload to Cloudinary
+    const attachments = [];
+    for (const file of files) {
+      try {
+        if (!file.buffer) {
+          console.error('File buffer is missing for file:', file.originalname);
+          continue; // Skip this file
+        }
+        
+        const result = await uploadFileBuffer(
+          file.buffer,
+          file.originalname,
+          file.mimetype,
+          'looklyn/reviews',
+          `review_${Date.now()}_${Math.random().toString(36).substring(7)}`
+        );
+        const isImage = file.mimetype.startsWith('image/');
+        attachments.push({
+          type: isImage ? 'image' : 'file',
+          url: result.secure_url,
+          name: file.originalname
+        });
+      } catch (uploadError) {
+        console.error('Error uploading review file to Cloudinary:', uploadError);
+        // Don't add attachment if upload fails - log error but continue
+        console.warn(`Skipping file ${file.originalname} due to upload error`);
+      }
+    }
 
     // Create review
     const review = new Review({
@@ -1999,6 +2024,8 @@ app.post('/api/payments/verify', authenticateToken, async (req, res) => {
 // Payment Confirmation - Create order after payment
 app.post('/api/payments/confirm', authenticateToken, upload.array('designFiles', 10), async (req, res) => {
   try {
+    console.log('Payment confirmation request received');
+    console.log('Files received:', req.files ? req.files.length : 0);
     const { orderId: paymentOrderId, transactionId, items, shippingAddress, customDesign, totals, couponCode } = req.body;
 
     if (!paymentOrderId) {
@@ -2081,12 +2108,45 @@ app.post('/api/payments/confirm', authenticateToken, upload.array('designFiles',
       }
     }
 
-    // Process custom design files if uploaded
+    // Process custom design files if uploaded - upload to Cloudinary
     const designFiles = [];
     if (req.files && req.files.length > 0) {
-      req.files.forEach(file => {
-        designFiles.push(`/uploads/${file.filename}`);
-      });
+      console.log(`Processing ${req.files.length} design file(s)...`);
+      for (const file of req.files) {
+        try {
+          if (!file || !file.buffer) {
+            console.warn('Invalid file object - missing buffer:', {
+              originalname: file?.originalname,
+              mimetype: file?.mimetype,
+              hasBuffer: !!file?.buffer
+            });
+            continue;
+          }
+          
+          console.log(`Uploading file: ${file.originalname} (${Math.round(file.buffer.length / 1024)}KB)`);
+          const result = await uploadFileBuffer(
+            file.buffer,
+            file.originalname || 'file',
+            file.mimetype || 'application/octet-stream',
+            'looklyn/design-files',
+            `design_${Date.now()}_${Math.random().toString(36).substring(7)}`
+          );
+          designFiles.push(result.secure_url);
+          console.log(`✅ File uploaded: ${result.secure_url.substring(0, 50)}...`);
+        } catch (uploadError) {
+          console.error('Error uploading design file to Cloudinary:', uploadError);
+          console.error('File details:', {
+            originalname: file?.originalname,
+            mimetype: file?.mimetype,
+            size: file?.buffer?.length,
+            hasBuffer: !!file?.buffer
+          });
+          // Don't add file if upload fails - log error but continue
+          // This prevents order creation from failing due to file upload issues
+          console.warn(`⚠️  Skipping file ${file?.originalname || 'unknown'} due to upload error`);
+        }
+      }
+      console.log(`Successfully uploaded ${designFiles.length} of ${req.files.length} files`);
     }
 
     const parsedCustomDesign = customDesign ? (typeof customDesign === 'string' ? JSON.parse(customDesign) : customDesign) : {};
@@ -2191,6 +2251,7 @@ app.post('/api/payments/confirm', authenticateToken, upload.array('designFiles',
       }).catch(err => console.error('Failed to notify admins:', err));
     }
 
+    console.log('Order created successfully:', order.orderId);
     res.json({
       success: true,
       message: 'Order created successfully',
@@ -2203,7 +2264,13 @@ app.post('/api/payments/confirm', authenticateToken, upload.array('designFiles',
     });
   } catch (error) {
     console.error('Confirm payment error:', error);
-    res.status(500).json({ error: error.message || 'Server error' });
+    console.error('Error stack:', error.stack);
+    // Always return a proper error response to prevent infinite loops
+    res.status(500).json({ 
+      success: false,
+      error: error.message || 'Server error',
+      message: 'Failed to create order. Please try again.'
+    });
   }
 });
 
@@ -2269,12 +2336,26 @@ app.post('/api/orders', authenticateToken, upload.array('designFiles', 10), asyn
       }
     }
 
-    // Process custom design files if uploaded
+    // Process custom design files if uploaded - upload to Cloudinary
     const designFiles = [];
     if (req.files && req.files.length > 0) {
-      req.files.forEach(file => {
-        designFiles.push(`/uploads/${file.filename}`);
-      });
+      for (const file of req.files) {
+        try {
+          const result = await uploadFileBuffer(
+            file.buffer,
+            file.originalname,
+            file.mimetype,
+            'looklyn/design-files',
+            `design_${Date.now()}_${Math.random().toString(36).substring(7)}`
+          );
+          designFiles.push(result.secure_url);
+        } catch (uploadError) {
+          console.error('Error uploading design file to Cloudinary:', uploadError);
+          // Don't add file if upload fails - log error but continue
+          // This prevents order creation from failing due to file upload issues
+          console.warn(`Skipping file ${file.originalname} due to upload error`);
+        }
+      }
     }
 
     // Calculate estimated delivery (7-8 days from now)
@@ -2597,17 +2678,37 @@ app.get('/api/admin/orders', authenticateAdmin, async (req, res) => {
     const { status, page = 1, limit = 20 } = req.query;
     const query = status ? { status } : {};
     
+    // Optimize query: use lean() for faster queries (returns plain JS objects)
     const orders = await Order.find(query)
       .populate('userId', 'name email phone')
       .sort({ createdAt: -1 })
       .limit(parseInt(limit))
       .skip((parseInt(page) - 1) * parseInt(limit))
-      .select('-__v');
+      .select('-__v')
+      .lean();
+    
+    // Clean up any invalid file URLs in customDesign.files to prevent ERR_INVALID_URL errors
+    const cleanedOrders = orders.map(order => {
+      if (order.customDesign && order.customDesign.files && Array.isArray(order.customDesign.files)) {
+        order.customDesign.files = order.customDesign.files.filter(file => {
+          // Filter out invalid URLs
+          if (typeof file === 'string') {
+            return file && file.trim() && !file.includes('data:;base64,=');
+          }
+          if (file && typeof file === 'object') {
+            const url = file.url || file.path || '';
+            return url && url.trim() && !url.includes('data:;base64,=');
+          }
+          return false;
+        });
+      }
+      return order;
+    });
     
     const total = await Order.countDocuments(query);
 
     res.json({
-      orders,
+      orders: cleanedOrders,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
@@ -2728,12 +2829,26 @@ app.post('/api/admin/orders/create', authenticateAdmin, upload.array('designFile
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Process custom design files if uploaded
+    // Process custom design files if uploaded - upload to Cloudinary
     const designFiles = [];
     if (req.files && req.files.length > 0) {
-      req.files.forEach(file => {
-        designFiles.push(`/uploads/${file.filename}`);
-      });
+      for (const file of req.files) {
+        try {
+          const result = await uploadFileBuffer(
+            file.buffer,
+            file.originalname,
+            file.mimetype,
+            'looklyn/design-files',
+            `design_${Date.now()}_${Math.random().toString(36).substring(7)}`
+          );
+          designFiles.push(result.secure_url);
+        } catch (uploadError) {
+          console.error('Error uploading design file to Cloudinary:', uploadError);
+          // Don't add file if upload fails - log error but continue
+          // This prevents order creation from failing due to file upload issues
+          console.warn(`Skipping file ${file.originalname} due to upload error`);
+        }
+      }
     }
 
     // Parse JSON fields if they're strings
@@ -2980,10 +3095,24 @@ app.post('/api/admin/users/:userId/add-product', authenticateAdmin, upload.array
       return res.status(400).json({ error: 'User has no shipping address. Please add an address first.' });
     }
 
-    // Handle product image
+    // Handle product image - upload to Cloudinary
     let productImage = '';
     if (req.files && req.files.length > 0) {
-      productImage = `/uploads/${req.files[0].filename}`;
+      try {
+        const result = await uploadFileBuffer(
+          req.files[0].buffer,
+          req.files[0].originalname,
+          req.files[0].mimetype,
+          'looklyn/orders',
+          `order_product_${Date.now()}_${Math.random().toString(36).substring(7)}`
+        );
+        productImage = result.secure_url;
+        } catch (uploadError) {
+          console.error('Error uploading product image to Cloudinary:', uploadError);
+          // Don't set productImage if upload fails - log error but continue
+          console.warn(`Skipping product image upload due to error`);
+          productImage = ''; // Empty string if upload fails
+        }
     }
 
     // If productId is provided, try to fetch product details

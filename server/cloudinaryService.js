@@ -122,10 +122,10 @@ export function extractPublicIdFromUrl(url) {
 }
 
 /**
- * Upload local file to Cloudinary
+ * Upload local file to Cloudinary (supports images, PDFs, and other files)
  * @param {string} filePath - Local file path (relative to server root or absolute)
  * @param {string} folder - Cloudinary folder path (optional)
- * @param {string} publicId - Public ID for the image (optional)
+ * @param {string} publicId - Public ID for the file (optional)
  * @returns {Promise<{url: string, public_id: string, secure_url: string}>}
  */
 export async function uploadLocalFile(filePath, folder = 'looklyn/products', publicId = null) {
@@ -151,15 +151,24 @@ export async function uploadLocalFile(filePath, folder = 'looklyn/products', pub
       throw new Error(`File not found: ${fullPath}`);
     }
 
+    // Determine file type from extension
+    const ext = path.extname(fullPath).toLowerCase();
+    const isImage = ['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext);
+    const isPdf = ext === '.pdf';
+    
     // Upload options
     const uploadOptions = {
       folder: folder,
-      resource_type: 'image',
-      transformation: [
+      resource_type: isPdf ? 'raw' : (isImage ? 'image' : 'auto'),
+    };
+
+    // Add image transformations only for images
+    if (isImage) {
+      uploadOptions.transformation = [
         { quality: 'auto', fetch_format: 'auto' },
         { width: 1200, height: 1200, crop: 'limit' }
-      ]
-    };
+      ];
+    }
 
     if (publicId) {
       uploadOptions.public_id = publicId;
@@ -172,13 +181,68 @@ export async function uploadLocalFile(filePath, folder = 'looklyn/products', pub
       url: result.secure_url,
       public_id: result.public_id,
       secure_url: result.secure_url,
-      width: result.width,
-      height: result.height,
-      format: result.format
+      width: result.width || null,
+      height: result.height || null,
+      format: result.format,
+      resource_type: result.resource_type
     };
   } catch (error) {
     console.error('Error uploading local file to Cloudinary:', error);
     throw new Error(`Failed to upload local file to Cloudinary: ${error.message}`);
+  }
+}
+
+/**
+ * Upload file buffer directly to Cloudinary (for multer files)
+ * @param {Buffer} fileBuffer - File buffer
+ * @param {string} originalName - Original filename
+ * @param {string} mimeType - MIME type
+ * @param {string} folder - Cloudinary folder path (optional)
+ * @param {string} publicId - Public ID for the file (optional)
+ * @returns {Promise<{url: string, public_id: string, secure_url: string}>}
+ */
+export async function uploadFileBuffer(fileBuffer, originalName, mimeType, folder = 'looklyn/uploads', publicId = null) {
+  try {
+    // Determine file type
+    const isImage = mimeType.startsWith('image/');
+    const isPdf = mimeType === 'application/pdf';
+    
+    // Upload options
+    const uploadOptions = {
+      folder: folder,
+      resource_type: isPdf ? 'raw' : (isImage ? 'image' : 'auto'),
+    };
+
+    // Add image transformations only for images
+    if (isImage) {
+      uploadOptions.transformation = [
+        { quality: 'auto', fetch_format: 'auto' },
+        { width: 1200, height: 1200, crop: 'limit' }
+      ];
+    }
+
+    if (publicId) {
+      uploadOptions.public_id = publicId;
+    }
+
+    // Convert buffer to data URI for upload
+    const dataUri = `data:${mimeType};base64,${fileBuffer.toString('base64')}`;
+    
+    // Upload to Cloudinary
+    const result = await cloudinary.uploader.upload(dataUri, uploadOptions);
+
+    return {
+      url: result.secure_url,
+      public_id: result.public_id,
+      secure_url: result.secure_url,
+      width: result.width || null,
+      height: result.height || null,
+      format: result.format,
+      resource_type: result.resource_type
+    };
+  } catch (error) {
+    console.error('Error uploading file buffer to Cloudinary:', error);
+    throw new Error(`Failed to upload file to Cloudinary: ${error.message}`);
   }
 }
 
