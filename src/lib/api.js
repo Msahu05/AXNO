@@ -627,11 +627,11 @@ export const couponsAPI = {
 // Helper function to get full image URL
 export function getImageUrl(imagePath) {
   if (!imagePath) return 'https://via.placeholder.com/500';
-  // If it's a data URL (base64 image), return as is
+  // If it's a data URL (base64 image), return as is (fallback for migration)
   if (imagePath.startsWith('data:image/')) {
     return imagePath;
   }
-  // If already a full URL, return as is
+  // If already a full URL (including Cloudinary URLs), return as is
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
     return imagePath;
   }
