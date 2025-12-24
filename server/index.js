@@ -92,6 +92,15 @@ app.use(cors({
   credentials: true
 }));
 
+// Set headers to allow Google OAuth to work properly
+app.use((req, res, next) => {
+  // Allow Google OAuth iframes to communicate via postMessage
+  // Set Cross-Origin-Opener-Policy to allow same-origin popups (needed for OAuth)
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+  res.setHeader('Cross-Origin-Embedder-Policy', 'unsafe-none');
+  next();
+});
+
 // Health check route
 app.get("/health", (req, res) => {
   res.status(200).send("OK");
@@ -2522,6 +2531,88 @@ app.post('/api/orders', authenticateToken, upload.array('designFiles', 10), asyn
   }
 });
 
+// Helper function to enrich order items with product images (OPTIMIZED - batch query)
+async function enrichOrderItemsWithProductImages(items) {
+  if (!items || !Array.isArray(items) || items.length === 0) {
+    return items;
+  }
+
+  // Collect all valid productIds from all items
+  const productIds = items
+    .map(item => item.productId)
+    .filter(id => id && mongoose.Types.ObjectId.isValid(id))
+    .map(id => new mongoose.Types.ObjectId(id));
+
+  // If no valid productIds, return items as-is
+  if (productIds.length === 0) {
+    return items.map(item => item.toObject ? item.toObject() : item);
+  }
+
+  // Fetch all products in a single query (BATCH QUERY - much faster!)
+  let productsMap = new Map();
+  try {
+    const products = await Product.find({
+      _id: { $in: productIds }
+    }).select('_id gallery name slug').lean();
+
+    // Create a map for O(1) lookup
+    products.forEach(product => {
+      productsMap.set(product._id.toString(), product);
+    });
+  } catch (error) {
+    console.error('Error fetching products in batch:', error);
+    // Fall back to returning items as-is if batch fetch fails
+    return items.map(item => item.toObject ? item.toObject() : item);
+  }
+
+  // Enrich items using the products map
+  const enrichedItems = items.map(item => {
+    const itemObj = item.toObject ? item.toObject() : item;
+    
+    // If productId exists and is valid, use product image
+    if (itemObj.productId && mongoose.Types.ObjectId.isValid(itemObj.productId)) {
+      const product = productsMap.get(itemObj.productId.toString());
+      
+      if (product && product.gallery && product.gallery.length > 0) {
+        // Get first image from product gallery
+        const productImage = typeof product.gallery[0] === 'string' 
+          ? product.gallery[0] 
+          : (product.gallery[0].url || product.gallery[0]);
+        
+        // Validate image URL - filter out invalid base64 URLs
+        if (productImage && 
+            productImage.trim() && 
+            productImage !== 'data:;base64,=' &&
+            !productImage.includes('data:;base64,=')) {
+          return {
+            ...itemObj,
+            image: productImage, // Use product image instead of stored image
+            productDetails: {
+              id: product._id.toString(),
+              name: product.name,
+              slug: product.slug
+            }
+          };
+        }
+      }
+    }
+    
+    // Validate item image - filter out invalid base64 URLs
+    if (itemObj.image && 
+        (itemObj.image === 'data:;base64,=' || 
+         itemObj.image.includes('data:;base64,=') ||
+         !itemObj.image.trim())) {
+      // Use placeholder if image is invalid
+      itemObj.image = 'https://via.placeholder.com/500';
+    }
+    
+    // Return item as-is if no productId or product not found
+    return itemObj;
+  });
+
+  return enrichedItems;
+}
+
 // Get user's orders
 app.get('/api/orders', authenticateToken, async (req, res) => {
   try {
@@ -2530,7 +2621,18 @@ app.get('/api/orders', authenticateToken, async (req, res) => {
       .select('-__v')
       .limit(50);
     
-    res.json({ orders });
+    // Enrich each order's items with product images
+    const enrichedOrders = await Promise.all(
+      orders.map(async (order) => {
+        const enrichedItems = await enrichOrderItemsWithProductImages(order.items);
+        return {
+          ...order.toObject(),
+          items: enrichedItems
+        };
+      })
+    );
+    
+    res.json({ orders: enrichedOrders });
   } catch (error) {
     console.error('Get orders error:', error);
     res.status(500).json({ error: 'Server error' });
@@ -2549,7 +2651,14 @@ app.get('/api/orders/:orderId', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    res.json({ order });
+    // Enrich order items with product images
+    const enrichedItems = await enrichOrderItemsWithProductImages(order.items);
+    const enrichedOrder = {
+      ...order.toObject(),
+      items: enrichedItems
+    };
+
+    res.json({ order: enrichedOrder });
   } catch (error) {
     console.error('Get order error:', error);
     res.status(500).json({ error: 'Server error' });
@@ -2729,37 +2838,121 @@ app.get('/api/admin/orders', authenticateAdmin, async (req, res) => {
     const { status, page = 1, limit = 20 } = req.query;
     const query = status ? { status } : {};
     
+    // Set timeout for this request (30 seconds)
+    req.setTimeout(30000);
+    
     // Optimize query: use lean() for faster queries (returns plain JS objects)
+    // Also limit fields to only what's needed
     const orders = await Order.find(query)
       .populate('userId', 'name email phone')
       .sort({ createdAt: -1 })
       .limit(parseInt(limit))
       .skip((parseInt(page) - 1) * parseInt(limit))
-      .select('-__v')
+      .select('-__v -customDesign.files') // Exclude large files field initially
       .lean();
     
-    // Clean up any invalid file URLs in customDesign.files to prevent ERR_INVALID_URL errors
-    const cleanedOrders = orders.map(order => {
-      if (order.customDesign && order.customDesign.files && Array.isArray(order.customDesign.files)) {
-        order.customDesign.files = order.customDesign.files.filter(file => {
-          // Filter out invalid URLs
-          if (typeof file === 'string') {
-            return file && file.trim() && !file.includes('data:;base64,=');
+    // OPTIMIZED: Collect all productIds from all orders first, then do ONE batch query
+    const allProductIds = new Set();
+    orders.forEach(order => {
+      if (order.items && Array.isArray(order.items)) {
+        order.items.forEach(item => {
+          if (item.productId && mongoose.Types.ObjectId.isValid(item.productId)) {
+            allProductIds.add(item.productId.toString());
           }
-          if (file && typeof file === 'object') {
-            const url = file.url || file.path || '';
-            return url && url.trim() && !url.includes('data:;base64,=');
-          }
-          return false;
         });
       }
-      return order;
+    });
+
+    // Fetch all products in a single batch query
+    let productsMap = new Map();
+    if (allProductIds.size > 0) {
+      try {
+        const productIdsArray = Array.from(allProductIds).map(id => new mongoose.Types.ObjectId(id));
+        const products = await Product.find({
+          _id: { $in: productIdsArray }
+        }).select('_id gallery name slug').lean();
+
+        products.forEach(product => {
+          productsMap.set(product._id.toString(), product);
+        });
+      } catch (error) {
+        console.error('Error fetching products in batch for admin orders:', error);
+      }
+    }
+
+    // Enrich all orders using the products map (no additional queries needed)
+    const enrichedOrders = orders.map(order => {
+      const enrichedItems = (order.items || []).map(item => {
+        const itemObj = item.toObject ? item.toObject() : item;
+        
+        // If productId exists and is valid, use product image
+        if (itemObj.productId && mongoose.Types.ObjectId.isValid(itemObj.productId)) {
+          const product = productsMap.get(itemObj.productId.toString());
+          
+          if (product && product.gallery && product.gallery.length > 0) {
+            const productImage = typeof product.gallery[0] === 'string' 
+              ? product.gallery[0] 
+              : (product.gallery[0].url || product.gallery[0]);
+            
+            // Validate image URL - filter out invalid base64 URLs
+            if (productImage && 
+                productImage.trim() && 
+                productImage !== 'data:;base64,=' &&
+                !productImage.includes('data:;base64,=')) {
+              return {
+                ...itemObj,
+                image: productImage,
+                productDetails: {
+                  id: product._id.toString(),
+                  name: product.name,
+                  slug: product.slug
+                }
+              };
+            }
+          }
+        }
+        
+        // Validate item image - filter out invalid base64 URLs
+        if (itemObj.image && 
+            (itemObj.image === 'data:;base64,=' || 
+             itemObj.image.includes('data:;base64,=') ||
+             !itemObj.image.trim())) {
+          // Use placeholder if image is invalid
+          itemObj.image = 'https://via.placeholder.com/500';
+        }
+        
+        return itemObj;
+      });
+      
+      // Clean up any invalid file URLs in customDesign.files
+      let cleanedCustomDesign = order.customDesign;
+      if (order.customDesign && order.customDesign.files && Array.isArray(order.customDesign.files)) {
+        cleanedCustomDesign = {
+          ...order.customDesign,
+          files: order.customDesign.files.filter(file => {
+            if (typeof file === 'string') {
+              return file && file.trim() && !file.includes('data:;base64,=');
+            }
+            if (file && typeof file === 'object') {
+              const url = file.url || file.path || '';
+              return url && url.trim() && !url.includes('data:;base64,=');
+            }
+            return false;
+          })
+        };
+      }
+      
+      return {
+        ...order,
+        items: enrichedItems,
+        customDesign: cleanedCustomDesign
+      };
     });
     
     const total = await Order.countDocuments(query);
 
     res.json({
-      orders: cleanedOrders,
+      orders: enrichedOrders,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
@@ -2785,7 +2978,14 @@ app.get('/api/admin/orders/:orderId', authenticateAdmin, async (req, res) => {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    res.json({ order });
+    // Enrich order items with product images
+    const enrichedItems = await enrichOrderItemsWithProductImages(order.items);
+    const enrichedOrder = {
+      ...order.toObject(),
+      items: enrichedItems
+    };
+
+    res.json({ order: enrichedOrder });
   } catch (error) {
     console.error('Get admin order error:', error);
     res.status(500).json({ error: 'Server error' });

@@ -660,9 +660,20 @@ export function getImageUrl(imagePath) {
     return 'https://via.placeholder.com/500';
   }
   
-  // If it's a data URL (base64 image), return as is (fallback for migration)
-  if (imagePath.startsWith('data:image/')) {
-    return imagePath;
+  // If it's a data URL (base64 image), validate it first
+  if (imagePath.startsWith('data:')) {
+    // Filter out invalid base64 URLs
+    if (imagePath === 'data:;base64,=' || imagePath.includes('data:;base64,=')) {
+      console.warn('Invalid base64 image URL detected:', imagePath);
+      return 'https://via.placeholder.com/500';
+    }
+    // Only return valid data URLs
+    if (imagePath.startsWith('data:image/')) {
+      return imagePath;
+    }
+    // Invalid data URL format
+    console.warn('Invalid data URL format:', imagePath);
+    return 'https://via.placeholder.com/500';
   }
   
   // If already a full URL (including Cloudinary URLs), return as is
