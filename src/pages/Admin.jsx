@@ -68,7 +68,8 @@ const Admin = () => {
     discountValue: '',
     applyTo: 'total',
     isActive: true,
-    firstOrderOnly: false
+    firstOrderOnly: false,
+    userId: '' // User ID for user-specific coupon (empty = public coupon)
   });
   const [statusFilter, setStatusFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -547,7 +548,8 @@ const Admin = () => {
         discountValue: parseFloat(couponForm.discountValue) || 0,
         applyTo: couponForm.applyTo,
         isActive: couponForm.isActive,
-        firstOrderOnly: couponForm.firstOrderOnly || false
+        firstOrderOnly: couponForm.firstOrderOnly || false,
+        userId: couponForm.userId || null // null for public, userId for user-specific
       };
 
       if (editingCoupon) {
@@ -577,7 +579,8 @@ const Admin = () => {
         discountValue: '',
         applyTo: 'total',
         isActive: true,
-        firstOrderOnly: false
+        firstOrderOnly: false,
+        userId: ''
       });
       await fetchCoupons();
     } catch (error) {
@@ -627,7 +630,8 @@ const Admin = () => {
         discountValue: coupon.discountValue || '',
         applyTo: coupon.applyTo || 'total',
         isActive: coupon.isActive !== undefined ? coupon.isActive : true,
-        firstOrderOnly: coupon.firstOrderOnly || false
+        firstOrderOnly: coupon.firstOrderOnly || false,
+        userId: coupon.userId ? (coupon.userId._id || coupon.userId) : ''
       });
     setShowCouponForm(true);
   };
@@ -1904,7 +1908,7 @@ const Admin = () => {
                 <div className="flex items-center justify-between">
                   <CardTitle>Coupon Management</CardTitle>
                   <Button
-                    onClick={() => {
+                    onClick={async () => {
                       setEditingCoupon(null);
                       setCouponForm({
                         code: '',
@@ -1918,8 +1922,19 @@ const Admin = () => {
         discountType: 'price_override',
         discountValue: '',
         applyTo: 'total',
-        isActive: true
+        isActive: true,
+        firstOrderOnly: false,
+        userId: ''
       });
+      // Load users if not already loaded
+      if (users.length === 0) {
+        try {
+          const data = await adminAPI.getUsers(undefined, 1, 100); // Get first 100 users
+          setUsers(data.users || []);
+        } catch (error) {
+          console.error('Error fetching users for coupon form:', error);
+        }
+      }
       setShowCouponForm(true);
                     }}
                     className="flex items-center gap-2"
@@ -1958,6 +1973,14 @@ const Admin = () => {
                                 <Badge className="bg-green-100 text-green-800 border-green-200">Active</Badge>
                               ) : (
                                 <Badge className="bg-gray-100 text-gray-800 border-gray-200">Inactive</Badge>
+                              )}
+                              {coupon.userId && (
+                                <Badge className="bg-purple-100 text-purple-800 border-purple-200">
+                                  User: {coupon.userId?.name || coupon.userId?.email || 'Specific User'}
+                                </Badge>
+                              )}
+                              {!coupon.userId && (
+                                <Badge className="bg-blue-100 text-blue-800 border-blue-200">Public</Badge>
                               )}
                             </div>
                             <div className="flex flex-wrap gap-4 text-xs text-gray-600 mt-2">
@@ -2532,6 +2555,40 @@ const Admin = () => {
                     />
                     <span className="text-sm font-medium">First Order Only (10% off on first shopping)</span>
                   </label>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Specific User (Optional)</label>
+                  <select
+                    value={couponForm.userId || ''}
+                    onChange={(e) => setCouponForm({ ...couponForm, userId: e.target.value })}
+                    className="w-full p-2 border rounded-md"
+                    onFocus={async () => {
+                      // Load users when dropdown is focused if not already loaded
+                      if (users.length === 0) {
+                        try {
+                          const data = await adminAPI.getUsers(undefined, 1, 100); // Get first 100 users
+                          setUsers(data.users || []);
+                        } catch (error) {
+                          console.error('Error fetching users for coupon form:', error);
+                        }
+                      }
+                    }}
+                  >
+                    <option value="">All Users (Public Coupon)</option>
+                    {users.length === 0 ? (
+                      <option value="" disabled>Loading users...</option>
+                    ) : (
+                      users.map((user) => (
+                        <option key={user._id} value={user._id}>
+                          {user.name} ({user.email})
+                        </option>
+                      ))
+                    )}
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Leave empty for public coupon, or select a user to make it visible only to them
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

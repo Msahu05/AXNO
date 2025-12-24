@@ -502,6 +502,7 @@ const couponSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
   firstOrderOnly: { type: Boolean, default: false },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }, // User-specific coupon (null = available to all)
 });
 
 const Coupon = mongoose.model('Coupon', couponSchema);
@@ -4275,7 +4276,9 @@ app.delete('/api/admin/products/:id', authenticateAdmin, async (req, res) => {
 // Get all coupons (admin)
 app.get('/api/admin/coupons', authenticateAdmin, async (req, res) => {
   try {
-    const coupons = await Coupon.find({}).sort({ createdAt: -1 });
+    const coupons = await Coupon.find({})
+      .populate('userId', 'name email')
+      .sort({ createdAt: -1 });
     res.json({ coupons });
   } catch (error) {
     console.error('Error fetching coupons:', error);
@@ -4286,7 +4289,33 @@ app.get('/api/admin/coupons', authenticateAdmin, async (req, res) => {
 // Get active banners (public)
 app.get('/api/coupons/banners', async (req, res) => {
   try {
-    const banners = await Coupon.find({ isActive: true }).sort({ createdAt: -1 });
+    // Try to get user from token if available (optional authentication)
+    let userId = null;
+    try {
+      const authHeader = req.headers['authorization'];
+      const token = authHeader && authHeader.split(' ')[1];
+      if (token) {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        userId = decoded.userId;
+      }
+    } catch (err) {
+      // Not authenticated - only show public coupons
+    }
+
+    // Get coupons that are either public (userId is null) or specific to the current user
+    const query = {
+      isActive: true,
+      $or: [
+        { userId: null } // Always include public coupons
+      ]
+    };
+
+    // If user is authenticated, also include their specific coupons
+    if (userId) {
+      query.$or.push({ userId: new mongoose.Types.ObjectId(userId) });
+    }
+
+    const banners = await Coupon.find(query).sort({ createdAt: -1 });
     res.json({ banners });
   } catch (error) {
     console.error('Error fetching banners:', error);
@@ -4294,11 +4323,18 @@ app.get('/api/coupons/banners', async (req, res) => {
   }
 });
 
-// Get coupon by code (public)
-app.get('/api/coupons/:code', async (req, res) => {
+// Get coupon by code (public or user-specific)
+app.get('/api/coupons/:code', authenticateToken, async (req, res) => {
   try {
     const { code } = req.params;
-    const coupon = await Coupon.findOne({ code: code.toUpperCase(), isActive: true });
+    const coupon = await Coupon.findOne({ 
+      code: code.toUpperCase(), 
+      isActive: true,
+      $or: [
+        { userId: null }, // Public coupons
+        { userId: req.user?.userId } // User-specific coupons
+      ]
+    });
     if (!coupon) {
       return res.status(404).json({ error: 'Coupon not found' });
     }
@@ -4319,11 +4355,22 @@ app.post('/api/coupons/validate', authenticateToken, async (req, res) => {
 
     const coupon = await Coupon.findOne({
       code: code.toUpperCase(),
-      isActive: true
+      isActive: true,
+      $or: [
+        { userId: null }, // Public coupons
+        { userId: req.user.userId } // User-specific coupons
+      ]
     });
 
     if (!coupon) {
       return res.status(404).json({ error: 'Invalid coupon code' });
+    }
+
+    // ✅ USER-SPECIFIC CHECK
+    if (coupon.userId && coupon.userId.toString() !== req.user.userId.toString()) {
+      return res.status(403).json({
+        error: 'This coupon is not available for your account'
+      });
     }
 
     // ✅ FIRST ORDER CHECK
@@ -4358,10 +4405,23 @@ app.post('/api/coupons/validate', authenticateToken, async (req, res) => {
 // Create coupon (admin)
 app.post('/api/admin/coupons', authenticateAdmin, async (req, res) => {
   try {
-    const { code, category, price, salePrice, minQuantity, minPrice, discountType, discountValue, applyTo, isActive, firstOrderOnly } = req.body;
+    const { code, category, price, salePrice, minQuantity, minPrice, discountType, discountValue, applyTo, isActive, firstOrderOnly, userId } = req.body;
     
     if (!code) {
       return res.status(400).json({ error: 'Coupon code is required' });
+    }
+
+    // Validate userId if provided
+    let validatedUserId = null;
+    if (userId) {
+      if (!mongoose.Types.ObjectId.isValid(userId)) {
+        return res.status(400).json({ error: 'Invalid user ID' });
+      }
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      validatedUserId = new mongoose.Types.ObjectId(userId);
     }
 
     const coupon = new Coupon({
@@ -4375,7 +4435,8 @@ app.post('/api/admin/coupons', authenticateAdmin, async (req, res) => {
       discountValue: discountValue ? parseFloat(discountValue) : 0,
       applyTo: applyTo || 'total',
       isActive: isActive !== undefined ? isActive : true,
-      firstOrderOnly: firstOrderOnly !== undefined ? firstOrderOnly : false
+      firstOrderOnly: firstOrderOnly !== undefined ? firstOrderOnly : false,
+      userId: validatedUserId // null for public coupons, ObjectId for user-specific
     });
 
     await coupon.save();
@@ -4393,7 +4454,20 @@ app.post('/api/admin/coupons', authenticateAdmin, async (req, res) => {
 app.put('/api/admin/coupons/:id', authenticateAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const { code, category, price, salePrice, minQuantity, minPrice, discountType, discountValue, applyTo, isActive, firstOrderOnly } = req.body;
+    const { code, category, price, salePrice, minQuantity, minPrice, discountType, discountValue, applyTo, isActive, firstOrderOnly, userId } = req.body;
+    
+    // Validate userId if provided
+    let validatedUserId = null;
+    if (userId) {
+      if (!mongoose.Types.ObjectId.isValid(userId)) {
+        return res.status(400).json({ error: 'Invalid user ID' });
+      }
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      validatedUserId = new mongoose.Types.ObjectId(userId);
+    }
     
     const updateData = {
       category: category || 'All',
@@ -4406,6 +4480,7 @@ app.put('/api/admin/coupons/:id', authenticateAdmin, async (req, res) => {
       applyTo: applyTo || 'total',
       isActive: isActive !== undefined ? isActive : true,
       firstOrderOnly: firstOrderOnly !== undefined ? firstOrderOnly : false,
+      userId: validatedUserId, // null for public coupons, ObjectId for user-specific
       updatedAt: Date.now()
     };
 
