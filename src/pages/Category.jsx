@@ -85,7 +85,7 @@ const Category = () => {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
     const filter = searchParams.get("filter");
-    if (filter && ["men", "women", "kids"].includes(filter)) {
+    if (filter && ["men", "women", "unisex"].includes(filter)) {
       setAudienceFilter(filter);
     } else {
       setAudienceFilter('all');
@@ -99,8 +99,8 @@ const Category = () => {
     // If filtering by audience, filter the category products
     if (audienceFilter !== "all") {
       products = products.filter((p) => {
-        const productAudience = p.audience || p.audienceType;
-        return productAudience === audienceFilter;
+        const productAudience = (p.audience || p.audienceType || '').toLowerCase();
+        return productAudience === audienceFilter.toLowerCase();
       });
     }
     
@@ -192,7 +192,7 @@ const Category = () => {
 
         <div className="flex flex-wrap items-center gap-4 rounded-[16px] border border-[rgba(47,37,64,0.08)] dark:border-white/10 bg-white dark:bg-[#2a2538] p-4 sm:p-6 shadow-[0_4px_16px_rgba(47,37,64,0.04)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.2)]">
           <span className="font-body text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Filter by:</span>
-          {['all', 'men', 'women', 'kids', 'unisex'].map((filter) => (
+          {['all', 'unisex', 'men', 'women'].map((filter) => (
             <Button
               key={filter}
               variant={audienceFilter === filter ? "default" : "outline"}
@@ -201,7 +201,15 @@ const Category = () => {
                   ? "bg-primary text-primary-foreground border-primary" 
                   : "bg-background dark:bg-[#2a2538] text-foreground dark:text-gray-300 border-border dark:border-white/20 hover:border-primary dark:hover:border-purple-500"
               }`}
-              onClick={() => setAudienceFilter(filter)}
+              onClick={() => {
+                setAudienceFilter(filter);
+                // Update URL with filter parameter
+                if (filter === 'all') {
+                  navigate(`/category/${category}`, { replace: true });
+                } else {
+                  navigate(`/category/${category}?filter=${filter}`, { replace: true });
+                }
+              }}
             >
               {filter === "all" ? "All" : filter.charAt(0).toUpperCase() + filter.slice(1)}
             </Button>

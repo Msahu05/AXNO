@@ -106,6 +106,16 @@ const Home = () => {
                         className="font-display rounded-full border-foreground px-4 py-2 text-sm tracking-[0.12em]"
                         onClick={() => {
                           window.scrollTo({ top: 0, behavior: "smooth" });
+                          navigate(`/category/${type.route}?filter=unisex`);
+                        }}
+                      >
+                        Unisex
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="font-display rounded-full border-foreground px-4 py-2 text-sm tracking-[0.12em]"
+                        onClick={() => {
+                          window.scrollTo({ top: 0, behavior: "smooth" });
                           navigate(`/category/${type.route}?filter=men`);
                         }}
                       >
@@ -120,26 +130,6 @@ const Home = () => {
                         }}
                       >
                         Women
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="font-display rounded-full border-foreground px-4 py-2 text-sm tracking-[0.12em]"
-                        onClick={() => {
-                          window.scrollTo({ top: 0, behavior: "smooth" });
-                          navigate(`/category/${type.route}?filter=kids`);
-                        }}
-                      >
-                        Kids
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="font-display rounded-full border-foreground px-4 py-2 text-sm tracking-[0.12em]"
-                        onClick={() => {
-                          window.scrollTo({ top: 0, behavior: "smooth" });
-                          navigate(`/category/${type.route}?filter=unisex`);
-                        }}
-                      >
-                        Unisex
                       </Button>
                     </div>
                   </div>

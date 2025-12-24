@@ -133,21 +133,6 @@ export function ProductCard({
           />
         </button>
 
-        {/* Quick add button */}
-        <div className="absolute bottom-3 left-3 right-3 opacity-0 transition-all duration-300 group-hover:opacity-100">
-          <Button
-            className="w-full gap-2 bg-primary/90 backdrop-blur-sm hover:bg-primary"
-            size="sm"
-            onClick={(e) => {
-              e.preventDefault();
-              window.location.href = productUrl;
-            }}
-          >
-            <ShoppingBag className="h-4 w-4" />
-            Add to Cart
-          </Button>
-        </div>
-
         {/* Discount badge */}
         {originalPrice && (
           <span className="absolute left-3 top-3 rounded-full bg-primary px-2 py-1 text-xs font-medium text-primary-foreground">

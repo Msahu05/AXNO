@@ -379,7 +379,6 @@ const Home = () => {
               const typeProducts = allProducts.filter((p) => p.category === type.key);
               const menProducts = typeProducts.filter((p) => p.audience === "men").slice(0, 6);
               const womenProducts = typeProducts.filter((p) => p.audience === "women").slice(0, 6);
-              const kidsProducts = typeProducts.filter((p) => p.audience === "kids").slice(0, 6);
               
               return (
                 <div key={type.key} id={`${type.key.toLowerCase()}-section`} className="space-y-6">
@@ -388,6 +387,16 @@ const Home = () => {
                       <p className="font-display text-2xl uppercase tracking-[0.16em] text-muted-foreground">{type.label}</p>
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
+                      <Button
+                        variant="outline"
+                        className="font-display rounded-full border-foreground px-4 py-2 text-sm tracking-[0.12em]"
+                        onClick={() => {
+                          window.scrollTo({ top: 0, behavior: "smooth" });
+                          navigate(`/category/${type.route}?filter=unisex`);
+                        }}
+                      >
+                        Unisex
+                      </Button>
                       <Button
                         variant="outline"
                         className="font-display rounded-full border-foreground px-4 py-2 text-sm tracking-[0.12em]"
@@ -407,16 +416,6 @@ const Home = () => {
                         }}
                       >
                         Women
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="font-display rounded-full border-foreground px-4 py-2 text-sm tracking-[0.12em]"
-                        onClick={() => {
-                          window.scrollTo({ top: 0, behavior: "smooth" });
-                          navigate(`/category/${type.route}?filter=kids`);
-                        }}
-                      >
-                        Kids
                       </Button>
                     </div>
                   </div>

@@ -20,7 +20,7 @@ const Category = () => {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
     const filter = searchParams.get("filter");
-    if (filter && ["all", "men", "women", "kids", "unisex"].includes(filter)) {
+    if (filter && ["all", "men", "women", "unisex"].includes(filter)) {
       setAudienceFilter(filter);
     }
   }, [searchParams]);
@@ -78,12 +78,20 @@ const Category = () => {
 
         <div className="flex flex-wrap items-center gap-4 rounded-[32px] border border-white/10 bg-[var(--card)]/90 p-4 shadow-[var(--shadow-soft)]">
           <span className="font-display text-sm uppercase tracking-[0.4em] text-muted-foreground">Filter by:</span>
-          {['all', 'men', 'women', 'kids', 'unisex'].map((filter) => (
+          {['all', 'unisex', 'men', 'women'].map((filter) => (
             <Button
               key={filter}
               variant={audienceFilter === filter ? "default" : "outline"}
               className={`rounded-full font-display text-sm tracking-[0.2em] ${audienceFilter === filter ? "bg-foreground text-background" : ""}`}
-              onClick={() => setAudienceFilter(filter)}
+              onClick={() => {
+                setAudienceFilter(filter);
+                // Update URL with filter parameter
+                if (filter === 'all') {
+                  navigate(`/category/${category}`, { replace: true });
+                } else {
+                  navigate(`/category/${category}?filter=${filter}`, { replace: true });
+                }
+              }}
             >
               {filter === "all" ? "All" : filter.charAt(0).toUpperCase() + filter.slice(1)}
             </Button>
