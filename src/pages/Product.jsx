@@ -456,7 +456,9 @@ const Product = () => {
     // Define correct size order
     const sizeOrder = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
     
-    if (!product || !product.sizes) return sizeOrder;
+    if (!product || !product.sizes || !Array.isArray(product.sizes) || product.sizes.length === 0) {
+      return sizeOrder;
+    }
     
     const cleanedSizes = product.sizes.map(size => {
       // Convert to string and remove brackets, quotes, backslashes, and whitespace
@@ -468,6 +470,11 @@ const Product = () => {
       
       return cleanedSize || size; // Return cleaned size or original if empty
     }).filter(size => size); // Remove empty values
+    
+    // If after cleaning we have no sizes, return default sizes
+    if (cleanedSizes.length === 0) {
+      return sizeOrder;
+    }
     
     // Sort sizes according to the correct order
     return cleanedSizes.sort((a, b) => {
