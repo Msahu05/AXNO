@@ -1481,21 +1481,21 @@ const Product = () => {
 
         {/* Size Chart Dialog */}
         <Dialog open={showSizeChart} onOpenChange={setShowSizeChart}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Size Chart - {product?.category}</DialogTitle>
-              <DialogDescription>
+          <DialogContent className="max-w-4xl max-h-[70vh] sm:max-h-[75vh] overflow-y-auto p-4 sm:p-6">
+            <DialogHeader className="pb-2 sm:pb-4">
+              <DialogTitle className="text-lg sm:text-xl">Size Chart - {product?.category}</DialogTitle>
+              <DialogDescription className="text-xs sm:text-sm">
                 {sizeChartData?.fitDescription || "Measurements guide"}
               </DialogDescription>
             </DialogHeader>
             {loadingSizeChart ? (
-              <div className="flex items-center justify-center py-8">
-                <p className="text-muted-foreground">Loading size chart...</p>
+              <div className="flex items-center justify-center py-4 sm:py-8">
+                <p className="text-sm text-muted-foreground">Loading size chart...</p>
               </div>
             ) : sizeChartData ? (
-              <div className="space-y-6 py-4">
+              <div className="space-y-3 sm:space-y-4 py-2 sm:py-4">
                 {sizeChartData.fitDetails && (
-                  <p className="text-sm text-muted-foreground">{sizeChartData.fitDetails}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">{sizeChartData.fitDetails}</p>
                 )}
                 
                 {/* Get all measurements from all sizes to ensure complete header */}
@@ -1518,14 +1518,14 @@ const Product = () => {
                       {/* Inches Measurements */}
                       {Object.keys(inchesData).length > 0 && (
                         <div>
-                          <h3 className="text-lg font-semibold mb-4">Measurements (Inches)</h3>
-                          <div className="overflow-x-auto">
-                            <table className="w-full border-collapse border border-border">
+                          <h3 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3">Measurements (Inches)</h3>
+                          <div className="overflow-x-auto -mx-2 sm:mx-0">
+                            <table className="w-full border-collapse border border-border text-xs sm:text-sm">
                               <thead>
                                 <tr className="bg-muted">
-                                  <th className="border border-border px-4 py-2 text-left font-semibold">Size</th>
+                                  <th className="border border-border px-2 py-1.5 sm:px-3 sm:py-2 text-left font-semibold sticky left-0 bg-muted z-10">Size</th>
                                   {measurementsArray.map(measurement => (
-                                    <th key={measurement} className="border border-border px-4 py-2 text-left font-semibold capitalize">
+                                    <th key={measurement} className="border border-border px-2 py-1.5 sm:px-3 sm:py-2 text-left font-semibold capitalize whitespace-nowrap">
                                       {measurement === 'toFitChest' ? 'To Fit Chest' : measurement}
                                     </th>
                                   ))}
@@ -1534,9 +1534,9 @@ const Product = () => {
                               <tbody>
                                 {Object.keys(inchesData).map(size => (
                                   <tr key={size}>
-                                    <td className="border border-border px-4 py-2 font-semibold">{size}</td>
+                                    <td className="border border-border px-2 py-1.5 sm:px-3 sm:py-2 font-semibold sticky left-0 bg-background z-10">{size}</td>
                                   {measurementsArray.map(measurement => (
-                                    <td key={measurement} className="border border-border px-4 py-2">
+                                    <td key={measurement} className="border border-border px-2 py-1.5 sm:px-3 sm:py-2 text-center">
                                       {inchesData[size]?.[measurement] ?? '-'}
                                     </td>
                                   ))}
@@ -1551,14 +1551,14 @@ const Product = () => {
                       {/* Centimeters Measurements */}
                       {Object.keys(cmsData).length > 0 && (
                         <div>
-                          <h3 className="text-lg font-semibold mb-4">Measurements (Centimeters)</h3>
-                          <div className="overflow-x-auto">
-                            <table className="w-full border-collapse border border-border">
+                          <h3 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3">Measurements (Centimeters)</h3>
+                          <div className="overflow-x-auto -mx-2 sm:mx-0">
+                            <table className="w-full border-collapse border border-border text-xs sm:text-sm">
                               <thead>
                                 <tr className="bg-muted">
-                                  <th className="border border-border px-4 py-2 text-left font-semibold">Size</th>
+                                  <th className="border border-border px-2 py-1.5 sm:px-3 sm:py-2 text-left font-semibold sticky left-0 bg-muted z-10">Size</th>
                                   {measurementsArray.map(measurement => (
-                                    <th key={measurement} className="border border-border px-4 py-2 text-left font-semibold capitalize">
+                                    <th key={measurement} className="border border-border px-2 py-1.5 sm:px-3 sm:py-2 text-left font-semibold capitalize whitespace-nowrap">
                                       {measurement === 'toFitChest' ? 'To Fit Chest' : measurement}
                                     </th>
                                   ))}
@@ -1567,9 +1567,9 @@ const Product = () => {
                               <tbody>
                                 {Object.keys(cmsData).map(size => (
                                   <tr key={size}>
-                                    <td className="border border-border px-4 py-2 font-semibold">{size}</td>
+                                    <td className="border border-border px-2 py-1.5 sm:px-3 sm:py-2 font-semibold sticky left-0 bg-background z-10">{size}</td>
                                     {measurementsArray.map(measurement => (
-                                      <td key={measurement} className="border border-border px-4 py-2">
+                                      <td key={measurement} className="border border-border px-2 py-1.5 sm:px-3 sm:py-2 text-center">
                                         {cmsData[size]?.[measurement] ?? '-'}
                                       </td>
                                     ))}
@@ -1585,8 +1585,8 @@ const Product = () => {
                 })()}
               </div>
             ) : (
-              <div className="flex items-center justify-center py-8">
-                <p className="text-muted-foreground">Size chart not available for this category.</p>
+              <div className="flex items-center justify-center py-4 sm:py-8">
+                <p className="text-sm text-muted-foreground">Size chart not available for this category.</p>
               </div>
             )}
           </DialogContent>
