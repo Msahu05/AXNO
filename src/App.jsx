@@ -25,6 +25,7 @@ import OrderManagement from './pages/OrderManagement';
 import ProductManagement from './pages/ProductManagement';
 import ErrorBoundary from './components/ErrorBoundary';
 import ScrollToTop from './components/ScrollToTop';
+import PromoBanner from './components/PromoBanner';
 
 const queryClient = new QueryClient();
 
@@ -40,6 +41,7 @@ const App = () => (
               <WishlistProvider>
                 <BrowserRouter>
                 <ScrollToTop />
+                <PromoBanner />
                 <Routes>
                   <Route path="/" element={<Home />} />
                   <Route path="/product/:slug" element={<Product />} />

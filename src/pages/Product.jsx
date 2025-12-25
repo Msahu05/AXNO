@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { productsAPI, getImageUrl, sizeChartsAPI, reviewsAPI } from "@/lib/api";
-import { Heart, Minus, Plus, ShoppingBag, Star, Truck, Zap, Upload, X, Image as ImageIcon, ArrowLeft, ArrowRight } from "lucide-react";
+import { Heart, Minus, Plus, ShoppingBag, Star, Truck, Zap, Upload, X, Image as ImageIcon, ArrowLeft, ArrowRight, Ruler } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/auth-context";
 import { useCart } from "@/contexts/cart-context";
@@ -56,6 +56,11 @@ const Product = () => {
   const [reviewFiles, setReviewFiles] = useState([]);
   const [reviewFilePreviews, setReviewFilePreviews] = useState([]);
   const [selectedImageModal, setSelectedImageModal] = useState({ open: false, url: null });
+  
+  // Size chart state
+  const [showSizeChart, setShowSizeChart] = useState(false);
+  const [sizeChartData, setSizeChartData] = useState(null);
+  const [loadingSizeChart, setLoadingSizeChart] = useState(false);
   
   // Touch/swipe state for image navigation
   const [touchStart, setTouchStart] = useState(null);
@@ -287,12 +292,57 @@ const Product = () => {
         
         // Load related products
         if (productData.category) {
-          const relatedData = await productsAPI.getAll({ 
-            category: productData.category,
-            limit: 3 
-          });
-          const filtered = relatedData.products.filter(item => item.id !== id).slice(0, 3);
-          setRelated(filtered);
+          const currentProductId = productData.id || productData._id?.toString() || id;
+          const currentPrice = productData.price || 0;
+          const currentAudience = productData.audience || null;
+          
+          let relatedProducts = [];
+          
+          // Step 1: Fetch products with same category and audience
+          if (currentAudience) {
+            const sameCategoryAudienceData = await productsAPI.getAll({ 
+              category: productData.category,
+              audience: currentAudience,
+              limit: 10 // Fetch more to have options
+            });
+            relatedProducts = sameCategoryAudienceData.products.filter(
+              item => (item.id || item._id?.toString()) !== currentProductId
+            );
+          }
+          
+          // Step 2: If we have less than 3 products, fetch more based on price range
+          if (relatedProducts.length < 3) {
+            // Fetch all products from same category (without audience filter)
+            const allCategoryData = await productsAPI.getAll({ 
+              category: productData.category,
+              limit: 50 // Fetch more to find similar price products
+            });
+            
+            // Filter out current product and already added products
+            const existingIds = new Set([
+              currentProductId,
+              ...relatedProducts.map(p => p.id || p._id?.toString())
+            ]);
+            
+            const availableProducts = allCategoryData.products.filter(
+              item => !existingIds.has(item.id || item._id?.toString())
+            );
+            
+            // Sort by price difference (closest price first)
+            const priceSorted = availableProducts.sort((a, b) => {
+              const priceA = Math.abs((a.price || 0) - currentPrice);
+              const priceB = Math.abs((b.price || 0) - currentPrice);
+              return priceA - priceB;
+            });
+            
+            // Add products until we have 3 total
+            relatedProducts = [...relatedProducts, ...priceSorted].slice(0, 3);
+          } else {
+            // If we have 3 or more, just take first 3
+            relatedProducts = relatedProducts.slice(0, 3);
+          }
+          
+          setRelated(relatedProducts);
         }
         
         // Load reviews for this product
@@ -956,7 +1006,36 @@ const Product = () => {
 
             {/* Sizes */}
             <div className="space-y-2 sm:space-y-3">
-              <p className="font-medium text-sm sm:text-base text-foreground">Size</p>
+              <div className="flex items-center justify-between">
+                <p className="font-medium text-sm sm:text-base text-foreground">Size</p>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs sm:text-sm text-primary hover:text-primary/80 h-auto py-1 px-2"
+                  onClick={async () => {
+                    setShowSizeChart(true);
+                    if (!sizeChartData && product?.category) {
+                      setLoadingSizeChart(true);
+                      try {
+                        const chart = await sizeChartsAPI.getByCategory(product.category);
+                        setSizeChartData(chart);
+                      } catch (error) {
+                        console.error('Error fetching size chart:', error);
+                        toast({
+                          title: "Error",
+                          description: "Failed to load size chart",
+                          variant: "destructive",
+                        });
+                      } finally {
+                        setLoadingSizeChart(false);
+                      }
+                    }
+                  }}
+                >
+                  <Ruler className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                  Size Chart
+                </Button>
+              </div>
               <div className="flex flex-wrap gap-2 sm:gap-3">
                 {productSizes.map((size) => {
                   // Clean the size value for display (remove brackets, quotes, and backslashes)
@@ -1395,6 +1474,119 @@ const Product = () => {
                   alt="Review image"
                   className="w-full h-auto max-h-[85vh] object-contain rounded-lg"
                 />
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Size Chart Dialog */}
+        <Dialog open={showSizeChart} onOpenChange={setShowSizeChart}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Size Chart - {product?.category}</DialogTitle>
+              <DialogDescription>
+                {sizeChartData?.fitDescription || "Measurements guide"}
+              </DialogDescription>
+            </DialogHeader>
+            {loadingSizeChart ? (
+              <div className="flex items-center justify-center py-8">
+                <p className="text-muted-foreground">Loading size chart...</p>
+              </div>
+            ) : sizeChartData ? (
+              <div className="space-y-6 py-4">
+                {sizeChartData.fitDetails && (
+                  <p className="text-sm text-muted-foreground">{sizeChartData.fitDetails}</p>
+                )}
+                
+                {/* Get all measurements from all sizes to ensure complete header */}
+                {(() => {
+                  const inchesData = sizeChartData.measurements?.inches || {};
+                  const cmsData = sizeChartData.measurements?.cms || {};
+                  const allMeasurements = new Set();
+                  
+                  // Collect all measurement types from all sizes
+                  Object.values(inchesData).forEach(sizeData => {
+                    if (sizeData && typeof sizeData === 'object') {
+                      Object.keys(sizeData).forEach(measurement => allMeasurements.add(measurement));
+                    }
+                  });
+                  
+                  const measurementsArray = Array.from(allMeasurements);
+                  
+                  return (
+                    <>
+                      {/* Inches Measurements */}
+                      {Object.keys(inchesData).length > 0 && (
+                        <div>
+                          <h3 className="text-lg font-semibold mb-4">Measurements (Inches)</h3>
+                          <div className="overflow-x-auto">
+                            <table className="w-full border-collapse border border-border">
+                              <thead>
+                                <tr className="bg-muted">
+                                  <th className="border border-border px-4 py-2 text-left font-semibold">Size</th>
+                                  {measurementsArray.map(measurement => (
+                                    <th key={measurement} className="border border-border px-4 py-2 text-left font-semibold capitalize">
+                                      {measurement === 'toFitChest' ? 'To Fit Chest' : measurement}
+                                    </th>
+                                  ))}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {Object.keys(inchesData).map(size => (
+                                  <tr key={size}>
+                                    <td className="border border-border px-4 py-2 font-semibold">{size}</td>
+                                  {measurementsArray.map(measurement => (
+                                    <td key={measurement} className="border border-border px-4 py-2">
+                                      {inchesData[size]?.[measurement] ?? '-'}
+                                    </td>
+                                  ))}
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Centimeters Measurements */}
+                      {Object.keys(cmsData).length > 0 && (
+                        <div>
+                          <h3 className="text-lg font-semibold mb-4">Measurements (Centimeters)</h3>
+                          <div className="overflow-x-auto">
+                            <table className="w-full border-collapse border border-border">
+                              <thead>
+                                <tr className="bg-muted">
+                                  <th className="border border-border px-4 py-2 text-left font-semibold">Size</th>
+                                  {measurementsArray.map(measurement => (
+                                    <th key={measurement} className="border border-border px-4 py-2 text-left font-semibold capitalize">
+                                      {measurement === 'toFitChest' ? 'To Fit Chest' : measurement}
+                                    </th>
+                                  ))}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {Object.keys(cmsData).map(size => (
+                                  <tr key={size}>
+                                    <td className="border border-border px-4 py-2 font-semibold">{size}</td>
+                                    {measurementsArray.map(measurement => (
+                                      <td key={measurement} className="border border-border px-4 py-2">
+                                        {cmsData[size]?.[measurement] ?? '-'}
+                                      </td>
+                                    ))}
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center py-8">
+                <p className="text-muted-foreground">Size chart not available for this category.</p>
               </div>
             )}
           </DialogContent>
