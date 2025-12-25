@@ -430,7 +430,7 @@ const Auth = () => {
                 onChange={(event) => setForm({ ...form, name: event.target.value })} 
                 placeholder="Aarya Patel" 
                 required 
-                className="border-border rounded-[12px] px-[18px] h-auto focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:border-primary transition-all duration-[200ms]"
+                className="border-border rounded-[12px] pl-[24px] pr-[18px] h-auto focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:border-primary transition-all duration-[200ms]"
                 style={{ borderWidth: '1px', paddingTop: '12px', paddingBottom: '14px' }}
               />
             </div>
@@ -447,7 +447,7 @@ const Auth = () => {
                 placeholder="you@email.com" 
                 required
                 autoComplete="email"
-                className="border-border rounded-[12px] px-[18px] h-auto focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:border-primary transition-all duration-[200ms]"
+                className="border-border rounded-[12px] pl-[24px] pr-[18px] h-auto focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:border-primary transition-all duration-[200ms]"
                 style={{ borderWidth: '1px', paddingTop: '12px', paddingBottom: '14px' }}
               />
             </div>
@@ -464,7 +464,7 @@ const Auth = () => {
                 placeholder="+91 9876543210" 
                 required
                 autoComplete="tel"
-                className="border-border rounded-[12px] px-[18px] h-auto focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:border-primary transition-all duration-[200ms]"
+                className="border-border rounded-[12px] pl-[24px] pr-[18px] h-auto focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:border-primary transition-all duration-[200ms]"
                 style={{ borderWidth: '1px', paddingTop: '12px', paddingBottom: '14px' }}
               />
               <p className="text-xs text-muted-foreground mt-1" style={{ lineHeight: '1.45' }}>Required for WhatsApp order confirmations</p>
@@ -483,7 +483,7 @@ const Auth = () => {
                   placeholder="••••••••" 
                   required
                   autoComplete={mode === "login" ? "current-password" : "new-password"}
-                  className="border-[#efe8ff] dark:border-[#4a4a5a] rounded-[12px] px-[18px] pr-12 h-auto focus-visible:ring-2 focus-visible:ring-[#8d73e8] focus-visible:ring-offset-1 focus-visible:border-[#8d73e8] transition-all duration-[200ms]"
+                  className="border-[#efe8ff] dark:border-[#4a4a5a] rounded-[12px] pl-[24px] pr-12 h-auto focus-visible:ring-2 focus-visible:ring-[#8d73e8] focus-visible:ring-offset-1 focus-visible:border-[#8d73e8] transition-all duration-[200ms]"
                   style={{ borderWidth: '1px', paddingTop: '12px', paddingBottom: '14px' }}
                 />
                 <button
@@ -509,7 +509,7 @@ const Auth = () => {
                 placeholder="Enter 6-digit OTP" 
                 maxLength={6}
                 required 
-                className="border-border rounded-[12px] px-[18px] h-auto focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:border-primary transition-all duration-[200ms]"
+                className="border-border rounded-[12px] pl-[24px] pr-[18px] h-auto focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:border-primary transition-all duration-[200ms]"
                 style={{ borderWidth: '1px', paddingTop: '12px', paddingBottom: '14px' }}
               />
             </div>
@@ -596,7 +596,7 @@ const Auth = () => {
 
           {/* Terms & Conditions Checkbox - only for signup modes */}
           {(mode === "signup" || mode === "signup-otp") && (
-            <div className="flex items-start space-x-3 pt-2">
+            <div className="flex items-start space-x-4 pt-2">
               <Checkbox
                 id="terms"
                 checked={form.termsAccepted}
@@ -813,6 +813,7 @@ const Auth = () => {
                 required
                 autoComplete="tel"
                 autoFocus
+                className="pl-[24px] pr-[18px]"
               />
               <p className="text-xs text-muted-foreground mt-1">Required for WhatsApp order confirmations</p>
             </div>

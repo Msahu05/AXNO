@@ -54,6 +54,11 @@ const Category = () => {
     setCurrentPage(1); // Reset to page 1 when filter changes
   }, [audienceFilter, categoryName]);
 
+  // Scroll to top when page changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [currentPage]);
+
   const requireAuth = (destination) => {
     if (isAuthenticated) {
       navigate(destination);

@@ -274,6 +274,20 @@ const Admin = () => {
     }
   }, [isAuthenticated, user, statusFilter, page, userPage, activeTab, checkingAdmin, authLoading]);
 
+  // Scroll to top when page changes (orders)
+  useEffect(() => {
+    if (activeTab === 'orders') {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [page, activeTab]);
+
+  // Scroll to top when userPage changes (users)
+  useEffect(() => {
+    if (activeTab === 'users') {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [userPage, activeTab]);
+
   const fetchStats = async () => {
     try {
       const data = await adminAPI.getStats();

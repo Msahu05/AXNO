@@ -439,7 +439,7 @@ const Home = () => {
                   <div className="flex justify-center">
                     <Button
                       variant="outline"
-                      className="font-display rounded-full border-foreground px-8 py-3 tracking-[0.12em]"
+                      className="font-display rounded-full border-foreground px-8 py-3 tracking-[0.12em] bg-black text-white hover:bg-purple-600 hover:text-white"
                       onClick={() => {
                         window.scrollTo({ top: 0, behavior: "smooth" });
                         navigate(`/category/${type.route}`);
