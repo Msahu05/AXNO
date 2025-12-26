@@ -296,6 +296,16 @@ const Product = () => {
           const currentPrice = productData.price || 0;
           const currentAudience = productData.audience || null;
           
+          // Helper function to shuffle array randomly
+          const shuffleArray = (array) => {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+              const j = Math.floor(Math.random() * (i + 1));
+              [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+          };
+          
           let relatedProducts = [];
           
           // Step 1: Fetch products with same category and audience
@@ -303,19 +313,19 @@ const Product = () => {
             const sameCategoryAudienceData = await productsAPI.getAll({ 
               category: productData.category,
               audience: currentAudience,
-              limit: 10 // Fetch more to have options
+              limit: 20 // Fetch more to have options for randomization
             });
             relatedProducts = sameCategoryAudienceData.products.filter(
               item => (item.id || item._id?.toString()) !== currentProductId
             );
           }
           
-          // Step 2: If we have less than 3 products, fetch more based on price range
+          // Step 2: If we have less than 3 products, fetch more from same category
           if (relatedProducts.length < 3) {
             // Fetch all products from same category (without audience filter)
             const allCategoryData = await productsAPI.getAll({ 
               category: productData.category,
-              limit: 50 // Fetch more to find similar price products
+              limit: 50 // Fetch more to have options for randomization
             });
             
             // Filter out current product and already added products
@@ -328,18 +338,15 @@ const Product = () => {
               item => !existingIds.has(item.id || item._id?.toString())
             );
             
-            // Sort by price difference (closest price first)
-            const priceSorted = availableProducts.sort((a, b) => {
-              const priceA = Math.abs((a.price || 0) - currentPrice);
-              const priceB = Math.abs((b.price || 0) - currentPrice);
-              return priceA - priceB;
-            });
+            // Shuffle available products randomly instead of sorting by price
+            const shuffledProducts = shuffleArray(availableProducts);
             
             // Add products until we have 3 total
-            relatedProducts = [...relatedProducts, ...priceSorted].slice(0, 3);
+            relatedProducts = [...relatedProducts, ...shuffledProducts].slice(0, 3);
           } else {
-            // If we have 3 or more, just take first 3
-            relatedProducts = relatedProducts.slice(0, 3);
+            // If we have 3 or more, shuffle and take first 3 randomly
+            const shuffled = shuffleArray(relatedProducts);
+            relatedProducts = shuffled.slice(0, 3);
           }
           
           setRelated(relatedProducts);
@@ -370,7 +377,7 @@ const Product = () => {
     return (
       <div className="min-h-screen bg-background">
         <Header />
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-4 py-4">
           <div className="grid gap-8 lg:grid-cols-2">
             <div className="space-y-4">
               <Skeleton className="aspect-square w-full rounded-lg" />
@@ -712,7 +719,7 @@ const Product = () => {
   return (
     <div className="min-h-screen bg-background">
         <Header />
-      <main className="container mx-auto px-4 py-6 sm:py-8 lg:py-12 lg:px-8">
+      <main className="container mx-auto px-4 py-2 sm:py-4 lg:py-6 lg:px-8">
         {/* Breadcrumb */}
         <nav className="mb-4 sm:mb-6 lg:mb-8 text-xs sm:text-sm text-muted-foreground">
           <button onClick={() => navigate('/')} className="hover:text-foreground">Home</button>

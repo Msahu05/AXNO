@@ -364,7 +364,7 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen bg-background width:1480px">
-      <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-6 width:1480px">
+      <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-2 width:1480px">
         <Header />
       </div>
       <div className="flex items-center justify-center px-4 py-8 sm:py-12 width:1480px">

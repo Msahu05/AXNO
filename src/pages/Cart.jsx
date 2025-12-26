@@ -15,7 +15,7 @@ const Cart = () => {
   if (authLoading) {
     return (
       <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(124,90,255,0.1),_transparent_65%)]">
-        <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-6">
+        <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-2">
           <Header />
         </div>
         <div className="px-2 sm:px-4 lg:px-6 py-6 sm:py-10">
@@ -58,7 +58,7 @@ const Cart = () => {
   if (items.length === 0) {
     return (
       <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(124,90,255,0.1),_transparent_65%)]">
-        <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-6">
+        <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-2">
           <Header />
         </div>
         <div className="px-4 py-6 sm:py-10">
@@ -78,7 +78,7 @@ const Cart = () => {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(124,90,255,0.1),_transparent_65%)]">
-      <div className="px-2 sm:px-4 lg:px-6 pb-4 sm:pb-8 lg:pb-12 pt-4 sm:pt-6">
+      <div className="px-2 sm:px-4 lg:px-6 pb-4 sm:pb-8 lg:pb-12 pt-2">
         <Header />
       </div>
       <div className="px-2 sm:px-4 lg:px-6 py-6 sm:py-10">

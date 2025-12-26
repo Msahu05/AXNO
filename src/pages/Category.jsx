@@ -166,7 +166,7 @@ const Category = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white via-[#f8f7ff] to-white dark:from-[#0f0a1a] dark:via-[#1a1526] dark:to-[#0f0a1a]">
-      <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-6">
+      <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-2">
         <Header />
       </div>
       <div className="px-4 sm:px-6 py-10">

@@ -261,7 +261,7 @@ const Account = () => {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(124,90,255,0.12),_transparent_60%)]">
-      <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-6">
+      <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-2">
         <Header />
       </div>
       <div className="px-4 py-10">
