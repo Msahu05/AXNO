@@ -236,6 +236,23 @@ const Product = () => {
         setLoading(true);
         // Use getBySlug which works with both slug and ID (backend handles both)
         const productData = await productsAPI.getBySlug(id);
+        console.log('=== PRODUCT DATA DEBUG ===');
+        console.log('Full product:', JSON.stringify(productData, null, 2));
+        console.log('Gallery array:', productData.gallery);
+        console.log('Gallery length:', productData.gallery?.length);
+        if (productData.gallery && productData.gallery.length > 0) {
+          productData.gallery.forEach((img, idx) => {
+            console.log(`Gallery[${idx}]:`, img, 'Type:', typeof img);
+            if (typeof img === 'string') {
+              console.log(`  - Is URL:`, img.startsWith('http'));
+              console.log(`  - Is data URL:`, img.startsWith('data:'));
+              console.log(`  - Length:`, img.length);
+            }
+          });
+        } else {
+          console.warn('⚠️ Gallery is empty or undefined!');
+        }
+        console.log('========================');
         setProduct(productData);
         
         // Update URL to use slug if available and current URL uses ID
@@ -416,22 +433,46 @@ const Product = () => {
   // Extract images from gallery array
   const getProductImages = () => {
     if (Array.isArray(product.gallery) && product.gallery.length > 0) {
-      return product.gallery.map(img => {
-        if (typeof img === 'string') return img;
-        if (img.url) return img.url;
-        return img;
-      });
+      const images = product.gallery
+        .map(img => {
+          if (typeof img === 'string') {
+            // Filter out empty strings and invalid data URLs
+            if (!img || img.trim() === '' || img === 'data:;base64,=') {
+              return null;
+            }
+            return img;
+          }
+          if (img && img.url && img.url.trim() && img.url !== 'data:;base64,=') {
+            return img.url;
+          }
+          return null;
+        })
+        .filter(img => img !== null && img !== '');
+      
+      if (images.length > 0) {
+        return images;
+      }
     }
-    if (product.gallery && typeof product.gallery === 'string') {
+    if (product.gallery && typeof product.gallery === 'string' && product.gallery.trim() && product.gallery !== 'data:;base64,=') {
       return [product.gallery];
     }
-    if (product.image) {
+    if (product.image && product.image.trim() && product.image !== 'data:;base64,=') {
       return [product.image];
     }
+    console.warn('No valid images found for product:', product.name, product.id);
     return [];
   };
   
   const productImages = getProductImages();
+  console.log('📸 Extracted product images:', productImages);
+  console.log('📸 Number of images:', productImages.length);
+  if (productImages.length > 0) {
+    productImages.forEach((img, idx) => {
+      console.log(`📸 Image[${idx}]:`, img.substring(0, 100) + (img.length > 100 ? '...' : ''));
+    });
+  } else {
+    console.warn('⚠️ No images extracted! Product gallery might be empty.');
+  }
   
   // Image navigation functions
   const nextImage = () => {
@@ -755,6 +796,10 @@ const Product = () => {
                       src={getImageUrl(productImages[prevImageIndex] || productImages[0])}
                       alt={product.name}
                       className="h-full w-full object-cover"
+                      onError={(e) => {
+                        e.target.src = '/placeholder.svg';
+                        e.target.onerror = null; // Prevent infinite loop
+                      }}
                     />
                   </div>
                 )}
@@ -785,6 +830,10 @@ const Product = () => {
                     src={getImageUrl(productImages[selectedImage] || productImages[0])}
                     alt={product.name}
                     className="h-full w-full object-cover hover:scale-105 transition-transform duration-500"
+                    onError={(e) => {
+                      e.target.src = '/placeholder.svg';
+                      e.target.onerror = null; // Prevent infinite loop
+                    }}
                   />
                 </div>
               </div>
@@ -865,7 +914,8 @@ const Product = () => {
                       alt={`${product.name} ${index + 1}`}
                       className="h-full w-full object-cover"
                       onError={(e) => {
-                        e.target.src = "https://via.placeholder.com/80";
+                        e.target.src = "/placeholder.svg";
+                        e.target.onerror = null; // Prevent infinite loop
                       }}
                     />
               </button>

@@ -460,7 +460,7 @@ const OrderManagement = () => {
                             }
                             
                             // Skip invalid URLs
-                            if (!fileUrl || fileUrl === 'https://via.placeholder.com/500' || fileUrl.includes('data:;base64,=')) {
+                            if (!fileUrl || fileUrl === 'https://via.placeholder.com/500' || fileUrl === '/placeholder.svg' || fileUrl.includes('data:;base64,=')) {
                               console.warn('Invalid file URL for order:', order.orderId, 'file:', file);
                               return null;
                             }

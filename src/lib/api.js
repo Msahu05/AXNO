@@ -628,7 +628,8 @@ export const couponsAPI = {
 export function getImageUrl(imagePath) {
   // Handle null, undefined, or empty string
   if (!imagePath) {
-    return 'https://via.placeholder.com/500';
+    console.warn('⚠️ getImageUrl: Empty imagePath, returning placeholder');
+    return '/placeholder.svg';
   }
   
   // Handle objects (e.g., {url: "...", data: "..."})
@@ -642,14 +643,14 @@ export function getImageUrl(imagePath) {
     } else {
       // Invalid object, return placeholder
       console.warn('Invalid image object:', imagePath);
-      return 'https://via.placeholder.com/500';
+      return '/placeholder.svg';
     }
   }
   
   // Ensure it's a string
   if (typeof imagePath !== 'string') {
     console.warn('Image path is not a string:', imagePath);
-    return 'https://via.placeholder.com/500';
+    return '/placeholder.svg';
   }
   
   // Trim whitespace
@@ -657,7 +658,7 @@ export function getImageUrl(imagePath) {
   
   // If empty after trimming, return placeholder
   if (!imagePath) {
-    return 'https://via.placeholder.com/500';
+    return '/placeholder.svg';
   }
   
   // If it's a data URL (base64 image), validate it first
@@ -665,7 +666,7 @@ export function getImageUrl(imagePath) {
     // Filter out invalid base64 URLs
     if (imagePath === 'data:;base64,=' || imagePath.includes('data:;base64,=')) {
       console.warn('Invalid base64 image URL detected:', imagePath);
-      return 'https://via.placeholder.com/500';
+      return '/placeholder.svg';
     }
     // Only return valid data URLs
     if (imagePath.startsWith('data:image/')) {
@@ -673,11 +674,12 @@ export function getImageUrl(imagePath) {
     }
     // Invalid data URL format
     console.warn('Invalid data URL format:', imagePath);
-    return 'https://via.placeholder.com/500';
+    return '/placeholder.svg';
   }
   
   // If already a full URL (including Cloudinary URLs), return as is
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    console.log('✅ getImageUrl: Full URL detected:', imagePath.substring(0, 80) + '...');
     return imagePath;
   }
   
@@ -697,6 +699,8 @@ export function getImageUrl(imagePath) {
   }
   
   // Otherwise, prepend server base URL
-  return `${SERVER_BASE_URL}${imagePath}`;
+  const finalUrl = `${SERVER_BASE_URL}${imagePath}`;
+  console.log('🔗 getImageUrl: Generated URL:', finalUrl);
+  return finalUrl;
 }
 
