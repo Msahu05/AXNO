@@ -32,7 +32,8 @@ import {
   deleteCloudinaryImage,
   extractPublicIdFromUrl,
   isCloudinaryUrl,
-  isLocalFilePath
+  isLocalFilePath,
+  verifyCloudinaryUrl
 } from './cloudinaryService.js';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
@@ -3647,17 +3648,19 @@ app.get('/api/products', async (req, res) => {
         id: p._id.toString(),
         original: p.originalPrice,
         slug: p.slug || generateSlug(p.name),
-        gallery: p.gallery.map(g => {
-          // Return Cloudinary URL if available (preferred)
-          if (g.url) {
-            return g.url;
-          }
-          // Fallback to base64 for backward compatibility (during migration)
-          if (g.data) {
-            return `data:${g.mimeType || 'image/jpeg'};base64,${g.data}`;
-          }
-          return '';
-        })
+        gallery: p.gallery
+          .map(g => {
+            // Return Cloudinary URL if available (preferred)
+            if (g.url && g.url.trim() && !g.url.includes('data:;base64,=')) {
+              return g.url;
+            }
+            // Fallback to base64 for backward compatibility (during migration)
+            if (g.data && g.data.trim() && g.data !== 'data:;base64,=') {
+              return `data:${g.mimeType || 'image/jpeg'};base64,${g.data}`;
+            }
+            return null;
+          })
+          .filter(img => img !== null && img !== '') // Remove empty/invalid images
       };
     });
     
@@ -3699,12 +3702,19 @@ app.get('/api/products/:id', async (req, res) => {
       id: product._id.toString(),
       original: product.originalPrice,
       slug: product.slug || generateSlug(product.name),
-      gallery: product.gallery.map(g => {
-        if (g.data) {
-          return `data:${g.mimeType || 'image/jpeg'};base64,${g.data}`;
-        }
-        return g.url || '';
-      })
+      gallery: product.gallery
+        .map(g => {
+          // Prefer Cloudinary URL if available
+          if (g.url && g.url.trim() && !g.url.includes('data:;base64,=')) {
+            return g.url;
+          }
+          // Fallback to base64 data
+          if (g.data && g.data.trim() && g.data !== 'data:;base64,=') {
+            return `data:${g.mimeType || 'image/jpeg'};base64,${g.data}`;
+          }
+          return null;
+        })
+        .filter(img => img !== null && img !== '') // Remove empty/invalid images
     };
     
     res.json(formattedProduct);
@@ -3746,17 +3756,19 @@ app.get('/api/admin/products', authenticateAdmin, async (req, res) => {
         id: p._id.toString(),
         original: p.originalPrice,
         slug: p.slug || generateSlug(p.name),
-        gallery: p.gallery.map(g => {
-          // Return Cloudinary URL if available (preferred)
-          if (g.url) {
-            return g.url;
-          }
-          // Fallback to base64 for backward compatibility (during migration)
-          if (g.data) {
-            return `data:${g.mimeType || 'image/jpeg'};base64,${g.data}`;
-          }
-          return '';
-        })
+        gallery: p.gallery
+          .map(g => {
+            // Return Cloudinary URL if available (preferred)
+            if (g.url && g.url.trim() && !g.url.includes('data:;base64,=')) {
+              return g.url;
+            }
+            // Fallback to base64 for backward compatibility (during migration)
+            if (g.data && g.data.trim() && g.data !== 'data:;base64,=') {
+              return `data:${g.mimeType || 'image/jpeg'};base64,${g.data}`;
+            }
+            return null;
+          })
+          .filter(img => img !== null && img !== '') // Remove empty/invalid images
       };
     });
     
@@ -3782,19 +3794,26 @@ app.post('/api/admin/products', authenticateAdmin, async (req, res) => {
       try {
         // Prepare images for Cloudinary upload
         const imagesToUpload = [];
-        galleryImages.forEach((imageData, index) => {
+        for (let index = 0; index < galleryImages.length; index++) {
+          const imageData = galleryImages[index];
           if (imageData.data) {
             // Skip if data is actually a URL (Cloudinary or HTTP/HTTPS)
             if (isCloudinaryUrl(imageData.data) || imageData.data.startsWith('http://') || imageData.data.startsWith('https://')) {
               // Treat as URL, not base64
               if (isCloudinaryUrl(imageData.data)) {
-                gallery.push({
-                  url: imageData.data,
-                  isMain: index === 0,
-                  order: index
-                });
+                // Verify Cloudinary URL before adding
+                const verification = await verifyCloudinaryUrl(imageData.data);
+                if (verification.valid) {
+                  gallery.push({
+                    url: imageData.data,
+                    isMain: index === 0,
+                    order: index
+                  });
+                } else {
+                  console.warn(`Skipping invalid Cloudinary URL: ${imageData.data.substring(0, 60)}... - ${verification.error}`);
+                }
               }
-              return; // Skip this image
+              continue; // Skip this image
             }
             
             // Extract base64 data and mime type
@@ -3819,14 +3838,20 @@ app.post('/api/admin/products', authenticateAdmin, async (req, res) => {
           } else if (imageData.url) {
             // Handle URL field
             if (isCloudinaryUrl(imageData.url)) {
-              // If it's already a Cloudinary URL, keep it
-              gallery.push({
-                url: imageData.url,
-                isMain: index === 0,
-                order: index
-              });
+              // Verify Cloudinary URL is valid before keeping it
+              const verification = await verifyCloudinaryUrl(imageData.url);
+              if (verification.valid) {
+                gallery.push({
+                  url: imageData.url,
+                  isMain: index === 0,
+                  order: index
+                });
+              } else {
+                console.warn(`Skipping invalid Cloudinary URL: ${imageData.url.substring(0, 60)}... - ${verification.error}`);
+                // Don't add invalid URLs - they will be skipped
+              }
             } else if (imageData.url.startsWith('http://') || imageData.url.startsWith('https://')) {
-              // Other URLs - keep as is
+              // Other URLs - keep as is (non-Cloudinary URLs)
               gallery.push({
                 url: imageData.url,
                 isMain: index === 0,
@@ -3834,11 +3859,21 @@ app.post('/api/admin/products', authenticateAdmin, async (req, res) => {
               });
             }
           }
-        });
+        }
 
         // Upload new images to Cloudinary
         if (imagesToUpload.length > 0) {
           const cloudinaryResults = await uploadMultipleBase64Images(imagesToUpload, 'looklyn/products');
+          
+          // Verify all uploaded images before saving
+          for (const result of cloudinaryResults) {
+            const verification = await verifyCloudinaryUrl(result.secure_url);
+            if (!verification.valid) {
+              console.error('Uploaded image verification failed:', result.secure_url, verification.error);
+              throw new Error(`Image upload verification failed: ${verification.error}`);
+            }
+          }
+          
           cloudinaryResults.forEach((result, index) => {
             gallery.push({
               url: result.secure_url,
@@ -3917,12 +3952,19 @@ app.post('/api/admin/products', authenticateAdmin, async (req, res) => {
       id: product._id.toString(),
       original: product.originalPrice,
       slug: product.slug || generateSlug(product.name),
-      gallery: product.gallery.map(g => {
-        if (g.data) {
-          return `data:${g.mimeType || 'image/jpeg'};base64,${g.data}`;
-        }
-        return g.url || '';
-      })
+      gallery: product.gallery
+        .map(g => {
+          // Prefer Cloudinary URL if available
+          if (g.url && g.url.trim() && !g.url.includes('data:;base64,=')) {
+            return g.url;
+          }
+          // Fallback to base64 data
+          if (g.data && g.data.trim() && g.data !== 'data:;base64,=') {
+            return `data:${g.mimeType || 'image/jpeg'};base64,${g.data}`;
+          }
+          return null;
+        })
+        .filter(img => img !== null && img !== '') // Remove empty/invalid images
     };
     
     res.status(201).json({
@@ -4062,35 +4104,31 @@ app.put('/api/admin/products/:id', authenticateAdmin, async (req, res) => {
     // Update gallery if new images uploaded - upload to Cloudinary
     if (galleryImages && Array.isArray(galleryImages) && galleryImages.length > 0) {
       try {
-        // Delete old Cloudinary images if they exist
-        if (product.gallery && product.gallery.length > 0) {
-          for (const oldImage of product.gallery) {
-            if (oldImage.url && isCloudinaryUrl(oldImage.url)) {
-              const publicId = extractPublicIdFromUrl(oldImage.url);
-              if (publicId) {
-                await deleteCloudinaryImage(publicId);
-              }
-            }
-          }
-        }
-
-        // Prepare new images for upload
+        // Prepare new images for upload FIRST
         const imagesToUpload = [];
         const existingUrls = [];
+        const oldImagesToDelete = []; // Store old images to delete AFTER successful upload
         
-        galleryImages.forEach((imageData, index) => {
+        for (let index = 0; index < galleryImages.length; index++) {
+          const imageData = galleryImages[index];
           if (imageData.data) {
             // Skip if data is actually a URL (Cloudinary or HTTP/HTTPS)
             if (isCloudinaryUrl(imageData.data) || imageData.data.startsWith('http://') || imageData.data.startsWith('https://')) {
               // Treat as URL, not base64
               if (isCloudinaryUrl(imageData.data)) {
-                existingUrls.push({
-                  url: imageData.data,
-                  isMain: index === 0,
-                  order: index
-                });
+                // Verify Cloudinary URL before keeping it
+                const verification = await verifyCloudinaryUrl(imageData.data);
+                if (verification.valid) {
+                  existingUrls.push({
+                    url: imageData.data,
+                    isMain: index === 0,
+                    order: index
+                  });
+                } else {
+                  console.warn(`Skipping invalid Cloudinary URL: ${imageData.data.substring(0, 60)}... - ${verification.error}`);
+                }
               }
-              return; // Skip this image
+              continue; // Skip this image
             }
             
             // Extract base64 data and mime type
@@ -4115,14 +4153,20 @@ app.put('/api/admin/products/:id', authenticateAdmin, async (req, res) => {
           } else if (imageData.url) {
             // Handle URL field
             if (isCloudinaryUrl(imageData.url)) {
-              // Keep existing Cloudinary URLs
-              existingUrls.push({
-                url: imageData.url,
-                isMain: index === 0,
-                order: index
-              });
+              // Verify Cloudinary URL is valid before keeping it
+              const verification = await verifyCloudinaryUrl(imageData.url);
+              if (verification.valid) {
+                existingUrls.push({
+                  url: imageData.url,
+                  isMain: index === 0,
+                  order: index
+                });
+              } else {
+                console.warn(`Skipping invalid Cloudinary URL: ${imageData.url.substring(0, 60)}... - ${verification.error}`);
+                // Don't add invalid URLs
+              }
             } else if (imageData.url.startsWith('http://') || imageData.url.startsWith('https://')) {
-              // Other URLs - keep as is
+              // Other URLs - keep as is (non-Cloudinary URLs)
               existingUrls.push({
                 url: imageData.url,
                 isMain: index === 0,
@@ -4130,12 +4174,35 @@ app.put('/api/admin/products/:id', authenticateAdmin, async (req, res) => {
               });
             }
           }
-        });
+        }
+
+        // Store old images for deletion (only if we have new images to upload)
+        if (imagesToUpload.length > 0 && product.gallery && product.gallery.length > 0) {
+          for (const oldImage of product.gallery) {
+            if (oldImage.url && isCloudinaryUrl(oldImage.url)) {
+              // Check if this old image is NOT in the new gallery
+              const isStillUsed = existingUrls.some(newImg => newImg.url === oldImage.url);
+              if (!isStillUsed) {
+                oldImagesToDelete.push(oldImage);
+              }
+            }
+          }
+        }
 
         // Upload new images to Cloudinary
         const newGallery = [...existingUrls];
         if (imagesToUpload.length > 0) {
           const cloudinaryResults = await uploadMultipleBase64Images(imagesToUpload, 'looklyn/products');
+          
+          // Verify all uploaded images before saving
+          for (const result of cloudinaryResults) {
+            const verification = await verifyCloudinaryUrl(result.secure_url);
+            if (!verification.valid) {
+              console.error('Uploaded image verification failed:', result.secure_url, verification.error);
+              throw new Error(`Image upload verification failed: ${verification.error}`);
+            }
+          }
+          
           cloudinaryResults.forEach((result, index) => {
             newGallery.push({
               url: result.secure_url,
@@ -4143,10 +4210,20 @@ app.put('/api/admin/products/:id', authenticateAdmin, async (req, res) => {
               order: existingUrls.length + index
             });
           });
+          
+          // Only delete old images AFTER successful upload and verification
+          for (const oldImage of oldImagesToDelete) {
+            const publicId = extractPublicIdFromUrl(oldImage.url);
+            if (publicId) {
+              await deleteCloudinaryImage(publicId);
+            }
+          }
         }
 
         if (newGallery.length > 0) {
           product.gallery = newGallery;
+        } else {
+          throw new Error('No valid images in gallery after processing');
         }
       } catch (uploadError) {
         console.error('Error uploading images to Cloudinary:', uploadError);

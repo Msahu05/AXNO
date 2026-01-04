@@ -12,7 +12,8 @@
     "verify:cloudinary": "node verifyCloudinary.js",
     "find:remaining": "node findRemainingFiles.js",
     "report:duplicates": "node reportCloudinaryDuplicates.js",
-    "cleanup:cloudinary": "node cleanupCloudinaryDuplicates.js"
+    "cleanup:cloudinary": "node cleanupCloudinaryDuplicates.js",
+    "check:urls": "node checkProductUrls.js"
   },
   "dependencies": {
     "@getbrevo/brevo": "^3.0.1",

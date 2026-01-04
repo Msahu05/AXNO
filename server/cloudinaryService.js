@@ -266,3 +266,38 @@ export function isCloudinaryUrl(url) {
   return url.includes('cloudinary.com') || url.includes('res.cloudinary.com');
 }
 
+/**
+ * Verify if a Cloudinary URL is valid and accessible
+ * @param {string} url - Cloudinary URL to verify
+ * @returns {Promise<{valid: boolean, error?: string}>}
+ */
+export async function verifyCloudinaryUrl(url) {
+  if (!url || typeof url !== 'string') {
+    return { valid: false, error: 'Invalid URL format' };
+  }
+
+  if (!isCloudinaryUrl(url)) {
+    return { valid: false, error: 'Not a Cloudinary URL' };
+  }
+
+  try {
+    // Extract public ID and check if image exists
+    const publicId = extractPublicIdFromUrl(url);
+    if (!publicId) {
+      return { valid: false, error: 'Could not extract public ID from URL' };
+    }
+
+    // Check if image exists in Cloudinary
+    const resource = await cloudinary.api.resource(publicId);
+    if (resource) {
+      return { valid: true };
+    }
+    return { valid: false, error: 'Image not found in Cloudinary' };
+  } catch (error) {
+    if (error.http_code === 404) {
+      return { valid: false, error: 'Image not found in Cloudinary (404)' };
+    }
+    return { valid: false, error: error.message || 'Failed to verify URL' };
+  }
+}
+
