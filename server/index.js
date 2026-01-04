@@ -3863,7 +3863,9 @@ app.post('/api/admin/products', authenticateAdmin, async (req, res) => {
 
         // Upload new images to Cloudinary
         if (imagesToUpload.length > 0) {
-          const cloudinaryResults = await uploadMultipleBase64Images(imagesToUpload, 'looklyn/products');
+          // Generate unique product ID for public ID (use timestamp if no product yet)
+          const uniqueId = Date.now().toString() + Math.random().toString(36).substring(2, 8);
+          const cloudinaryResults = await uploadMultipleBase64Images(imagesToUpload, 'looklyn/products', uniqueId);
           
           // Verify all uploaded images before saving
           for (const result of cloudinaryResults) {
@@ -4192,13 +4194,16 @@ app.put('/api/admin/products/:id', authenticateAdmin, async (req, res) => {
         // Upload new images to Cloudinary
         const newGallery = [...existingUrls];
         if (imagesToUpload.length > 0) {
-          const cloudinaryResults = await uploadMultipleBase64Images(imagesToUpload, 'looklyn/products');
+          // Use product ID for unique public ID generation
+          const productIdForUpload = product._id.toString().replace(/[^a-zA-Z0-9]/g, '');
+          const cloudinaryResults = await uploadMultipleBase64Images(imagesToUpload, 'looklyn/products', productIdForUpload);
           
           // Verify all uploaded images before saving
           for (const result of cloudinaryResults) {
             const verification = await verifyCloudinaryUrl(result.secure_url);
             if (!verification.valid) {
               console.error('Uploaded image verification failed:', result.secure_url, verification.error);
+              // Don't delete old images if new upload fails
               throw new Error(`Image upload verification failed: ${verification.error}`);
             }
           }
@@ -4212,10 +4217,17 @@ app.put('/api/admin/products/:id', authenticateAdmin, async (req, res) => {
           });
           
           // Only delete old images AFTER successful upload and verification
+          // This ensures we don't lose images if upload fails
           for (const oldImage of oldImagesToDelete) {
             const publicId = extractPublicIdFromUrl(oldImage.url);
             if (publicId) {
-              await deleteCloudinaryImage(publicId);
+              try {
+                await deleteCloudinaryImage(publicId);
+                console.log(`Deleted old image: ${publicId}`);
+              } catch (deleteError) {
+                console.warn(`Failed to delete old image ${publicId}:`, deleteError.message);
+                // Don't throw - deletion failure shouldn't break the update
+              }
             }
           }
         }

@@ -74,12 +74,21 @@ export async function uploadBase64Image(base64Data, mimeType = 'image/jpeg', fol
  * Upload multiple base64 images to Cloudinary
  * @param {Array<{data: string, mimeType: string}>} images - Array of image objects
  * @param {string} folder - Cloudinary folder path (optional)
+ * @param {string} productId - Product ID for unique public ID generation (optional)
  * @returns {Promise<Array<{url: string, public_id: string, secure_url: string}>>}
  */
-export async function uploadMultipleBase64Images(images, folder = 'looklyn/products') {
+export async function uploadMultipleBase64Images(images, folder = 'looklyn/products', productId = null) {
   try {
+    // Generate unique public IDs to prevent overwriting
+    // Use productId if provided, otherwise use timestamp + random
+    const baseId = productId ? productId.toString().replace(/[^a-zA-Z0-9]/g, '') : Date.now().toString();
+    const randomSuffix = Math.random().toString(36).substring(2, 8); // 6 char random string
+    
     const uploadPromises = images.map((image, index) => {
-      const publicId = `product_${Date.now()}_${index}`;
+      // Create unique public ID: product_{productId or timestamp}_{index}_{random}
+      const publicId = productId 
+        ? `product_${baseId}_${index}_${Date.now()}_${randomSuffix}`
+        : `product_${baseId}_${index}_${randomSuffix}`;
       return uploadBase64Image(image.data, image.mimeType || 'image/jpeg', folder, publicId);
     });
 
