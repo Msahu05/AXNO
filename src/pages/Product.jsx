@@ -78,16 +78,11 @@ const Product = () => {
       
       if (data && data.length > 0) {
         const locationData = data[0];
-        const city = locationData.City?.toLowerCase() || '';
-        const district = locationData.District?.toLowerCase() || '';
+        const city = locationData.City || '';
+        const district = locationData.District || '';
         
-        // Check if city or district matches Ahmedabad or Gandhinagar
-        if (city.includes('ahmedabad') || district.includes('ahmedabad')) {
-          return 'Ahmedabad';
-        }
-        if (city.includes('gandhinagar') || district.includes('gandhinagar')) {
-          return 'Gandhinagar';
-        }
+        // Return the city or district name
+        return city || district || null;
       }
       return null;
     } catch (error) {
@@ -97,17 +92,13 @@ const Product = () => {
         const altResponse = await fetch(`https://api.postalpincode.in/pincode/${pin}`);
         const altData = await altResponse.json();
         
-        if (altData && altData[0] && altData[0].PostOffice) {
+        if (altData && altData[0] && altData[0].PostOffice && altData[0].PostOffice.length > 0) {
           const postOffice = altData[0].PostOffice[0];
-          const district = postOffice.District?.toLowerCase() || '';
-          const state = postOffice.State?.toLowerCase() || '';
+          const district = postOffice.District || '';
+          const state = postOffice.State || '';
           
-          if (district.includes('ahmedabad') || (state.includes('gujarat') && district.includes('ahmedabad'))) {
-            return 'Ahmedabad';
-          }
-          if (district.includes('gandhinagar') || (state.includes('gujarat') && district.includes('gandhinagar'))) {
-            return 'Gandhinagar';
-          }
+          // Return district or state
+          return district || state || null;
         }
       } catch (altError) {
         console.error('Error fetching from alternative API:', altError);
@@ -119,7 +110,7 @@ const Product = () => {
   // Handle pincode submission
   const handlePincodeSubmit = async (e) => {
     e.preventDefault();
-    if (pincode.length !== 6) {
+    if (pincode.length !== 6 || !/^\d{6}$/.test(pincode)) {
       toast({
         title: "Invalid Pincode",
         description: "Please enter a valid 6-digit pincode",
@@ -140,22 +131,24 @@ const Product = () => {
       if (location) {
         toast({
           title: "Delivery Available",
-          description: `Free shipping available for ${location}`,
+          description: `Free shipping available to ${location}`,
         });
       } else {
+        // If API fails but pincode is valid format, still accept it
         toast({
-          title: "Delivery Not Available",
-          description: "Currently only delivering to Ahmedabad and Gandhinagar",
-          variant: "destructive",
+          title: "Delivery Available",
+          description: "Free shipping available pan-India",
         });
+        setDetectedLocation("India");
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Unable to verify pincode. Please try again.",
-        variant: "destructive",
-      });
+      // Even if API fails, accept the pincode as valid (pan-India delivery)
       setPincodeChecked(true);
+      setDetectedLocation("India");
+      toast({
+        title: "Delivery Available",
+        description: "Free shipping available pan-India",
+      });
     } finally {
       setCheckingPincode(false);
     }
@@ -1176,9 +1169,9 @@ const Product = () => {
                     </>
                   ) : pincodeChecked && !detectedLocation ? (
                     <>
-                      <p className="font-medium text-sm sm:text-base text-foreground">Delivery Not Available</p>
+                      <p className="font-medium text-sm sm:text-base text-foreground">Delivery Available</p>
                       <p className="text-xs sm:text-sm text-muted-foreground">
-                        Currently only delivering to Ahmedabad and Gandhinagar
+                        Free shipping available pan-India
                       </p>
                     </>
                   ) : (
