@@ -48,11 +48,27 @@ const Cart = () => {
   }
 
   if (!isAuthenticated) {
-    // Only redirect if not already on auth page to prevent loops
-    if (window.location.pathname !== '/auth') {
-      navigate(`/auth?redirect=${encodeURIComponent("/cart")}`, { replace: true });
-    }
-    return null;
+    return (
+      <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(124,90,255,0.1),_transparent_65%)]">
+        <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-2">
+          <Header />
+        </div>
+        <div className="px-4 py-6 sm:py-10">
+          <div className="mx-auto max-w-4xl rounded-[32px] sm:rounded-[56px] border border-white/10 bg-[var(--card)]/90 p-6 sm:p-12 shadow-[var(--shadow-soft)] text-center">
+            <h2 className="text-2xl sm:text-3xl font-black mb-3 sm:mb-4">Sign in to view your cart</h2>
+            <p className="text-sm sm:text-base text-muted-foreground mb-6 sm:mb-8">Please sign in to access your shopping cart and checkout.</p>
+            <div className="flex justify-center">
+              <Button 
+                className="rounded-full bg-foreground px-6 py-3 sm:px-8 sm:py-6 text-xs sm:text-sm font-semibold uppercase tracking-[0.2em] sm:tracking-[0.4em] text-background" 
+                onClick={() => navigate(`/auth?redirect=${encodeURIComponent("/cart")}`)}
+              >
+                Sign In
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (items.length === 0) {
