@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { productsAPI, getImageUrl, sizeChartsAPI, reviewsAPI } from "@/lib/api";
-import { Heart, Minus, Plus, ShoppingBag, Star, Truck, Zap, Upload, X, Image as ImageIcon, ArrowLeft, ArrowRight, Ruler } from "lucide-react";
+import { Heart, Minus, Plus, ShoppingBag, Star, Truck, Zap, Upload, X, Image as ImageIcon, ArrowLeft, ArrowRight, Ruler, CheckCircle2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/auth-context";
 import { useCart } from "@/contexts/cart-context";
@@ -78,11 +78,16 @@ const Product = () => {
       
       if (data && data.length > 0) {
         const locationData = data[0];
-        const city = locationData.City || '';
-        const district = locationData.District || '';
+        const city = locationData.City?.toLowerCase() || '';
+        const district = locationData.District?.toLowerCase() || '';
         
-        // Return the city or district name
-        return city || district || null;
+        // Check if city or district matches Ahmedabad or Gandhinagar
+        if (city.includes('ahmedabad') || district.includes('ahmedabad')) {
+          return 'Ahmedabad';
+        }
+        if (city.includes('gandhinagar') || district.includes('gandhinagar')) {
+          return 'Gandhinagar';
+        }
       }
       return null;
     } catch (error) {
@@ -92,13 +97,17 @@ const Product = () => {
         const altResponse = await fetch(`https://api.postalpincode.in/pincode/${pin}`);
         const altData = await altResponse.json();
         
-        if (altData && altData[0] && altData[0].PostOffice && altData[0].PostOffice.length > 0) {
+        if (altData && altData[0] && altData[0].PostOffice) {
           const postOffice = altData[0].PostOffice[0];
-          const district = postOffice.District || '';
-          const state = postOffice.State || '';
+          const district = postOffice.District?.toLowerCase() || '';
+          const state = postOffice.State?.toLowerCase() || '';
           
-          // Return district or state
-          return district || state || null;
+          if (district.includes('ahmedabad') || (state.includes('gujarat') && district.includes('ahmedabad'))) {
+            return 'Ahmedabad';
+          }
+          if (district.includes('gandhinagar') || (state.includes('gujarat') && district.includes('gandhinagar'))) {
+            return 'Gandhinagar';
+          }
         }
       } catch (altError) {
         console.error('Error fetching from alternative API:', altError);
@@ -110,7 +119,7 @@ const Product = () => {
   // Handle pincode submission
   const handlePincodeSubmit = async (e) => {
     e.preventDefault();
-    if (pincode.length !== 6 || !/^\d{6}$/.test(pincode)) {
+    if (pincode.length !== 6) {
       toast({
         title: "Invalid Pincode",
         description: "Please enter a valid 6-digit pincode",
@@ -131,24 +140,22 @@ const Product = () => {
       if (location) {
         toast({
           title: "Delivery Available",
-          description: `Free shipping available to ${location}`,
+          description: `Free shipping available for ${location}`,
         });
       } else {
-        // If API fails but pincode is valid format, still accept it
         toast({
-          title: "Delivery Available",
-          description: "Free shipping available pan-India",
+          title: "Delivery Not Available",
+          description: "Currently only delivering to Ahmedabad and Gandhinagar",
+          variant: "destructive",
         });
-        setDetectedLocation("India");
       }
     } catch (error) {
-      // Even if API fails, accept the pincode as valid (pan-India delivery)
-      setPincodeChecked(true);
-      setDetectedLocation("India");
       toast({
-        title: "Delivery Available",
-        description: "Free shipping available pan-India",
+        title: "Error",
+        description: "Unable to verify pincode. Please try again.",
+        variant: "destructive",
       });
+      setPincodeChecked(true);
     } finally {
       setCheckingPincode(false);
     }
@@ -229,23 +236,6 @@ const Product = () => {
         setLoading(true);
         // Use getBySlug which works with both slug and ID (backend handles both)
         const productData = await productsAPI.getBySlug(id);
-        console.log('=== PRODUCT DATA DEBUG ===');
-        console.log('Full product:', JSON.stringify(productData, null, 2));
-        console.log('Gallery array:', productData.gallery);
-        console.log('Gallery length:', productData.gallery?.length);
-        if (productData.gallery && productData.gallery.length > 0) {
-          productData.gallery.forEach((img, idx) => {
-            console.log(`Gallery[${idx}]:`, img, 'Type:', typeof img);
-            if (typeof img === 'string') {
-              console.log(`  - Is URL:`, img.startsWith('http'));
-              console.log(`  - Is data URL:`, img.startsWith('data:'));
-              console.log(`  - Length:`, img.length);
-            }
-          });
-        } else {
-          console.warn('⚠️ Gallery is empty or undefined!');
-        }
-        console.log('========================');
         setProduct(productData);
         
         // Update URL to use slug if available and current URL uses ID
@@ -426,46 +416,22 @@ const Product = () => {
   // Extract images from gallery array
   const getProductImages = () => {
     if (Array.isArray(product.gallery) && product.gallery.length > 0) {
-      const images = product.gallery
-        .map(img => {
-          if (typeof img === 'string') {
-            // Filter out empty strings and invalid data URLs
-            if (!img || img.trim() === '' || img === 'data:;base64,=') {
-              return null;
-            }
-            return img;
-          }
-          if (img && img.url && img.url.trim() && img.url !== 'data:;base64,=') {
-            return img.url;
-          }
-          return null;
-        })
-        .filter(img => img !== null && img !== '');
-      
-      if (images.length > 0) {
-        return images;
-      }
+      return product.gallery.map(img => {
+        if (typeof img === 'string') return img;
+        if (img.url) return img.url;
+        return img;
+      });
     }
-    if (product.gallery && typeof product.gallery === 'string' && product.gallery.trim() && product.gallery !== 'data:;base64,=') {
+    if (product.gallery && typeof product.gallery === 'string') {
       return [product.gallery];
     }
-    if (product.image && product.image.trim() && product.image !== 'data:;base64,=') {
+    if (product.image) {
       return [product.image];
     }
-    console.warn('No valid images found for product:', product.name, product.id);
     return [];
   };
   
   const productImages = getProductImages();
-  console.log('📸 Extracted product images:', productImages);
-  console.log('📸 Number of images:', productImages.length);
-  if (productImages.length > 0) {
-    productImages.forEach((img, idx) => {
-      console.log(`📸 Image[${idx}]:`, img.substring(0, 100) + (img.length > 100 ? '...' : ''));
-    });
-  } else {
-    console.warn('⚠️ No images extracted! Product gallery might be empty.');
-  }
   
   // Image navigation functions
   const nextImage = () => {
@@ -789,10 +755,6 @@ const Product = () => {
                       src={getImageUrl(productImages[prevImageIndex] || productImages[0])}
                       alt={product.name}
                       className="h-full w-full object-cover"
-                      onError={(e) => {
-                        e.target.src = '/placeholder.svg';
-                        e.target.onerror = null; // Prevent infinite loop
-                      }}
                     />
                   </div>
                 )}
@@ -823,10 +785,6 @@ const Product = () => {
                     src={getImageUrl(productImages[selectedImage] || productImages[0])}
                     alt={product.name}
                     className="h-full w-full object-cover hover:scale-105 transition-transform duration-500"
-                    onError={(e) => {
-                      e.target.src = '/placeholder.svg';
-                      e.target.onerror = null; // Prevent infinite loop
-                    }}
                   />
                 </div>
               </div>
@@ -907,8 +865,7 @@ const Product = () => {
                       alt={`${product.name} ${index + 1}`}
                       className="h-full w-full object-cover"
                       onError={(e) => {
-                        e.target.src = "/placeholder.svg";
-                        e.target.onerror = null; // Prevent infinite loop
+                        e.target.src = "https://via.placeholder.com/80";
                       }}
                     />
               </button>
@@ -931,21 +888,34 @@ const Product = () => {
                 <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground lg:text-4xl">
                   {product.name}
                 </h1>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className={cn("flex-shrink-0 h-10 w-10 sm:h-12 sm:w-12", inWishlist && "border-primary text-primary")}
-                  onClick={handleWishlist}
-                >
-                  <Heart
-                    className={cn("h-5 w-5 sm:h-6 sm:w-6", inWishlist && "fill-primary")}
-                  />
-                </Button>
+                <div className="flex items-center gap-2">
+                  <a
+                    href="https://wa.me/917016925325"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#25D366] hover:scale-110 transition-all duration-300 cursor-pointer"
+                    aria-label="WhatsApp"
+                  >
+                    <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.372a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                    </svg>
+                  </a>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className={cn("flex-shrink-0 h-10 w-10 sm:h-12 sm:w-12", inWishlist && "border-primary text-primary")}
+                    onClick={handleWishlist}
+                  >
+                    <Heart
+                      className={cn("h-5 w-5 sm:h-6 sm:w-6", inWishlist && "fill-primary")}
+                    />
+                  </Button>
+                </div>
               </div>
             </div>
 
-            {/* Rating */}
-            <div className="flex items-center gap-2">
+            {/* Rating - Temporarily Hidden */}
+            {/* <div className="flex items-center gap-2">
               <div className="flex items-center gap-1">
                 {[...Array(5)].map((_, i) => (
                   <Star
@@ -970,7 +940,7 @@ const Product = () => {
               <span className="text-sm text-muted-foreground">
                 ({reviews.length} review{reviews.length !== 1 ? 's' : ''})
               </span>
-            </div>
+            </div> */}
 
             {/* Price */}
             <div className="flex flex-wrap items-baseline gap-2 sm:gap-3">
@@ -991,6 +961,31 @@ const Product = () => {
 
             {/* Description */}
             <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">{product.description || "Premium quality product with elegant design."}</p>
+
+            {/* Why You Will Love This Product */}
+            <div className="mt-6 sm:mt-8 rounded-lg border border-border dark:border-white/15 bg-purple-soft/30 dark:bg-card/50 p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold text-foreground mb-4 sm:mb-6">
+                Why You Will Love This Product:
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                  <p className="text-sm sm:text-base text-muted-foreground">Thick Long Lasting Fabric</p>
+                </div>
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                  <p className="text-sm sm:text-base text-muted-foreground">Long Lasting Print</p>
+                </div>
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                  <p className="text-sm sm:text-base text-muted-foreground">Oversized Street Fit</p>
+                </div>
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                  <p className="text-sm sm:text-base text-muted-foreground">Printed Only After You Order</p>
+                </div>
+              </div>
+            </div>
 
             {/* Colors */}
             {productColors.length > 0 && (
@@ -1164,14 +1159,14 @@ const Product = () => {
                     <>
                       <p className="font-medium text-sm sm:text-base text-foreground">Free Shipping to {detectedLocation}</p>
                       <p className="text-xs sm:text-sm text-muted-foreground">
-                        Estimated delivery:  Assured Delivery by 8-10 days
+                        Estimated delivery:  Shipped within 3-5 days and delivered within 7-10 days
                       </p>
                     </>
                   ) : pincodeChecked && !detectedLocation ? (
                     <>
-                      <p className="font-medium text-sm sm:text-base text-foreground">Delivery Available</p>
+                      <p className="font-medium text-sm sm:text-base text-foreground">Delivery Not Available</p>
                       <p className="text-xs sm:text-sm text-muted-foreground">
-                        Free shipping available pan-India
+                        Currently not delivering to your area
                       </p>
                     </>
                   ) : (

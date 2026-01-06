@@ -122,7 +122,11 @@ export function HeroSection() {
 
             {/* Description */}
             <p className="max-w-md text-sm sm:text-base text-muted-foreground leading-relaxed">
-              Choose your own design and wear it. No design in mind? No worries, explore our curated collection of the coolest designs and make them yours...
+              Built by a young mind, driven by bold ideas.
+              <br />
+              Made for people who don't follow trends — they create them.
+              <br />
+              Your design. Your vibe. Your look.
             </p>
 
             {/* CTA Buttons */}
@@ -153,7 +157,7 @@ export function HeroSection() {
                 </div>
                 <div>
                   <p className="text-sm sm:text-base font-semibold text-foreground">Free Shipping</p>
-                  <p className="text-xs text-muted-foreground">Across Ahmedabad & Gandhinagar</p>
+                  <p className="text-xs text-muted-foreground">All Over India</p>
                 </div>
               </div>
               <div className="flex items-center gap-2 sm:gap-3">
