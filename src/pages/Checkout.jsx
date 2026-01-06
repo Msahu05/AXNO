@@ -1240,16 +1240,30 @@ const Checkout = () => {
             {/* Left Column */}
             <div className="space-y-4">
               {/* Shipping Address Section */}
-              <section className="bg-white rounded-lg border border-purple-100 shadow-sm overflow-hidden">
+              <section className={`rounded-lg border shadow-sm overflow-hidden transition-colors ${
+                isShippingOpen 
+                  ? 'bg-white border-purple-100' 
+                  : 'bg-black border-gray-700'
+              }`}>
                 <button
                   onClick={() => setIsShippingOpen(!isShippingOpen)}
-                  className="w-full flex items-center justify-between p-6 hover:bg-purple-50 transition-colors"
+                  className={`w-full flex items-center justify-between p-6 transition-colors ${
+                    isShippingOpen 
+                      ? 'hover:bg-purple-50' 
+                      : 'hover:bg-gray-900'
+                  }`}
                 >
-                  <h2 className="text-lg font-semibold text-gray-800">Shipping address</h2>
+                  <h2 className={`text-lg font-semibold ${
+                    isShippingOpen ? 'text-gray-800' : 'text-white'
+                  }`}>Shipping address</h2>
                   {isShippingOpen ? (
-                    <ChevronDown className="h-5 w-5 text-gray-600" />
+                    <ChevronDown className={`h-5 w-5 ${
+                      isShippingOpen ? 'text-gray-600' : 'text-white'
+                    }`} />
                   ) : (
-                    <ChevronRight className="h-5 w-5 text-gray-600" />
+                    <ChevronRight className={`h-5 w-5 ${
+                      isShippingOpen ? 'text-gray-600' : 'text-white'
+                    }`} />
                   )}
                 </button>
                 {isShippingOpen && (
@@ -1445,16 +1459,30 @@ const Checkout = () => {
               </section>
 
               {/* Custom Design Section */}
-              <section className="bg-white rounded-lg border border-purple-100 shadow-sm overflow-hidden">
+              <section className={`rounded-lg border shadow-sm overflow-hidden transition-colors ${
+                isCustomDesignOpen 
+                  ? 'bg-white border-purple-100' 
+                  : 'bg-black border-gray-700'
+              }`}>
                 <button
                   onClick={() => setIsCustomDesignOpen(!isCustomDesignOpen)}
-                  className="w-full flex items-center justify-between p-6 hover:bg-purple-50 transition-colors"
+                  className={`w-full flex items-center justify-between p-6 transition-colors ${
+                    isCustomDesignOpen 
+                      ? 'hover:bg-purple-50' 
+                      : 'hover:bg-gray-900'
+                  }`}
                 >
-                  <h2 className="text-lg font-semibold text-gray-800">Custom Design</h2>
+                  <h2 className={`text-lg font-semibold ${
+                    isCustomDesignOpen ? 'text-gray-800' : 'text-white'
+                  }`}>Custom Design</h2>
                   {isCustomDesignOpen ? (
-                    <ChevronDown className="h-5 w-5 text-gray-600" />
+                    <ChevronDown className={`h-5 w-5 ${
+                      isCustomDesignOpen ? 'text-gray-600' : 'text-white'
+                    }`} />
                   ) : (
-                    <ChevronRight className="h-5 w-5 text-gray-600" />
+                    <ChevronRight className={`h-5 w-5 ${
+                      isCustomDesignOpen ? 'text-gray-600' : 'text-white'
+                    }`} />
                   )}
                 </button>
                 {isCustomDesignOpen && (
@@ -1686,10 +1714,9 @@ const Checkout = () => {
                       htmlFor="refund-policy"
                       className="text-sm text-gray-800 cursor-pointer leading-relaxed"
                     >
-                      <span className="font-semibold text-red-700">I understand and agree</span> that the products I am purchasing are{" "}
-                      <span className="font-semibold text-red-700">completely non-refundable</span> and{" "}
-                      <span className="font-semibold text-red-700">non-exchangeable</span>. I acknowledge that once the order is placed, 
-                      I cannot request a refund or exchange for any reason..
+                      <span className="font-semibold text-red-700">I understand and agree</span> that this product is custom-made and therefore not eligible for returns due to a change of mind.{" "}
+                      <span className="font-semibold text-red-700"></span>
+                      <span className="font-semibold text-red-700"></span>However, in the event of a damaged, misprinted, or incorrect item being delivered, a replacement or refund will be provided.
                     </label>
                   </div>
                 </div>
