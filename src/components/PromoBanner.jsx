@@ -95,8 +95,8 @@ const PromoBanner = () => {
     )}>
       <div className="container mx-auto flex items-center justify-center gap-2 sm:gap-3 text-center">
         <p className="text-xs sm:text-sm font-medium">
-          <span className="font-bold">10% OFF</span> on your first shopping, use code{' '}
-          <span className="font-bold bg-primary-foreground/20 px-1.5 py-0.5 rounded">first10</span> to redeem
+          <span className="font-bold">15% OFF</span> for first 20 customers, use code{' '}
+          <span className="font-bold bg-primary-foreground/20 px-1.5 py-0.5 rounded">2026</span> to redeem
         </p>
       </div>
       <Button
