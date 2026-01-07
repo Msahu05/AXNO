@@ -1243,7 +1243,7 @@ const Checkout = () => {
               <section className={`rounded-lg border shadow-sm overflow-hidden transition-colors ${
                 isShippingOpen 
                   ? 'bg-white border-purple-100' 
-                  : 'bg-black border-gray-700'
+                  : 'bg-foreground border-gray-700'
               }`}>
                 <button
                   onClick={() => setIsShippingOpen(!isShippingOpen)}
@@ -1254,15 +1254,15 @@ const Checkout = () => {
                   }`}
                 >
                   <h2 className={`text-lg font-semibold ${
-                    isShippingOpen ? 'text-gray-800' : 'text-white'
+                    isShippingOpen ? 'text-gray-800' : 'text-background'
                   }`}>Shipping address</h2>
                   {isShippingOpen ? (
                     <ChevronDown className={`h-5 w-5 ${
-                      isShippingOpen ? 'text-gray-600' : 'text-white'
+                      isShippingOpen ? 'text-gray-600' : 'text-background'
                     }`} />
                   ) : (
                     <ChevronRight className={`h-5 w-5 ${
-                      isShippingOpen ? 'text-gray-600' : 'text-white'
+                      isShippingOpen ? 'text-gray-600' : 'text-background'
                     }`} />
                   )}
                 </button>
@@ -1366,7 +1366,7 @@ const Checkout = () => {
                 <div className="col-span-2 relative">
                       <label className="block text-xs font-semibold uppercase tracking-wide text-gray-700 mb-2">
                         ZIP CODE
-                        <span className="text-xs font-normal text-gray-500 ml-2">(Ahmedabad/Gandhinagar only)</span>
+                        
                   </label>
                   <Input
                     value={zipCode}
@@ -1411,7 +1411,7 @@ const Checkout = () => {
                       <select
                     value={state}
                         onChange={(e) => setState(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        className="w-full px-3 py-2 bg-background border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                       >
                         <option value="">Select...</option>
                         {INDIAN_STATES.map((s) => (
@@ -1462,7 +1462,7 @@ const Checkout = () => {
               <section className={`rounded-lg border shadow-sm overflow-hidden transition-colors ${
                 isCustomDesignOpen 
                   ? 'bg-white border-purple-100' 
-                  : 'bg-black border-gray-700'
+                  : 'bg-foreground border-gray-700'
               }`}>
                 <button
                   onClick={() => setIsCustomDesignOpen(!isCustomDesignOpen)}
@@ -1473,15 +1473,15 @@ const Checkout = () => {
                   }`}
                 >
                   <h2 className={`text-lg font-semibold ${
-                    isCustomDesignOpen ? 'text-gray-800' : 'text-white'
+                    isCustomDesignOpen ? 'text-gray-800' : 'text-background'
                   }`}>Custom Design</h2>
                   {isCustomDesignOpen ? (
                     <ChevronDown className={`h-5 w-5 ${
-                      isCustomDesignOpen ? 'text-gray-600' : 'text-white'
+                      isCustomDesignOpen ? 'text-gray-600' : 'text-background'
                     }`} />
                   ) : (
                     <ChevronRight className={`h-5 w-5 ${
-                      isCustomDesignOpen ? 'text-gray-600' : 'text-white'
+                      isCustomDesignOpen ? 'text-gray-600' : 'text-background'
                     }`} />
                   )}
                 </button>

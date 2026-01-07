@@ -1,4 +1,4 @@
-import { ArrowRight, Truck, Headphones } from "lucide-react";
+import { ArrowRight, Truck, Headphones, IndianRupee, Shirt, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "@/components/ui/carousel";
@@ -61,11 +61,11 @@ export function HeroSection() {
   return (
     <section className="relative min-h-[60vh] sm:min-h-[80vh] overflow-hidden bg-background">
       <div className="container relative mx-auto flex min-h-[60vh] sm:min-h-[80vh] items-center px-4 lg:px-8 py-6 sm:py-12">
-        <div className="grid gap-8 sm:gap-12 lg:grid-cols-2 lg:gap-16 w-full">
+        <div className="grid gap-4 sm:gap-12 lg:grid-cols-2 lg:gap-12 w-full">
           {/* Hero Image Carousel - First on mobile */}
-          <div className="relative flex items-center justify-center order-1 lg:order-2 py-4 sm:py-8" style={{ animationDelay: "0.2s" }}>
-            <div className="relative w-full max-w-full sm:max-w-[80%] lg:max-w-[33%] overflow-hidden rounded-2xl bg-secondary shadow-elevated animate-scale-in">
-              <div className="relative w-full" style={{ paddingBottom: 'calc(100% + 4px)' }}>
+          <div className="relative flex items-center justify-center order-1 lg:order-2 py-2 sm:py-6" style={{ animationDelay: "0.2s" }}>
+            <div className="relative w-full max-w-full sm:max-w-[70%] lg:max-w-[33%] overflow-hidden rounded-2xl bg-secondary shadow-elevated animate-scale-in">
+              <div className="relative w-full" style={{ paddingBottom: 'calc(100% + 0px)' }}>
                 <div className="absolute inset-0 h-full w-full">
                   {loading ? (
                     <div className="flex h-full w-full items-center justify-center">
@@ -97,8 +97,8 @@ export function HeroSection() {
                           </CarouselItem>
                         ))}
                       </CarouselContent>
-                      <CarouselPrevious className="left-2 sm:left-4 h-10 w-10 bg-white/90 hover:bg-white border-2 border-primary/20 shadow-lg" />
-                      <CarouselNext className="right-2 sm:right-4 h-10 w-10 bg-white/90 hover:bg-white border-2 border-primary/20 shadow-lg" />
+                      <CarouselPrevious className="left-2 sm:left-4 h-10 w-10 bg-background hover:bg-white border-2 border-primary/20 shadow-lg" />
+                      <CarouselNext className="right-2 sm:right-4 h-10 w-10 bg-background  hover:bg-white border-2 border-primary/20 shadow-lg" />
                     </Carousel>
                   )}
                 </div>
@@ -107,9 +107,9 @@ export function HeroSection() {
           </div>
 
           {/* Content - Second on mobile */}
-          <div className="flex flex-col items-start justify-center space-y-4 sm:space-y-6 animate-fade-in py-4 sm:py-8 order-2 lg:order-1">
+          <div className="flex flex-col items-start justify-center space-y-2 sm:space-y-4 animate-fade-in py-4 sm:py-6 order-2 lg:order-1">
             {/* Top Banner */}
-            <div className="inline-flex w-fit items-center gap-2 rounded-lg bg-primary/10 px-3 py-2 text-lg sm:text-xl md:text-2xl xl:text-3xl font-bold text-primary">
+            <div className="inline-flex w-fit items-center gap-1 rounded-lg bg-primary/10 px-3 py-1 text-lg sm:text-xl md:text-2xl xl:text-3xl font-bold text-primary">
               Looklyn - Own The Look
             </div>
 
@@ -167,6 +167,33 @@ export function HeroSection() {
                 <div>
                   <p className="text-sm sm:text-base font-semibold text-foreground">24/7 WhatsApp Support</p>
                   <p className="text-xs text-muted-foreground">Always here to help</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-primary/10">
+                  <IndianRupee className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm sm:text-base font-semibold text-foreground">Secured Payment via Razorpay</p>
+                  <p className="text-xs text-muted-foreground">Safe & secure transactions</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-primary/10">
+                  <Shirt className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm sm:text-base font-semibold text-foreground">Printed After Order</p>
+                  <p className="text-xs text-muted-foreground">Made just for you</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-primary/10">
+                  <Heart className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm sm:text-base font-semibold text-foreground">Every Order Matters</p>
+                  <p className="text-xs text-muted-foreground">Crafted with care</p>
                 </div>
               </div>
             </div>
