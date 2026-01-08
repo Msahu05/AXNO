@@ -171,15 +171,6 @@ export function HeroSection() {
               </div>
               <div className="flex items-center gap-2 sm:gap-3">
                 <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-primary/10">
-                  <IndianRupee className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm sm:text-base font-semibold text-foreground">Secured Payment via Razorpay</p>
-                  <p className="text-xs text-muted-foreground">Safe & secure transactions</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-primary/10">
                   <Shirt className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                 </div>
                 <div>
@@ -196,6 +187,16 @@ export function HeroSection() {
                   <p className="text-xs text-muted-foreground">Crafted with care</p>
                 </div>
               </div>
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-primary/10">
+                  <IndianRupee className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm sm:text-base font-semibold text-foreground">Secured Payment via Razorpay</p>
+                  <p className="text-xs text-muted-foreground">Safe & secure transactions</p>
+                </div>
+              </div>
+      
             </div>
           </div>
         </div>
