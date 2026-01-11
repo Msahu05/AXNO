@@ -187,7 +187,7 @@ const Home = () => {
         <div className="border-t border-border/50 my-6 sm:my-8 lg:my-12"></div>
 
         <section id="custom" className="space-y-6 sm:space-y-8 rounded-[28px] sm:rounded-[40px] lg:rounded-[56px] border border-border dark:border-white/15 bg-purple-soft/50 dark:bg-gradient-to-r dark:from-[var(--card)] dark:via-[var(--muted)] dark:to-[var(--card)] p-4 sm:p-6 lg:p-10 shadow-[var(--shadow-soft)]">
-          <div className="space-y-4">
+          {/* <div className="space-y-4">
             <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Custom studio</p>
             <h2 className="text-4xl font-black">Upload, confirm, conquer.</h2>
             <p className="text-muted-foreground">
@@ -216,7 +216,7 @@ const Home = () => {
             <Button className="rounded-full bg-primary px-8 py-6 text-xs font-semibold uppercase tracking-[0.4em]" onClick={() => navigate("/category/hoodies")}>
               Start custom order
             </Button>
-          </div>
+          </div> */}
 
           <div className="space-y-8">
             <div>

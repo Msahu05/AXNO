@@ -1459,7 +1459,7 @@ const Checkout = () => {
               </section>
 
               {/* Custom Design Section */}
-              <section className={`rounded-lg border shadow-sm overflow-hidden transition-colors ${
+              {/* <section className={`rounded-lg border shadow-sm overflow-hidden transition-colors ${
                 isCustomDesignOpen 
                   ? 'bg-white border-purple-100' 
                   : 'bg-foreground border-gray-700'
@@ -1530,7 +1530,7 @@ const Checkout = () => {
                   </div>
               </div>
                 )}
-            </section>
+            </section> */}
           </div>
 
             {/* Right Column */}

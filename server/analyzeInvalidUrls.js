@@ -1,4 +1,4 @@
-/**
+ /**
  * Analyze why product URLs became invalid - check if images exist in Cloudinary
  */
 

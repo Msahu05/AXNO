@@ -1384,7 +1384,8 @@ const Admin = () => {
                         setStatusFilter(e.target.value);
                         setPage(1);
                       }}
-                      className="px-4 py-2 border rounded-md"
+                      className="px-4 py-2 border rounded-md bg-background"
+                      
                     >
                       <option value="">All Status</option>
                       <option value="pending">Pending</option>
