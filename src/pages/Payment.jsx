@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, CreditCard, ShieldCheck, Loader2, CheckCircle2, XCircle, TestTube } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import Header from "@/components/Header";
 import { useAuth } from "@/contexts/auth-context";
 import { useCart } from "@/contexts/cart-context";
 import { paymentsAPI } from "@/lib/api";
@@ -31,13 +30,6 @@ const Payment = () => {
       return;
     }
     
-    if (!isAuthenticated) {
-      // Only redirect if not already on auth page to prevent loops
-      if (window.location.pathname !== '/auth') {
-        navigate(`/auth?redirect=${encodeURIComponent("/payment")}`, { replace: true });
-      }
-      return;
-    }
 
     let data = null;
     let files = [];
@@ -396,9 +388,6 @@ const Payment = () => {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(124,90,255,0.12),_transparent_70%)]">
-      <div className="px-2 sm:px-4 lg:px-6 pb-4 sm:pb-8 lg:pb-12 pt-4 sm:pt-6">
-        <Header />
-      </div>
       <div className="px-2 sm:px-4 lg:px-6 py-6 sm:py-10">
         <div className="mx-auto max-w-4xl space-y-4 sm:space-y-6">
           {/* Breadcrumbs */}

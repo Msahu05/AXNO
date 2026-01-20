@@ -440,6 +440,10 @@ const productSchema = new mongoose.Schema({
   isActive: { type: Boolean, default: true }, // Product visibility
   tags: [{ type: String }], // Product tags for search
   displayOrder: { type: Number, default: 0 }, // Display order within category
+  isHotProduct: { type: Boolean, default: false }, // Hot Products category
+  isNewArrival: { type: Boolean, default: false }, // New Arrivals category
+  isTopProduct: { type: Boolean, default: false }, // Top Products category
+  isCustomisedProduct: { type: Boolean, default: false }, // Customised Products category
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });
@@ -3619,13 +3623,21 @@ app.get('/api/admin/stats', authenticateAdmin, async (req, res) => {
 // Public: Get all products
 app.get('/api/products', async (req, res) => {
   try {
-    const { category, audience, search, page = 1, limit = 50 } = req.query;
+    const { category, audience, search, filter, page = 1, limit = 50 } = req.query;
     const query = { isActive: true };
     
     if (category) query.category = category;
     if (audience) query.audience = audience;
     if (search) {
       query.$text = { $search: search };
+    }
+    // Filter by product categories (new, hot, top)
+    if (filter === 'new') {
+      query.isNewArrival = true;
+    } else if (filter === 'hot') {
+      query.isHotProduct = true;
+    } else if (filter === 'top') {
+      query.isTopProduct = true;
     }
     
     const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -3782,7 +3794,7 @@ app.get('/api/admin/products', authenticateAdmin, async (req, res) => {
 // Admin: Create product
 app.post('/api/admin/products', authenticateAdmin, async (req, res) => {
   try {
-    const { name, description, category, audience, price, originalPrice, sizes, stock, colorOptions, tags, galleryImages } = req.body;
+    const { name, description, category, audience, price, originalPrice, sizes, stock, colorOptions, tags, galleryImages, isHotProduct, isNewArrival, isTopProduct, isCustomisedProduct } = req.body;
     
     if (!name || !category || !audience || !price || !originalPrice) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -3943,7 +3955,11 @@ app.post('/api/admin/products', authenticateAdmin, async (req, res) => {
       colorOptions: colorOptionsArray,
       tags: tagsArray,
       displayOrder: nextDisplayOrder,
-      isActive: true
+      isActive: true,
+      isHotProduct: isHotProduct === true || isHotProduct === 'true',
+      isNewArrival: isNewArrival === true || isNewArrival === 'true',
+      isTopProduct: isTopProduct === true || isTopProduct === 'true',
+      isCustomisedProduct: isCustomisedProduct === true || isCustomisedProduct === 'true'
     });
     
     await product.save();
@@ -4049,7 +4065,7 @@ app.put('/api/admin/products/order', authenticateAdmin, async (req, res) => {
 app.put('/api/admin/products/:id', authenticateAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, category, audience, price, originalPrice, sizes, stock, colorOptions, tags, galleryImages } = req.body;
+    const { name, description, category, audience, price, originalPrice, sizes, stock, colorOptions, tags, galleryImages, isHotProduct, isNewArrival, isTopProduct, isCustomisedProduct } = req.body;
     
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ error: 'Invalid product ID' });
@@ -4077,6 +4093,18 @@ app.put('/api/admin/products/:id', authenticateAdmin, async (req, res) => {
     if (stock !== undefined) product.stock = parseInt(stock);
     if (tags) {
       product.tags = Array.isArray(tags) ? tags : tags.split(',').map(t => t.trim());
+    }
+    if (req.body.isHotProduct !== undefined) {
+      product.isHotProduct = req.body.isHotProduct === true || req.body.isHotProduct === 'true';
+    }
+    if (req.body.isNewArrival !== undefined) {
+      product.isNewArrival = req.body.isNewArrival === true || req.body.isNewArrival === 'true';
+    }
+    if (req.body.isTopProduct !== undefined) {
+      product.isTopProduct = req.body.isTopProduct === true || req.body.isTopProduct === 'true';
+    }
+    if (req.body.isCustomisedProduct !== undefined) {
+      product.isCustomisedProduct = req.body.isCustomisedProduct === true || req.body.isCustomisedProduct === 'true';
     }
     if (colorOptions) {
       try {

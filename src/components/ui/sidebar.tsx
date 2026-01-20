@@ -325,17 +325,40 @@ const SidebarSeparator = React.forwardRef<React.ElementRef<typeof Separator>, Re
 );
 SidebarSeparator.displayName = "SidebarSeparator";
 
-const SidebarContent = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(({ className, ...props }, ref) => {
+const SidebarContent = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(({ className, style, ...props }, ref) => {
   return (
-    <div
-      ref={ref}
-      data-sidebar="content"
-      className={cn(
-        "flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-hidden",
-        className,
-      )}
-      {...props}
-    />
+    <>
+      <style>{`
+        [data-sidebar="content"]::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+        [data-sidebar="content"]::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        [data-sidebar="content"]::-webkit-scrollbar-thumb {
+          background-color: hsl(var(--sidebar-border));
+          border-radius: 9999px;
+        }
+        [data-sidebar="content"]::-webkit-scrollbar-thumb:hover {
+          background-color: hsl(var(--sidebar-accent));
+        }
+      `}</style>
+      <div
+        ref={ref}
+        data-sidebar="content"
+        className={cn(
+          "flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-hidden",
+          className,
+        )}
+        style={{
+          scrollbarWidth: 'thin',
+          scrollbarColor: 'hsl(var(--sidebar-border)) transparent',
+          ...style,
+        }}
+        {...props}
+      />
+    </>
   );
 });
 SidebarContent.displayName = "SidebarContent";

@@ -418,6 +418,10 @@ export const adminAPI = {
       sizes: productData.sizes || [],
       colorOptions: productData.colorOptions || [],
       tags: productData.tags || [],
+      isHotProduct: productData.isHotProduct || false,
+      isNewArrival: productData.isNewArrival || false,
+      isTopProduct: productData.isTopProduct || false,
+      isCustomisedProduct: productData.isCustomisedProduct || false,
       galleryImages: galleryImages
     };
     
@@ -480,6 +484,10 @@ export const adminAPI = {
       sizes: productData.sizes || [],
       colorOptions: productData.colorOptions || [],
       tags: productData.tags || [],
+      isHotProduct: productData.isHotProduct !== undefined ? productData.isHotProduct : false,
+      isNewArrival: productData.isNewArrival !== undefined ? productData.isNewArrival : false,
+      isTopProduct: productData.isTopProduct !== undefined ? productData.isTopProduct : false,
+      isCustomisedProduct: productData.isCustomisedProduct !== undefined ? productData.isCustomisedProduct : false,
     };
     
     // Always include galleryImages if we have any (existing or new)
@@ -533,6 +541,7 @@ export const productsAPI = {
     if (filters.category) queryParams.append('category', filters.category);
     if (filters.audience) queryParams.append('audience', filters.audience);
     if (filters.search) queryParams.append('search', filters.search);
+    if (filters.filter) queryParams.append('filter', filters.filter); // new, hot, or top
     if (filters.page) queryParams.append('page', filters.page);
     if (filters.limit) queryParams.append('limit', filters.limit);
     

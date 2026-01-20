@@ -5,7 +5,6 @@ import { ArrowLeft, User, Mail, Phone, MapPin, Save, Edit2, Loader2, Trash2 } fr
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import Header from "@/components/Header";
 import { useAuth } from "@/contexts/auth-context";
 import { userAPI } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
@@ -261,9 +260,6 @@ const Account = () => {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(124,90,255,0.12),_transparent_60%)]">
-      <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-2">
-        <Header />
-      </div>
       <div className="px-4 py-10">
         <div className="mx-auto max-w-4xl space-y-6">
         <button

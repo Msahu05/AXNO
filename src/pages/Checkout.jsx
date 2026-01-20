@@ -6,10 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
-import Header from "@/components/Header";
 import { useAuth } from "@/contexts/auth-context";
 import { useCart } from "@/contexts/cart-context";
-import { userAPI, couponsAPI, paymentsAPI, ordersAPI } from "@/lib/api";
+import { userAPI, couponsAPI, paymentsAPI, ordersAPI, productsAPI } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
 // Indian cities and states data
@@ -82,6 +81,7 @@ const Checkout = () => {
   const [isShippingOpen, setIsShippingOpen] = useState(true);
   const [isCustomDesignOpen, setIsCustomDesignOpen] = useState(false);
   const [acceptedRefundPolicy, setAcceptedRefundPolicy] = useState(false);
+  const [hasCustomisedProducts, setHasCustomisedProducts] = useState(false);
   const descriptionRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -215,6 +215,48 @@ const Checkout = () => {
 
     checkPreviousOrders();
   }, [isAuthenticated]);
+
+  // Check if any product in checkout is customized
+  useEffect(() => {
+    const checkCustomisedProducts = async () => {
+      if (displayItems.length === 0) {
+        setHasCustomisedProducts(false);
+        return;
+      }
+
+      try {
+        let hasCustomised = false;
+        
+        for (const item of displayItems) {
+          try {
+            // Try to get product by slug first, then by ID
+            let productData;
+            if (item.slug) {
+              productData = await productsAPI.getBySlug(item.slug);
+            } else {
+              productData = await productsAPI.getById(item.id);
+            }
+            
+            if (productData?.isCustomisedProduct) {
+              hasCustomised = true;
+              break; // No need to check further if we found one
+            }
+          } catch (error) {
+            console.error(`Error fetching product ${item.id || item.slug}:`, error);
+            // Continue checking other products even if one fails
+          }
+        }
+        
+        setHasCustomisedProducts(hasCustomised);
+      } catch (error) {
+        console.error('Error checking customized products:', error);
+        // On error, assume no customized products to be safe
+        setHasCustomisedProducts(false);
+      }
+    };
+
+    checkCustomisedProducts();
+  }, [displayItems]);
 
   // Track if we've already attempted to load coupons to prevent infinite loops
   const couponsLoadedRef = useRef(false);
@@ -841,6 +883,38 @@ const Checkout = () => {
       return;
     }
 
+    // Check if any product is customized and require design upload
+    try {
+      let hasCustomisedProduct = false;
+      
+      for (const item of displayItems) {
+        try {
+          // Use getBySlug which works with both slug and ID
+          const productData = await productsAPI.getBySlug(item.id);
+          if (productData?.isCustomisedProduct) {
+            hasCustomisedProduct = true;
+            break;
+          }
+        } catch (error) {
+          console.error(`Error fetching product ${item.id}:`, error);
+          // Continue checking other products
+        }
+      }
+      
+      if (hasCustomisedProduct && designFiles.length === 0) {
+        toast({
+          title: "Design Upload Required",
+          description: "Please upload your design file(s) for customized product(s).",
+          variant: "destructive",
+        });
+        setIsCustomDesignOpen(true);
+        return;
+      }
+    } catch (error) {
+      console.error('Error checking for customized products:', error);
+      // Continue with order even if check fails
+    }
+
     // Save address if requested
     if (saveAddress && isAuthenticated) {
       try {
@@ -1123,7 +1197,6 @@ const Checkout = () => {
     return (
       <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(124,90,255,0.12),_transparent_70%)]">
         <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-2">
-          <Header />
         </div>
         <div className="px-2 sm:px-4 lg:px-6 py-6 sm:py-10">
           <div className="mx-auto max-w-7xl">
@@ -1144,20 +1217,12 @@ const Checkout = () => {
     );
   }
 
-  if (!isAuthenticated) {
-    // Only redirect if not already on auth page to prevent loops
-    if (location.pathname !== '/auth') {
-      navigate(`/auth?redirect=${encodeURIComponent("/checkout")}`, { replace: true });
-    }
-    return null;
-  }
 
   // Show loading if buy now product is being loaded
   if (isBuyNow && buyNowLoading) {
     return (
       <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(124,90,255,0.12),_transparent_70%)]">
         <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-2">
-          <Header />
         </div>
         <div className="px-2 sm:px-4 lg:px-6 py-6 sm:py-10">
           <div className="mx-auto max-w-7xl">
@@ -1191,7 +1256,6 @@ const Checkout = () => {
     return (
       <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(124,90,255,0.12),_transparent_70%)]">
         <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-2">
-          <Header />
         </div>
         <div className="px-4 py-10">
           <div className="mx-auto max-w-5xl rounded-[56px] border border-white/15 bg-[var(--card)]/95 p-8 shadow-[var(--shadow-soft)] text-center">
@@ -1208,9 +1272,6 @@ const Checkout = () => {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(124,90,255,0.12),_transparent_70%)]">
-      <div className="px-2 sm:px-4 lg:px-6 pb-4 sm:pb-8 lg:pb-12 pt-2">
-        <Header />
-      </div>
       <div className="px-2 sm:px-4 lg:px-6 py-6 sm:py-10">
         <div className="mx-auto max-w-7xl">
           {/* Breadcrumb */}
@@ -1458,79 +1519,81 @@ const Checkout = () => {
                 )}
               </section>
 
-              {/* Custom Design Section */}
-              {/* <section className={`rounded-lg border shadow-sm overflow-hidden transition-colors ${
-                isCustomDesignOpen 
-                  ? 'bg-white border-purple-100' 
-                  : 'bg-foreground border-gray-700'
-              }`}>
-                <button
-                  onClick={() => setIsCustomDesignOpen(!isCustomDesignOpen)}
-                  className={`w-full flex items-center justify-between p-6 transition-colors ${
-                    isCustomDesignOpen 
-                      ? 'hover:bg-purple-50' 
-                      : 'hover:bg-gray-900'
-                  }`}
-                >
-                  <h2 className={`text-lg font-semibold ${
-                    isCustomDesignOpen ? 'text-gray-800' : 'text-background'
-                  }`}>Custom Design</h2>
-                  {isCustomDesignOpen ? (
-                    <ChevronDown className={`h-5 w-5 ${
-                      isCustomDesignOpen ? 'text-gray-600' : 'text-background'
-                    }`} />
-                  ) : (
-                    <ChevronRight className={`h-5 w-5 ${
-                      isCustomDesignOpen ? 'text-gray-600' : 'text-background'
-                    }`} />
-                  )}
-                </button>
-                {isCustomDesignOpen && (
-                  <div className="px-6 pb-6">
-                    <div className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wide text-gray-700 mb-2">DESCRIPTION / INSTRUCTIONS</label>
-                  <Textarea
-                    ref={descriptionRef}
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                      className="w-full resize-none"
-                    placeholder="Enter any special instructions for your custom design..."
-                      rows={4}
-                  />
-                </div>
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wide text-gray-700 mb-2">REFERENCE LINKS (OPTIONAL)</label>
-                  <Input
-                    value={referenceLinks}
-                    onChange={(e) => setReferenceLinks(e.target.value)}
-                    className="w-full"
-                    placeholder="Paste links to design references, Pinterest, etc."
-                  />
-                </div>
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wide text-gray-700 mb-2">UPLOAD DESIGN FILES (OPTIONAL)</label>
-                  <div className="flex items-center gap-4">
-                    <Input
-                      type="file"
-                      multiple
-                      accept="image/*,.pdf,.doc,.docx"
-                      onChange={(e) => {
-                        const files = Array.from(e.target.files || []);
-                        setDesignFiles(files);
-                      }}
-                      className="w-full"
-                    />
-                    {designFiles.length > 0 && (
-                        <span className="text-sm text-gray-600 whitespace-nowrap">{designFiles.length} file(s) selected</span>
+              {/* Custom Design Section - Show only if any product is customized */}
+              {hasCustomisedProducts && (
+                <section className={`rounded-lg border shadow-sm overflow-hidden transition-colors ${
+                  isCustomDesignOpen 
+                    ? 'bg-white border-purple-100' 
+                    : 'bg-foreground border-gray-700'
+                }`}>
+                  <button
+                    onClick={() => setIsCustomDesignOpen(!isCustomDesignOpen)}
+                    className={`w-full flex items-center justify-between p-6 transition-colors ${
+                      isCustomDesignOpen 
+                        ? 'hover:bg-purple-50' 
+                        : 'hover:bg-gray-900'
+                    }`}
+                  >
+                    <h2 className={`text-lg font-semibold ${
+                      isCustomDesignOpen ? 'text-gray-800' : 'text-background'
+                    }`}>Upload Design (For Customised Products)</h2>
+                    {isCustomDesignOpen ? (
+                      <ChevronDown className={`h-5 w-5 ${
+                        isCustomDesignOpen ? 'text-gray-600' : 'text-background'
+                      }`} />
+                    ) : (
+                      <ChevronRight className={`h-5 w-5 ${
+                        isCustomDesignOpen ? 'text-gray-600' : 'text-background'
+                      }`} />
                     )}
+                  </button>
+                  {isCustomDesignOpen && (
+                    <div className="px-6 pb-6">
+                      <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-semibold uppercase tracking-wide text-gray-700 mb-2">DESCRIPTION / INSTRUCTIONS</label>
+                    <Textarea
+                      ref={descriptionRef}
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                        className="w-full resize-none"
+                      placeholder="Enter any special instructions for your custom design..."
+                        rows={4}
+                    />
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">Upload images, PDFs, or documents (max 10MB each)</p>
+                    <div>
+                      <label className="block text-xs font-semibold uppercase tracking-wide text-gray-700 mb-2">REFERENCE LINKS (OPTIONAL)</label>
+                    <Input
+                      value={referenceLinks}
+                      onChange={(e) => setReferenceLinks(e.target.value)}
+                      className="w-full"
+                      placeholder="Paste links to design references, Pinterest, etc."
+                    />
+                  </div>
+                    <div>
+                      <label className="block text-xs font-semibold uppercase tracking-wide text-gray-700 mb-2">UPLOAD DESIGN FILES <span className="text-red-600">*</span></label>
+                    <div className="flex items-center gap-4">
+                      <Input
+                        type="file"
+                        multiple
+                        accept="image/*,.pdf,.doc,.docx"
+                        onChange={(e) => {
+                          const files = Array.from(e.target.files || []);
+                          setDesignFiles(files);
+                        }}
+                        className="w-full"
+                      />
+                      {designFiles.length > 0 && (
+                          <span className="text-sm text-gray-600 whitespace-nowrap">{designFiles.length} file(s) selected</span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">Upload images, PDFs, or documents (max 10MB each). Required for customized products.</p>
+                  </div>
+                    </div>
                 </div>
-                  </div>
-              </div>
-                )}
-            </section> */}
+                  )}
+              </section>
+              )}
           </div>
 
             {/* Right Column */}

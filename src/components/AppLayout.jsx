@@ -1,0 +1,19 @@
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { NavigationSidebar } from "@/components/NavigationSidebar";
+import Header from "@/components/Header";
+import { Separator } from "@/components/ui/separator";
+
+export function AppLayout({ children }) {
+  return (
+    <SidebarProvider defaultOpen={false}>
+      <NavigationSidebar />
+      <SidebarInset>
+        <Header />
+        <Separator />
+        <div className="flex flex-1 flex-col min-h-[calc(100vh-5rem)]">
+          {children}
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
+  );
+}

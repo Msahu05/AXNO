@@ -3,7 +3,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Package, CheckCircle2, Clock, XCircle, Truck, MapPin, Star, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import Header from "@/components/Header";
 import { useAuth } from "@/contexts/auth-context";
 import { ordersAPI, reviewsAPI, getImageUrl } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
@@ -625,9 +624,6 @@ const Orders = () => {
   // Show orders list
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(124,90,255,0.12),_transparent_70%)]">
-      <div className="px-2 sm:px-4 lg:px-6 pb-4 sm:pb-8 lg:pb-12 pt-4 sm:pt-6">
-        <Header />
-      </div>
       <div className="px-2 sm:px-4 lg:px-6 py-6 sm:py-10">
         <div className="mx-auto max-w-6xl space-y-6">
           <div className="flex items-center gap-4">

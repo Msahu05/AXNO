@@ -1,82 +1,15 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Trash2, Plus, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import Header from "@/components/Header";
 import { useCart } from "@/contexts/cart-context";
-import { useAuth } from "@/contexts/auth-context";
 
 const Cart = () => {
   const navigate = useNavigate();
   const { items, removeItem, updateQuantity, total, clearCart } = useCart();
-  const { isAuthenticated, loading: authLoading } = useAuth();
-
-  // Wait for auth to finish loading before checking
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(124,90,255,0.1),_transparent_65%)]">
-        <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-2">
-          <Header />
-        </div>
-        <div className="px-2 sm:px-4 lg:px-6 py-6 sm:py-10">
-          <div className="mx-auto max-w-6xl space-y-6 sm:space-y-8">
-            <Skeleton className="h-10 w-48" />
-            <div className="grid gap-6 sm:gap-8 lg:grid-cols-[1.2fr_0.8fr]">
-              <div className="space-y-3 sm:space-y-4 rounded-[24px] sm:rounded-[32px] border border-white/10 bg-[var(--card)]/90 p-4 sm:p-6">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="flex flex-row gap-3 sm:gap-4 rounded-[16px] sm:rounded-[24px] border border-white/15 bg-background/70 p-3 sm:p-4">
-                    <Skeleton className="h-12 w-12 sm:h-16 sm:w-16 rounded-md sm:rounded-lg" />
-                    <div className="flex-1 space-y-2">
-                      <Skeleton className="h-4 w-3/4" />
-                      <Skeleton className="h-3 w-1/2" />
-                      <Skeleton className="h-4 w-20" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="rounded-[24px] sm:rounded-[32px] border border-white/10 bg-[var(--card)]/90 p-4 sm:p-6">
-                <Skeleton className="h-6 w-32 mb-4" />
-                <Skeleton className="h-4 w-full mb-2" />
-                <Skeleton className="h-4 w-full mb-2" />
-                <Skeleton className="h-10 w-full mt-4" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(124,90,255,0.1),_transparent_65%)]">
-        <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-2">
-          <Header />
-        </div>
-        <div className="px-4 py-6 sm:py-10">
-          <div className="mx-auto max-w-4xl rounded-[32px] sm:rounded-[56px] border border-white/10 bg-[var(--card)]/90 p-6 sm:p-12 shadow-[var(--shadow-soft)] text-center">
-            <h2 className="text-2xl sm:text-3xl font-black mb-3 sm:mb-4">Sign in to view your cart</h2>
-            <p className="text-sm sm:text-base text-muted-foreground mb-6 sm:mb-8">Please sign in to access your shopping cart and checkout.</p>
-            <div className="flex justify-center">
-              <Button 
-                className="rounded-full bg-foreground px-6 py-3 sm:px-8 sm:py-6 text-xs sm:text-sm font-semibold uppercase tracking-[0.2em] sm:tracking-[0.4em] text-background" 
-                onClick={() => navigate(`/auth?redirect=${encodeURIComponent("/cart")}`)}
-              >
-                Sign In
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   if (items.length === 0) {
     return (
       <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(124,90,255,0.1),_transparent_65%)]">
-        <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-2">
-          <Header />
-        </div>
         <div className="px-4 py-6 sm:py-10">
           <div className="mx-auto max-w-4xl rounded-[32px] sm:rounded-[56px] border border-white/10 bg-[var(--card)]/90 p-6 sm:p-12 shadow-[var(--shadow-soft)] text-center">
             <h2 className="text-2xl sm:text-3xl font-black mb-3 sm:mb-4">Your cart is empty</h2>
@@ -94,9 +27,6 @@ const Cart = () => {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(124,90,255,0.1),_transparent_65%)]">
-      <div className="px-2 sm:px-4 lg:px-6 pb-4 sm:pb-8 lg:pb-12 pt-2">
-        <Header />
-      </div>
       <div className="px-2 sm:px-4 lg:px-6 py-6 sm:py-10">
         <div className="mx-auto max-w-6xl space-y-6 sm:space-y-8">
         <div className="flex items-center gap-2 sm:gap-4">

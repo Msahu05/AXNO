@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import Header from "@/components/Header";
 import { ProductCard } from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -376,7 +375,6 @@ const Product = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <div className="container mx-auto px-4 py-4">
           <div className="grid gap-8 lg:grid-cols-2">
             <div className="space-y-4">
@@ -403,7 +401,6 @@ const Product = () => {
   if (!product) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <div className="container mx-auto flex min-h-[60vh] items-center justify-center px-4">
           <p className="text-muted-foreground">Product not found</p>
         </div>
@@ -636,11 +633,6 @@ const Product = () => {
   })();
 
   const handleWishlist = () => {
-    if (!isAuthenticated) {
-      const productUrl = getProductUrl(product);
-      navigate(`/auth?redirect=${encodeURIComponent(productUrl)}`);
-      return;
-    }
     if (inWishlist) {
       removeFromWishlist(product.id);
       toast({ title: "Removed from wishlist" });
@@ -658,11 +650,6 @@ const Product = () => {
   };
 
   const handleAddToCart = () => {
-    if (!isAuthenticated) {
-      const productUrl = getProductUrl(product);
-      navigate(`/auth?redirect=${encodeURIComponent(productUrl)}`);
-      return;
-    }
     if (!selectedSize) {
       toast({ title: "Please select a size", variant: "destructive" });
       return;
@@ -684,11 +671,6 @@ const Product = () => {
   };
 
   const handleBuyNow = () => {
-    if (!isAuthenticated) {
-      const productUrl = getProductUrl(product);
-      navigate(`/auth?redirect=${encodeURIComponent(productUrl)}`);
-      return;
-    }
     if (!selectedSize) {
       toast({ title: "Please select a size", variant: "destructive" });
       return;
@@ -717,24 +699,24 @@ const Product = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-        <Header />
-      <main className="container mx-auto px-4 py-2 sm:py-4 lg:py-6 lg:px-8">
+    <div className="min-h-screen bg-background w-full max-w-full overflow-x-hidden">
+      <main className="w-full max-w-full overflow-x-hidden px-1 sm:px-0 md:px-4 py-1 sm:py-2 lg:py-4 xl:py-6 lg:px-8">
         {/* Breadcrumb */}
-        <nav className="mb-4 sm:mb-6 lg:mb-8 text-xs sm:text-sm text-muted-foreground">
-          <button onClick={() => navigate('/')} className="hover:text-foreground">Home</button>
+        <nav className="mb-2 sm:mb-3 lg:mb-6 text-[10px] xs:text-xs sm:text-sm text-muted-foreground overflow-hidden w-full max-w-full sm:max-w-[200px] md:max-w-none mx-auto sm:mx-auto md:mx-0 px-1 sm:px-0">
+          <button onClick={() => navigate('/')} className="hover:text-foreground truncate">Home</button>
           <span className="mx-1 sm:mx-2">/</span>
-          <button onClick={() => navigate('/category/hoodies')} className="hover:text-foreground">Products</button>
+          <button onClick={() => navigate('/category/hoodies')} className="hover:text-foreground truncate">Products</button>
           <span className="mx-1 sm:mx-2">/</span>
-          <span className="text-foreground line-clamp-1">{product.name}</span>
+          <span className="text-foreground truncate block max-w-[200px] sm:max-w-none">{product.name}</span>
         </nav>
 
-        <div className="grid gap-6 sm:gap-8 lg:gap-12 lg:grid-cols-2">
+        <div className="grid gap-2 sm:gap-4 lg:gap-8 xl:gap-12 lg:grid-cols-2 w-full max-w-full sm:max-w-[200px] md:max-w-none overflow-hidden mx-auto sm:mx-auto md:mx-0 px-1 sm:px-0">
           {/* Product Images */}
-          <div className="space-y-3 sm:space-y-4">
+          <div className="space-y-1.5 sm:space-y-2 lg:space-y-4 w-full max-w-full overflow-hidden" style={{ maxWidth: '100%' }}>
             {/* Main Image */}
             <div 
-              className="relative aspect-square overflow-hidden rounded-xl sm:rounded-2xl bg-secondary shadow-soft group"
+              className="relative aspect-square overflow-hidden rounded-lg sm:rounded-xl lg:rounded-2xl bg-secondary shadow-soft group w-full max-w-full"
+              style={{ maxWidth: '100%' }}
               onTouchStart={onTouchStart}
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
@@ -784,7 +766,8 @@ const Product = () => {
                     key={selectedImage}
                     src={getImageUrl(productImages[selectedImage] || productImages[0])}
                     alt={product.name}
-                    className="h-full w-full object-cover hover:scale-105 transition-transform duration-500"
+                    className="h-full w-full max-w-full object-cover hover:scale-105 transition-transform duration-500"
+                    style={{ maxWidth: '100%', height: 'auto' }}
                   />
                 </div>
               </div>
@@ -847,14 +830,14 @@ const Product = () => {
         </div>
 
             {/* Thumbnail Gallery */}
-            <div className="flex gap-1.5 sm:gap-2 justify-center overflow-x-auto pb-2">
+            <div className="flex gap-1.5 sm:gap-2 justify-center overflow-x-auto pb-2 w-full max-w-full" style={{ maxWidth: '100%' }}>
               {productImages.length > 0 ? (
                 productImages.map((image, index) => (
               <button
                     key={index}
                     onClick={() => setSelectedImage(index)}
                     className={cn(
-                      "relative h-12 w-12 sm:h-14 sm:w-14 flex-shrink-0 overflow-hidden rounded-md border-2 transition-all cursor-pointer",
+                      "relative h-10 w-10 xs:h-12 xs:w-12 sm:h-14 sm:w-14 flex-shrink-0 overflow-hidden rounded-md border-2 transition-all cursor-pointer",
                       selectedImage === index
                         ? "border-primary shadow-soft"
                         : "border-border hover:border-primary/50"
@@ -863,7 +846,8 @@ const Product = () => {
                     <img
                       src={getImageUrl(image)}
                       alt={`${product.name} ${index + 1}`}
-                      className="h-full w-full object-cover"
+                      className="h-full w-full object-cover max-w-full"
+                      style={{ maxWidth: '100%' }}
                       onError={(e) => {
                         e.target.src = "https://via.placeholder.com/80";
                       }}
@@ -871,43 +855,43 @@ const Product = () => {
               </button>
                 ))
               ) : (
-                <div className="h-12 w-12 sm:h-14 sm:w-14 flex-shrink-0 rounded-md border-2 border-border bg-secondary flex items-center justify-center">
-                  <span className="text-xs text-muted-foreground">No images</span>
+                <div className="h-10 w-10 xs:h-12 xs:w-12 sm:h-14 sm:w-14 flex-shrink-0 rounded-md border-2 border-border bg-secondary flex items-center justify-center">
+                  <span className="text-[10px] xs:text-xs text-muted-foreground">No images</span>
             </div>
               )}
             </div>
           </div>
 
           {/* Product Info */}
-          <div className="space-y-4 sm:space-y-6">
-            <div>
-              <p className="text-xs sm:text-sm font-medium uppercase tracking-wider text-primary">
+          <div className="space-y-2 sm:space-y-3 lg:space-y-5 xl:space-y-6 w-full max-w-full sm:max-w-[200px] md:max-w-none overflow-hidden mx-auto sm:mx-auto md:mx-0 box-border" style={{ maxWidth: '100%', boxSizing: 'border-box' }}>
+            <div className="w-full max-w-full overflow-hidden">
+              <p className="text-[10px] xs:text-xs sm:text-sm font-medium uppercase tracking-wider text-primary">
                 {product.category}
               </p>
-              <div className="flex items-center justify-between gap-4 mt-1 sm:mt-2">
-                <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground lg:text-4xl">
-                  {product.name}
+              <div className="flex items-start justify-between gap-2 sm:gap-4 mt-0.5 sm:mt-1 lg:mt-2 w-full max-w-full">
+                <h1 className="font-display text-base xs:text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-foreground leading-tight flex-1 min-w-0 overflow-hidden">
+                  <span className="line-clamp-2 break-words">{product.name}</span>
                 </h1>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
                   <a
                     href="https://wa.me/917016925325"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[#25D366] hover:scale-110 transition-all duration-300 cursor-pointer"
+                    className="text-[#25D366] hover:scale-110 transition-all duration-300 cursor-pointer flex-shrink-0"
                     aria-label="WhatsApp"
                   >
-                    <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="currentColor" viewBox="0 0 24 24">
+                    <svg className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.372a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
                     </svg>
                   </a>
                   <Button
                     variant="outline"
                     size="icon"
-                    className={cn("flex-shrink-0 h-10 w-10 sm:h-12 sm:w-12", inWishlist && "border-primary text-primary")}
+                    className={cn("flex-shrink-0 h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12", inWishlist && "border-primary text-primary")}
                     onClick={handleWishlist}
                   >
                     <Heart
-                      className={cn("h-5 w-5 sm:h-6 sm:w-6", inWishlist && "fill-primary")}
+                      className={cn("h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6", inWishlist && "fill-primary")}
                     />
                   </Button>
                 </div>
@@ -943,55 +927,55 @@ const Product = () => {
             </div> */}
 
             {/* Price */}
-            <div className="flex flex-wrap items-baseline gap-2 sm:gap-3">
-              <span className="text-2xl sm:text-3xl font-bold text-foreground">
+            <div className="flex flex-wrap items-baseline gap-1.5 sm:gap-2 lg:gap-3 max-w-full">
+              <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">
                 ₹{product.price}
               </span>
               {(product.original || product.originalPrice) && (
-                <span className="text-lg sm:text-xl text-muted-foreground line-through">
+                <span className="text-base sm:text-lg lg:text-xl text-muted-foreground line-through">
                   ₹{product.original || product.originalPrice}
                 </span>
               )}
               {(product.original || product.originalPrice) && (
-                <span className="rounded-full bg-primary/10 px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium text-primary">
+                <span className="rounded-full bg-primary/10 px-1.5 sm:px-2 lg:px-3 py-0.5 sm:py-1 text-[10px] xs:text-xs sm:text-sm font-medium text-primary whitespace-nowrap">
                   {Math.round(((product.original || product.originalPrice) - product.price) / (product.original || product.originalPrice) * 100)}% OFF
                 </span>
               )}
             </div>
 
             {/* Description */}
-            <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">{product.description || "Premium quality product with elegant design."}</p>
+            <p className="text-xs sm:text-sm lg:text-base text-muted-foreground leading-relaxed max-w-full">{product.description || "Premium quality product with elegant design."}</p>
 
             {/* Why You Will Love This Product */}
-            <div className="mt-6 sm:mt-8 rounded-lg border border-border dark:border-white/15 bg-purple-soft/30 dark:bg-card/50 p-4 sm:p-6">
-              <h3 className="text-base sm:text-lg font-semibold text-foreground mb-4 sm:mb-6">
+            <div className="mt-2 sm:mt-4 lg:mt-6 rounded-lg border border-border dark:border-white/15 bg-purple-soft/30 dark:bg-card/50 p-1.5 sm:p-2 lg:p-5 xl:p-6 max-w-full box-border" style={{ boxSizing: 'border-box' }}>
+              <h3 className="text-xs sm:text-sm lg:text-base xl:text-lg font-semibold text-foreground mb-2 sm:mb-3 lg:mb-4 xl:mb-6">
                 Why You Will Love This Product:
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <div className="flex items-start gap-2 sm:gap-3">
-                  <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                  <p className="text-sm sm:text-base text-muted-foreground">Thick Long Lasting Fabric</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2 lg:gap-3 xl:gap-4">
+                <div className="flex items-start gap-1 sm:gap-1.5 lg:gap-2 xl:gap-3">
+                  <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-primary flex-shrink-0 mt-0.5" />
+                  <p className="text-[11px] xs:text-xs sm:text-sm lg:text-base text-muted-foreground">Thick Long Lasting Fabric</p>
                 </div>
-                <div className="flex items-start gap-2 sm:gap-3">
-                  <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                  <p className="text-sm sm:text-base text-muted-foreground">Long Lasting Print</p>
+                <div className="flex items-start gap-1 sm:gap-1.5 lg:gap-2 xl:gap-3">
+                  <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-primary flex-shrink-0 mt-0.5" />
+                  <p className="text-[11px] xs:text-xs sm:text-sm lg:text-base text-muted-foreground">Long Lasting Print</p>
                 </div>
-                <div className="flex items-start gap-2 sm:gap-3">
-                  <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                  <p className="text-sm sm:text-base text-muted-foreground">Oversized Street Fit</p>
+                <div className="flex items-start gap-1 sm:gap-1.5 lg:gap-2 xl:gap-3">
+                  <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-primary flex-shrink-0 mt-0.5" />
+                  <p className="text-[11px] xs:text-xs sm:text-sm lg:text-base text-muted-foreground">Oversized Street Fit</p>
                 </div>
-                <div className="flex items-start gap-2 sm:gap-3">
-                  <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                  <p className="text-sm sm:text-base text-muted-foreground">Printed Only After You Order</p>
+                <div className="flex items-start gap-1 sm:gap-1.5 lg:gap-2 xl:gap-3">
+                  <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-primary flex-shrink-0 mt-0.5" />
+                  <p className="text-[11px] xs:text-xs sm:text-sm lg:text-base text-muted-foreground">Printed Only After You Order</p>
                 </div>
               </div>
             </div>
 
             {/* Colors */}
             {productColors.length > 0 && (
-              <div className="space-y-2 sm:space-y-3">
-                <p className="font-medium text-sm sm:text-base text-foreground">Color</p>
-                <div className="flex gap-3 sm:gap-4 flex-wrap items-center">
+              <div className="space-y-2 sm:space-y-3 w-full max-w-full overflow-hidden">
+                <p className="font-medium text-xs sm:text-sm lg:text-base text-foreground">Color</p>
+                <div className="flex gap-2 sm:gap-3 lg:gap-4 flex-wrap items-center max-w-full">
                   {productColors.map((color, index) => {
                     const colorKey = color.name || color.hex || `color-${index}`;
                     // Use the hex from the formatted color object, with fallback to color name mapping
@@ -999,7 +983,7 @@ const Product = () => {
                     const isSelected = selectedColor === color.name || selectedColor === color.hex || selectedColor === colorKey;
                     console.log('Rendering color:', { name: color.name, hex: colorHex, color });
                     return (
-                      <div key={colorKey} className="flex flex-col items-center gap-2">
+                      <div key={colorKey} className="flex flex-col items-center gap-1.5 sm:gap-2">
                         <button
                           type="button"
                           onClick={() => {
@@ -1015,27 +999,25 @@ const Product = () => {
                           }}
                           className={cn(
                             "relative rounded-full border-2 transition-all hover:scale-110 shadow-md flex-shrink-0",
-                            "h-12 w-12",
+                            "h-10 w-10 xs:h-11 xs:w-11 sm:h-12 sm:w-12",
                             isSelected
-                              ? "border-primary ring-2 ring-primary ring-offset-2 ring-offset-background scale-110"
+                              ? "border-primary ring-1 sm:ring-2 ring-primary ring-offset-1 sm:ring-offset-2 ring-offset-background scale-110"
                               : "border-border hover:border-primary/50"
                           )}
                           style={{ 
                             backgroundColor: colorHex || '#000000',
-                            width: '48px',
-                            height: '48px',
-                            display: 'inline-block'
+                            maxWidth: '100%'
                           }}
                           title={color.name || `Color ${index + 1}`}
                         >
                           {isSelected && (
                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                              <div className="h-2.5 w-2.5 rounded-full bg-white shadow-sm"></div>
+                              <div className="h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full bg-white shadow-sm"></div>
                   </div>
                 )}
                         </button>
                         {color.name && (
-                          <span className="text-xs font-medium text-foreground">{color.name}</span>
+                          <span className="text-[10px] xs:text-xs font-medium text-foreground text-center break-words max-w-[60px] sm:max-w-none">{color.name}</span>
                         )}
                       </div>
                     );
@@ -1050,13 +1032,13 @@ const Product = () => {
                 )}
 
             {/* Sizes */}
-            <div className="space-y-2 sm:space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="font-medium text-sm sm:text-base text-foreground">Size</p>
+            <div className="space-y-2 sm:space-y-3 w-full max-w-full overflow-hidden">
+              <div className="flex items-center justify-between gap-2 max-w-full">
+                <p className="font-medium text-xs sm:text-sm lg:text-base text-foreground">Size</p>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-xs sm:text-sm text-primary hover:text-primary/80 h-auto py-1 px-2"
+                  className="text-[10px] xs:text-xs sm:text-sm text-primary hover:text-primary/80 h-auto py-0.5 sm:py-1 px-1.5 sm:px-2 flex-shrink-0"
                   onClick={async () => {
                     setShowSizeChart(true);
                     if (!sizeChartData && product?.category) {
@@ -1077,11 +1059,12 @@ const Product = () => {
                     }
                   }}
                 >
-                  <Ruler className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                  Size Chart
+                  <Ruler className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" />
+                  <span className="hidden xs:inline">Size Chart</span>
+                  <span className="xs:hidden">Chart</span>
                 </Button>
               </div>
-              <div className="flex flex-wrap gap-2 sm:gap-3">
+              <div className="flex flex-wrap gap-1.5 sm:gap-2 lg:gap-3 max-w-full">
                 {productSizes.map((size) => {
                   // Clean the size value for display (remove brackets, quotes, and backslashes)
                   const cleanSize = String(size).replace(/[\[\]"]/g, '').replace(/\\/g, '').trim();
@@ -1090,7 +1073,7 @@ const Product = () => {
                       key={size}
                       onClick={() => setSelectedSize(cleanSize)}
                       className={cn(
-                        "flex h-10 sm:h-12 min-w-[50px] sm:min-w-[60px] px-3 sm:px-4 items-center justify-center rounded-lg border-2 text-xs sm:text-sm font-medium transition-all",
+                        "flex h-9 xs:h-10 sm:h-12 min-w-[45px] xs:min-w-[50px] sm:min-w-[60px] px-2 xs:px-2.5 sm:px-3 lg:px-4 items-center justify-center rounded-lg border-2 text-[11px] xs:text-xs sm:text-sm font-medium transition-all flex-shrink-0",
                         selectedSize === cleanSize || selectedSize === size
                           ? "border-primary bg-primary text-primary-foreground"
                           : "border-border text-foreground hover:border-primary"
@@ -1104,82 +1087,82 @@ const Product = () => {
             </div>
 
             {/* Quantity */}
-            <div className="space-y-2 sm:space-y-3">
-              <p className="font-medium text-sm sm:text-base text-foreground">Quantity</p>
-              <div className="flex items-center gap-3 sm:gap-4">
+            <div className="space-y-1.5 sm:space-y-2 lg:space-y-3 w-full max-w-full overflow-hidden">
+              <p className="font-medium text-xs sm:text-sm lg:text-base text-foreground">Quantity</p>
+              <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-3 xl:gap-4">
                 <div className="flex items-center rounded-lg border border-border">
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-9 w-9 sm:h-10 sm:w-10"
+                    className="h-7 w-7 xs:h-8 xs:w-8 sm:h-9 sm:w-9 lg:h-10 lg:w-10"
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
                     disabled={quantity <= 1}
                   >
-                    <Minus className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <Minus className="h-2.5 w-2.5 xs:h-3 xs:w-3 sm:h-3.5 sm:w-3.5 lg:h-4 lg:w-4" />
                   </Button>
-                  <span className="w-10 sm:w-12 text-center text-sm sm:text-base font-medium">{quantity}</span>
+                  <span className="w-7 xs:w-8 sm:w-10 lg:w-12 text-center text-xs xs:text-sm sm:text-base font-medium">{quantity}</span>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-9 w-9 sm:h-10 sm:w-10"
+                    className="h-7 w-7 xs:h-8 xs:w-8 sm:h-9 sm:w-9 lg:h-10 lg:w-10"
                     onClick={() => setQuantity(quantity + 1)}
                   >
-                    <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <Plus className="h-2.5 w-2.5 xs:h-3 xs:w-3 sm:h-3.5 sm:w-3.5 lg:h-4 lg:w-4" />
               </Button>
                 </div>
               </div>
             </div>
 
             {/* Actions */}
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4">
+            <div className="flex flex-col sm:flex-row gap-1 sm:gap-2 lg:gap-3 xl:gap-4 pt-2 sm:pt-3 lg:pt-4 w-full max-w-full">
               <Button
                 size="lg"
-                className="flex-1 gap-2 shadow-soft hover:shadow-elevated text-sm sm:text-base h-12 sm:h-auto py-3 sm:py-0"
+                className="flex-1 gap-0.5 sm:gap-1.5 lg:gap-2 shadow-soft hover:shadow-elevated text-[9px] xs:text-[10px] sm:text-sm lg:text-base h-8 sm:h-10 lg:h-12 xl:h-auto py-1 sm:py-2 lg:py-3 xl:py-0 w-full max-w-full px-1 sm:px-2"
                 onClick={handleAddToCart}
               >
-                <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5" />
-                Add to Cart
+                <ShoppingBag className="h-2.5 w-2.5 xs:h-3 xs:w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
+                <span className="whitespace-nowrap text-[9px] xs:text-[10px]">Add to Cart</span>
               </Button>
               <Button
                 size="lg"
-                className="flex-1 gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-soft hover:shadow-elevated text-sm sm:text-base h-12 sm:h-auto py-3 sm:py-0"
+                className="flex-1 gap-0.5 sm:gap-1.5 lg:gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-soft hover:shadow-elevated text-[9px] xs:text-[10px] sm:text-sm lg:text-base h-8 sm:h-10 lg:h-12 xl:h-auto py-1 sm:py-2 lg:py-3 xl:py-0 w-full max-w-full px-1 sm:px-2"
                 onClick={handleBuyNow}
               >
-                <Zap className="h-4 w-4 sm:h-5 sm:w-5" />
-                Buy Now
+                <Zap className="h-2.5 w-2.5 xs:h-3 xs:w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
+                <span className="whitespace-nowrap text-[9px] xs:text-[10px]">Buy Now</span>
               </Button>
             </div>
 
             {/* Shipping Info */}
-            <div className="space-y-3 rounded-lg bg-accent/50 p-3 sm:p-4">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <Truck className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
-                <div className="flex-1 min-w-0">
+            <div className="space-y-1.5 sm:space-y-2 lg:space-y-3 rounded-lg bg-accent/50 p-1.5 sm:p-2 lg:p-4 max-w-full box-border" style={{ boxSizing: 'border-box' }}>
+              <div className="flex items-start gap-1.5 sm:gap-2 lg:gap-3">
+                <Truck className="h-3.5 w-3.5 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-primary flex-shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0 max-w-full">
                   {pincodeChecked && detectedLocation ? (
                     <>
-                      <p className="font-medium text-sm sm:text-base text-foreground">Free Shipping to {detectedLocation}</p>
-                      <p className="text-xs sm:text-sm text-muted-foreground">
+                      <p className="font-medium text-xs sm:text-sm lg:text-base text-foreground">Free Shipping to {detectedLocation}</p>
+                      <p className="text-[10px] xs:text-xs sm:text-sm text-muted-foreground mt-0.5">
                         Estimated delivery:  Shipped within 3-5 days and delivered within 7-10 days
                       </p>
                     </>
                   ) : pincodeChecked && !detectedLocation ? (
                     <>
-                      <p className="font-medium text-sm sm:text-base text-foreground">Delivery Not Available</p>
-                      <p className="text-xs sm:text-sm text-muted-foreground">
+                      <p className="font-medium text-xs sm:text-sm lg:text-base text-foreground">Delivery Not Available</p>
+                      <p className="text-[10px] xs:text-xs sm:text-sm text-muted-foreground mt-0.5">
                         Currently not delivering to your area
                       </p>
                     </>
                   ) : (
                     <>
-                      <p className="font-medium text-sm sm:text-base text-foreground">Check Delivery</p>
-                      <p className="text-xs sm:text-sm text-muted-foreground">
+                      <p className="font-medium text-xs sm:text-sm lg:text-base text-foreground">Check Delivery</p>
+                      <p className="text-[10px] xs:text-xs sm:text-sm text-muted-foreground mt-0.5">
                         Enter your pincode to check delivery availability
                       </p>
                     </>
                   )}
                 </div>
               </div>
-              <form onSubmit={handlePincodeSubmit} className="flex flex-col sm:flex-row gap-2">
+              <form onSubmit={handlePincodeSubmit} className="flex flex-col sm:flex-row gap-1.5 sm:gap-2 w-full max-w-full">
                 <Input
                   type="text"
                   placeholder="Enter pincode"
@@ -1190,11 +1173,12 @@ const Product = () => {
                     setPincodeChecked(false);
                     setDetectedLocation(null);
                   }}
-                  className="flex-1 text-sm sm:text-base"
+                  className="flex-1 text-xs sm:text-sm lg:text-base h-8 sm:h-9 lg:h-10 w-full min-w-0"
+                  style={{ maxWidth: '100%' }}
                   maxLength={6}
                   disabled={checkingPincode}
                 />
-                <Button type="submit" size="default" className="px-4 sm:px-6 text-sm sm:text-base whitespace-nowrap" disabled={checkingPincode || pincode.length !== 6}>
+                <Button type="submit" size="default" className="px-2.5 sm:px-3 lg:px-4 xl:px-6 text-xs sm:text-sm lg:text-base whitespace-nowrap h-8 sm:h-9 lg:h-10 flex-shrink-0" disabled={checkingPincode || pincode.length !== 6}>
                   {checkingPincode ? "Checking..." : "Check"}
                 </Button>
               </form>
@@ -1203,32 +1187,33 @@ const Product = () => {
         </div>
 
         {/* Ratings and Reviews */}
-        <section className="mt-32 sm:mt-52 lg:mt-72">
-          <div className="max-w-4xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="font-display text-xl sm:text-2xl font-black text-foreground">
+        <section className="mt-6 sm:mt-8 lg:mt-12 xl:mt-16 w-full max-w-full overflow-hidden">
+          <div className="mx-auto px-1 sm:px-0 md:px-4 lg:px-6 xl:px-8 w-full max-w-full sm:max-w-[200px] md:max-w-4xl">
+          <div className="mb-4 sm:mb-6 lg:mb-8">
+            <div className="flex flex-col xs:flex-row items-start xs:items-center justify-between gap-3 xs:gap-4 mb-4 sm:mb-6">
+              <h2 className="font-display text-lg sm:text-xl lg:text-2xl font-black text-foreground">
                 Ratings & <span className="text-gradient">Reviews</span>
               </h2>
               {isAuthenticated && (
                 <Dialog open={showAddReview} onOpenChange={setShowAddReview}>
                   <DialogTrigger asChild>
-                    <Button className="gap-2">
-                      <Star className="h-4 w-4" />
-                      Add Review
+                    <Button className="gap-1.5 sm:gap-2 text-xs sm:text-sm h-8 sm:h-10 px-3 sm:px-4">
+                      <Star className="h-3 w-3 sm:h-4 sm:w-4" />
+                      <span className="hidden xs:inline">Add Review</span>
+                      <span className="xs:hidden">Review</span>
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto mx-2 sm:mx-4">
                     <DialogHeader>
-                      <DialogTitle>Write a Review</DialogTitle>
-                      <DialogDescription>
+                      <DialogTitle className="text-base sm:text-lg">Write a Review</DialogTitle>
+                      <DialogDescription className="text-xs sm:text-sm">
                         Share your experience with this product
                       </DialogDescription>
                     </DialogHeader>
-                    <div className="space-y-4 py-4">
+                    <div className="space-y-3 sm:space-y-4 py-2 sm:py-4">
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">Rating</label>
-                        <div className="flex items-center gap-2">
+                        <label className="text-xs sm:text-sm font-medium">Rating</label>
+                        <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
                           {[1, 2, 3, 4, 5].map((rating) => (
                             <button
                               key={rating}
@@ -1238,7 +1223,7 @@ const Product = () => {
                             >
                               <Star
                                 className={cn(
-                                  "h-8 w-8 transition-colors cursor-pointer",
+                                  "h-6 w-6 sm:h-8 sm:w-8 transition-colors cursor-pointer",
                                   rating <= newReview.rating
                                     ? "fill-primary text-primary"
                                     : "fill-muted text-muted"
@@ -1246,7 +1231,7 @@ const Product = () => {
                               />
                             </button>
                           ))}
-                          <span className="ml-2 text-sm text-muted-foreground">
+                          <span className="ml-1 sm:ml-2 text-xs sm:text-sm text-muted-foreground">
                             {newReview.rating} out of 5
                           </span>
                         </div>
@@ -1408,40 +1393,40 @@ const Product = () => {
               const recentReviews = reviews.slice(0, 3);
               
               return (
-                <div className="flex flex-col md:flex-row gap-8">
+                <div className="flex flex-col md:flex-row gap-4 sm:gap-6 lg:gap-8">
                   {/* Rating Summary */}
-                  <div className="space-y-6 rounded-lg border border-border bg-card p-4 sm:p-6 w-full md:w-64 md:max-w-64 flex-shrink-0">
-                    <div className="flex items-center gap-4">
+                  <div className="space-y-4 sm:space-y-6 rounded-lg border border-border bg-card p-3 sm:p-4 lg:p-6 w-full md:w-64 md:max-w-64 flex-shrink-0">
+                    <div className="flex items-center justify-center md:justify-start gap-4">
                       <div className="text-center">
-                        <div className="text-4xl font-black text-foreground">{avgRating}</div>
-                        <div className="flex items-center gap-1 mt-1">
+                        <div className="text-3xl sm:text-4xl font-black text-foreground">{avgRating}</div>
+                        <div className="flex items-center justify-center gap-1 mt-1">
                           {[1, 2, 3, 4, 5].map((i) => (
                             <Star
                               key={i}
                               className={cn(
-                                "h-4 w-4",
+                                "h-3 w-3 sm:h-4 sm:w-4",
                                 i <= parseFloat(avgRating) ? "fill-primary text-primary" : "fill-muted text-muted"
                               )}
                             />
                           ))}
                         </div>
-                        <p className="text-sm text-muted-foreground mt-2">{reviews.length} review{reviews.length !== 1 ? 's' : ''}</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground mt-2">{reviews.length} review{reviews.length !== 1 ? 's' : ''}</p>
                       </div>
                     </div>
                     
                     {/* Rating Breakdown */}
-                    <div className="space-y-2">
+                    <div className="space-y-1.5 sm:space-y-2">
                       {ratingCounts.map(({ rating, percentage }) => (
-                        <div key={rating} className="flex items-center gap-3">
-                          <span className="text-sm font-medium text-foreground w-8">{rating}</span>
-                          <Star className="h-4 w-4 fill-primary text-primary" />
-                          <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                        <div key={rating} className="flex items-center gap-2 sm:gap-3">
+                          <span className="text-xs sm:text-sm font-medium text-foreground w-6 sm:w-8">{rating}</span>
+                          <Star className="h-3 w-3 sm:h-4 sm:w-4 fill-primary text-primary" />
+                          <div className="flex-1 h-1.5 sm:h-2 bg-muted rounded-full overflow-hidden">
                             <div
                               className="h-full bg-primary rounded-full transition-all"
                               style={{ width: `${percentage}%` }}
                             />
                           </div>
-                          <span className="text-sm text-muted-foreground w-10 text-right">
+                          <span className="text-xs sm:text-sm text-muted-foreground w-8 sm:w-10 text-right">
                             {percentage}%
                           </span>
                         </div>
@@ -1450,33 +1435,33 @@ const Product = () => {
                   </div>
 
                   {/* Recent Reviews */}
-                  <div className="space-y-6 flex-1">
-                    <h3 className="text-lg font-semibold text-foreground">Recent Reviews</h3>
+                  <div className="space-y-4 sm:space-y-6 flex-1">
+                    <h3 className="text-base sm:text-lg font-semibold text-foreground">Recent Reviews</h3>
                     
                     {recentReviews.length > 0 ? (
                       <>
                         {recentReviews.map((review) => (
-                          <div key={review.id} className="space-y-3 rounded-lg border border-border bg-card p-4">
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <p className="font-semibold text-foreground">{review.userName}</p>
+                          <div key={review.id} className="space-y-2 sm:space-y-3 rounded-lg border border-border bg-card p-3 sm:p-4">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-sm sm:text-base text-foreground truncate">{review.userName}</p>
                                 {review.verified && (
-                                  <p className="text-xs text-muted-foreground">Verified Purchase</p>
+                                  <p className="text-[10px] xs:text-xs text-muted-foreground">Verified Purchase</p>
                                 )}
                               </div>
-                              <div className="flex items-center gap-1">
+                              <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
                                 {[1, 2, 3, 4, 5].map((i) => (
                                   <Star
                                     key={i}
                                     className={cn(
-                                      "h-3 w-3",
+                                      "h-2.5 w-2.5 sm:h-3 sm:w-3",
                                       i <= review.rating ? "fill-primary text-primary" : "fill-muted text-muted"
                                     )}
                                   />
                                 ))}
                               </div>
                             </div>
-                            <p className="text-sm text-foreground">{review.comment}</p>
+                            <p className="text-xs sm:text-sm text-foreground break-words">{review.comment}</p>
                             {review.attachments && review.attachments.length > 0 && (
                               <div className="flex flex-wrap gap-2 mt-2">
                                 {review.attachments.map((attachment, idx) => (
@@ -1639,14 +1624,15 @@ const Product = () => {
 
         {/* Related Products */}
         {related.length > 0 && (
-          <section className="mt-12 sm:mt-16">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 sm:mb-8">
-              <h2 className="font-display text-xl sm:text-2xl font-black text-foreground">
+          <section className="mt-6 sm:mt-8 lg:mt-12 xl:mt-16 w-full max-w-full overflow-hidden">
+            <div className="mx-auto px-1 sm:px-0 md:px-4 lg:px-6 xl:px-8 w-full max-w-full sm:max-w-[200px] md:max-w-none">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mb-3 sm:mb-4 lg:mb-6 max-w-full">
+              <h2 className="font-display text-lg sm:text-xl lg:text-2xl font-black text-foreground">
                 Related <span className="text-gradient">Products</span>
               </h2>
               <Button
                 variant="ghost"
-                className="text-primary hover:text-primary/80 text-sm sm:text-base"
+                className="text-primary hover:text-primary/80 text-xs sm:text-sm lg:text-base h-8 sm:h-10 px-3 sm:px-4"
                 onClick={() => {
                   const categoryMap = {
                     'Hoodie': 'hoodies',
@@ -1658,63 +1644,64 @@ const Product = () => {
                 }}
               >
                 View All
-            </Button>
-          </div>
-            {/* Mobile: Carousel (one at a time) */}
-            <div className="block md:hidden">
-              <Carousel
-                opts={{
-                  align: "start",
-                  loop: false,
-                }}
-                className="w-full"
-              >
-                <CarouselContent>
-                  {related.map((item, index) => (
-                    <CarouselItem key={item.id} className="basis-full">
-                      <div className="animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
-                        <ProductCard
-                          id={item.id}
-                          name={item.name}
-                          category={item.category}
-                          price={item.price}
-                          originalPrice={item.original || item.originalPrice}
-                          image={getImageUrl(Array.isArray(item.gallery) ? item.gallery[0] : item.gallery || item.image)}
-                          rating={4.8}
-                        />
-                      </div>
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-                <CarouselPrevious />
-                <CarouselNext />
-              </Carousel>
-            </div>
-            {/* Desktop: Grid (3 items side by side) */}
-            <div className="hidden md:flex md:flex-row md:justify-center md:items-start" style={{ gap: '64px', alignItems: 'stretch' }}>
-              {related.map((item, index) => (
-                <div
-                  key={item.id}
-                  className="animate-fade-in flex-shrink-0"
-                  style={{ 
-                    animationDelay: `${index * 0.1}s`,
-                    width: '320px',
-                    minWidth: '320px',
-                    maxWidth: '320px',
-                    display: 'flex'
+              </Button>
+              </div>
+              {/* Mobile: Carousel (one at a time) */}
+              <div className="block md:hidden">
+                <Carousel
+                  opts={{
+                    align: "start",
+                    loop: false,
                   }}
+                  className="w-full"
                 >
-                  <ProductCard
-                    id={item.id}
-                    name={item.name}
-                    category={item.category}
-                    price={item.price}
-                    originalPrice={item.original || item.originalPrice}
-                    image={getImageUrl(Array.isArray(item.gallery) ? item.gallery[0] : item.gallery || item.image)}
-                    rating={4.8}
-                  />
-                </div>
-              ))}
+                  <CarouselContent>
+                    {related.map((item, index) => (
+                      <CarouselItem key={item.id} className="basis-full">
+                        <div className="animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
+                          <ProductCard
+                            id={item.id}
+                            name={item.name}
+                            category={item.category}
+                            price={item.price}
+                            originalPrice={item.original || item.originalPrice}
+                            image={getImageUrl(Array.isArray(item.gallery) ? item.gallery[0] : item.gallery || item.image)}
+                            rating={4.8}
+                          />
+                        </div>
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                  <CarouselPrevious />
+                  <CarouselNext />
+                </Carousel>
+              </div>
+              {/* Desktop: Grid (3 items side by side) */}
+              <div className="hidden md:flex md:flex-row md:justify-center md:items-start px-2 sm:px-0" style={{ gap: '32px', alignItems: 'stretch' }}>
+                {related.map((item, index) => (
+                  <div
+                    key={item.id}
+                    className="animate-fade-in flex-shrink-0"
+                    style={{ 
+                      animationDelay: `${index * 0.1}s`,
+                      width: '280px',
+                      minWidth: '280px',
+                      maxWidth: '280px',
+                      display: 'flex'
+                    }}
+                  >
+                    <ProductCard
+                      id={item.id}
+                      name={item.name}
+                      category={item.category}
+                      price={item.price}
+                      originalPrice={item.original || item.originalPrice}
+                      image={getImageUrl(Array.isArray(item.gallery) ? item.gallery[0] : item.gallery || item.image)}
+                      rating={4.8}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
           </section>
         )}

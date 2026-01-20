@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState, useMemo } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { CheckCircle2, PhoneCall, UploadCloud, HeartHandshake, Truck, ArrowRight, Leaf, Sparkles, Zap, Award, Shield, Star, Instagram, Mail, Facebook } from "lucide-react";
 import { HeroSection } from "@/components/HeroSection";
-import Header from "@/components/Header";
 import ProductCard from "@/components/ProductCard";
 import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import { Button } from "@/components/ui/button";
@@ -36,16 +35,32 @@ const customizationSteps = [
 
 const Home = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { isAuthenticated, user } = useAuth();
   const { items: wishlistItems } = useWishlist();
   const [allProducts, setAllProducts] = useState([]);
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isLargeScreen, setIsLargeScreen] = useState(false);
+
+  const filterParam = searchParams.get('filter'); // new, hot, or top
+
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsLargeScreen(window.innerWidth >= 1024); // lg breakpoint
+    };
+    
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const productsResponse = await productsAPI.getAll();
+        // If filter is present, pass it to API
+        const params = filterParam ? { filter: filterParam } : {};
+        const productsResponse = await productsAPI.getAll(params);
         setAllProducts(productsResponse.products || []);
       } catch (error) {
         console.error('Error loading products:', error);
@@ -55,7 +70,7 @@ const Home = () => {
       }
     };
     loadData();
-  }, []);
+  }, [filterParam]);
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -83,7 +98,6 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-purple-soft/40 dark:bg-background">
-      <Header />
       <main className="container mx-auto px-4 lg:px-8 py-2 sm:py-4 lg:py-6 space-y-8 sm:space-y-8 lg:space-y-16">
         <HeroSection />
 
@@ -135,14 +149,14 @@ const Home = () => {
                   </div>
                   {loading ? (
                     // Show skeleton placeholders
-                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                      {[1, 2, 3].map((i) => (
+                    <div className="grid gap-6 grid-cols-2 lg:grid-cols-3">
+                      {[1, 2, 3, 4].slice(0, isLargeScreen ? 3 : 4).map((i) => (
                         <ProductCardSkeleton key={i} />
                       ))}
                     </div>
                   ) : (
-                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                      {typeProducts.slice(0, 3).map((product) => (
+                    <div className="grid gap-6 grid-cols-2 lg:grid-cols-3">
+                      {typeProducts.slice(0, isLargeScreen ? 3 : 4).map((product) => (
                         <ProductCard
                           key={product._id || product.id}
                           id={product._id || product.id}

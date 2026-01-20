@@ -3,7 +3,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Package, CheckCircle2, Clock, Truck, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import Header from "@/components/Header";
 import { useAuth } from "@/contexts/auth-context";
 import { ordersAPI } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
@@ -135,10 +134,7 @@ const Tracking = () => {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(124,90,255,0.12),_transparent_60%)]">
-      <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-6">
-        <Header />
-      </div>
-      <div className="px-4 sm:px-6 lg:px-16 max-w-4xl mx-auto">
+      <div className="px-4 sm:px-6 lg:px-16 max-w-4xl mx-auto pt-6">
         <Button
           variant="ghost"
           onClick={() => navigate("/orders")}

@@ -26,6 +26,7 @@ import ProductManagement from './pages/ProductManagement';
 import ErrorBoundary from './components/ErrorBoundary';
 import ScrollToTop from './components/ScrollToTop';
 import PromoBanner from './components/PromoBanner';
+import { AppLayout } from './components/AppLayout';
 
 const queryClient = new QueryClient();
 
@@ -42,26 +43,28 @@ const App = () => (
                 <BrowserRouter>
                 <ScrollToTop />
                 <PromoBanner />
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/product/:slug" element={<Product />} />
-                  <Route path="/category/:category" element={<Category />} />
-                  <Route path="/cart" element={<Cart />} />
-                  <Route path="/checkout" element={<Checkout />} />
-                  <Route path="/payment" element={<Payment />} />
-                  <Route path="/wishlist" element={<Wishlist />} />
-                  <Route path="/auth" element={<Auth />} />
-                  <Route path="/reset-password" element={<ResetPassword />} />
-                  <Route path="/account" element={<Account />} />
-                  <Route path="/orders" element={<Orders />} />
-                  <Route path="/orders/:orderId" element={<Orders />} />
-                  <Route path="/tracking/:orderId" element={<Tracking />} />
-                  <Route path="/admin" element={<Admin />} />
-                  <Route path="/admin/orders/:orderId" element={<OrderManagement />} />
-                  {/* All product routes use the same component, it handles 'new' vs ID internally */}
-                  <Route path="/admin/products/:productId" element={<ProductManagement />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
+                <AppLayout>
+                  <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/product/:slug" element={<Product />} />
+                    <Route path="/category/:category" element={<Category />} />
+                    <Route path="/cart" element={<Cart />} />
+                    <Route path="/checkout" element={<Checkout />} />
+                    <Route path="/payment" element={<Payment />} />
+                    <Route path="/wishlist" element={<Wishlist />} />
+                    <Route path="/auth" element={<Auth />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
+                    <Route path="/account" element={<Account />} />
+                    <Route path="/orders" element={<Orders />} />
+                    <Route path="/orders/:orderId" element={<Orders />} />
+                    <Route path="/tracking/:orderId" element={<Tracking />} />
+                    <Route path="/admin" element={<Admin />} />
+                    <Route path="/admin/orders/:orderId" element={<OrderManagement />} />
+                    {/* All product routes use the same component, it handles 'new' vs ID internally */}
+                    <Route path="/admin/products/:productId" element={<ProductManagement />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </AppLayout>
                 </BrowserRouter>
               </WishlistProvider>
             </CartProvider>

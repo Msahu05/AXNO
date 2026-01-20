@@ -9,7 +9,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import Header from "@/components/Header";
 import ProductCard from "@/components/ProductCard";
 import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import { productsAPI, getImageUrl } from "@/lib/api";
@@ -125,23 +124,11 @@ const Category = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [currentPage]);
 
-  const requireAuth = (destination) => {
-    if (isAuthenticated) {
-      navigate(destination);
-    } else {
-      navigate(`/auth?redirect=${encodeURIComponent(destination)}`);
-    }
-  };
-
   const handleWishlistNav = () => {
-    requireAuth("/wishlist");
+    navigate("/wishlist");
   };
 
   const handleAddToWishlist = (productId) => {
-    if (!isAuthenticated) {
-      navigate(`/auth?redirect=${encodeURIComponent(`/category/${category}`)}`);
-      return;
-    }
     const product = allProducts.find((p) => p.id === productId);
     if (product && !isInWishlist(productId)) {
       addToWishlist({
@@ -166,9 +153,6 @@ const Category = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white via-[#f8f7ff] to-white dark:from-[#0f0a1a] dark:via-[#1a1526] dark:to-[#0f0a1a]">
-      <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-2">
-        <Header />
-      </div>
       <div className="px-4 sm:px-6 py-10">
         <div className="mx-auto max-w-7xl space-y-8">
         <div className="flex items-center gap-4 flex-wrap">
@@ -223,7 +207,7 @@ const Category = () => {
 
         {loading ? (
           // Show skeleton placeholders
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid gap-6 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
               <ProductCardSkeleton key={i} />
             ))}
@@ -234,7 +218,7 @@ const Category = () => {
           </div>
         ) : (
           <>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid gap-6 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {paginatedProducts.map((product) => (
                 <ProductCard
                   key={product.id}
@@ -246,7 +230,7 @@ const Category = () => {
                   image={getImageUrl(Array.isArray(product.gallery) ? product.gallery[0] : product.gallery)}
                   accent={product.accent}
                   onView={() => navigate(`/product/${product.id}`)}
-                  onAdd={() => requireAuth(`/product/${product.id}`)}
+                  onAdd={() => {}}
                   onWishlist={() => handleAddToWishlist(product.id)}
                 />
               ))}

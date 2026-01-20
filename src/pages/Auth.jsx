@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, Loader2, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import Header from "@/components/Header";
 import { useAuth } from "@/contexts/auth-context";
 import { toast } from "@/hooks/use-toast";
 import { authAPI, userAPI } from "@/lib/api";
@@ -364,9 +363,6 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen bg-background width:1480px">
-      <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-2 width:1480px">
-        <Header />
-      </div>
       <div className="flex items-center justify-center px-4 py-8 sm:py-12 width:1480px">
         <div className="w-full  auth-card" style={{width:"1480px"}}>
           <button 

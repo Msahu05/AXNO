@@ -39,11 +39,6 @@ export function ProductCard({
     e.preventDefault();
     e.stopPropagation();
     
-    if (!isAuthenticated) {
-      navigate(`/auth?redirect=${encodeURIComponent(productUrl)}`);
-      return;
-    }
-    
     // Add with default size 'M' - user can change on product page
     addToCart({
       id,
@@ -64,11 +59,6 @@ export function ProductCard({
   const handleBuyNow = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    
-    if (!isAuthenticated) {
-      navigate(`/auth?redirect=${encodeURIComponent(productUrl)}`);
-      return;
-    }
     
     // Don't add to cart - buy now is separate
     const buyNowProduct = {
@@ -96,14 +86,15 @@ export function ProductCard({
   return (
     <Link
       to={productUrl}
-      className="group block h-full overflow-hidden rounded-lg bg-card shadow-soft transition-all duration-300 hover:shadow-elevated flex flex-col"
+      className="group block h-full w-full max-w-full overflow-hidden rounded-lg bg-card shadow-soft transition-all duration-300 hover:shadow-elevated flex flex-col"
+      style={{ maxWidth: '100%' }}
     >
-      <div className="relative w-full overflow-hidden bg-secondary" style={{ aspectRatio: '1 / 1', position: 'relative' }}>
+      <div className="relative w-full max-w-full overflow-hidden bg-secondary" style={{ aspectRatio: '1 / 1', position: 'relative', maxWidth: '100%' }}>
         <img
           src={image}
           alt={name}
           className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
-          style={{ objectFit: 'cover' }}
+          style={{ objectFit: 'cover', maxWidth: '100%' }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
         
@@ -141,7 +132,7 @@ export function ProductCard({
         )}
       </div>
 
-      <div className="p-4 flex flex-col flex-grow" style={{ minHeight: '180px' }}>
+      <div className="p-4 flex flex-col flex-grow w-full max-w-full overflow-hidden" style={{ minHeight: '180px', maxWidth: '100%' }}>
         <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
           {category}
         </p>
@@ -157,23 +148,25 @@ export function ProductCard({
         </div>
 
         {/* Buy Now and Add to Cart Buttons */}
-        <div className="mt-auto pt-3 flex gap-2">
+        <div className="mt-auto pt-2 sm:pt-3 flex gap-1 sm:gap-2 w-full max-w-full">
           <Button
             onClick={handleBuyNow}
-            className="flex-1 gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
-            size="sm"
+            className="flex-1 gap-0.5 bg-primary hover:bg-primary/90 text-primary-foreground h-7 text-[9px] px-1 sm:h-8 sm:text-xs sm:px-2 lg:h-9 lg:text-sm lg:px-3 w-full max-w-full"
+            style={{ maxWidth: '100%' }}
           >
-            <ShoppingBag className="h-4 w-4" />
-            Buy Now
+            <ShoppingBag className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+            <span className="hidden sm:inline">Buy Now</span>
+            <span className="sm:hidden text-[9px]">Buy</span>
           </Button>
           <Button
             onClick={handleAddToCart}
             variant="outline"
-            className="flex-1 gap-2 border-primary text-primary hover:bg-primary/10"
-            size="sm"
+            className="flex-1 gap-0.5 border-primary text-primary hover:bg-primary/10 h-7 text-[9px] px-1 sm:h-8 sm:text-xs sm:px-2 lg:h-9 lg:text-sm lg:px-3 w-full max-w-full"
+            style={{ maxWidth: '100%' }}
           >
-            <ShoppingCart className="h-4 w-4" />
-            Add to Cart
+            <ShoppingCart className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+            <span className="hidden sm:inline">Add to Cart</span>
+            <span className="sm:hidden text-[9px]">Cart</span>
           </Button>
         </div>
       </div>

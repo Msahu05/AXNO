@@ -27,7 +27,11 @@ const NewProductForm = ({ navigate }) => {
     stock: 0,
     isActive: true,
     tags: [],
-    colorOptions: []
+    colorOptions: [],
+    isHotProduct: false,
+    isNewArrival: false,
+    isTopProduct: false,
+    isCustomisedProduct: false
   });
   
   const [galleryFiles, setGalleryFiles] = useState([]);
@@ -576,6 +580,48 @@ const NewProductForm = ({ navigate }) => {
                       <option value="false">Inactive</option>
                     </select>
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Product Categories</label>
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.isNewArrival || false}
+                          onChange={(e) => setFormData({ ...formData, isNewArrival: e.target.checked })}
+                          className="w-4 h-4 rounded border-gray-300"
+                        />
+                        <span>New Arrivals</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.isHotProduct || false}
+                          onChange={(e) => setFormData({ ...formData, isHotProduct: e.target.checked })}
+                          className="w-4 h-4 rounded border-gray-300"
+                        />
+                        <span>Hot Products</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.isTopProduct || false}
+                          onChange={(e) => setFormData({ ...formData, isTopProduct: e.target.checked })}
+                          className="w-4 h-4 rounded border-gray-300"
+                        />
+                        <span>Top Products</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.isCustomisedProduct || false}
+                          onChange={(e) => setFormData({ ...formData, isCustomisedProduct: e.target.checked })}
+                          className="w-4 h-4 rounded border-gray-300"
+                        />
+                        <span>Customised Product</span>
+                      </label>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">You can select multiple categories</p>
+                  </div>
                   <div className="text-xs text-muted-foreground">
                     * Required fields must be filled
                   </div>
@@ -632,7 +678,11 @@ const ProductManagement = () => {
     stock: 0,
     isActive: true,
     tags: [],
-    colorOptions: []
+    colorOptions: [],
+    isHotProduct: false,
+    isNewArrival: false,
+    isTopProduct: false,
+    isCustomisedProduct: false
   });
   
   const [galleryFiles, setGalleryFiles] = useState([]);
@@ -688,7 +738,11 @@ const ProductManagement = () => {
         stock: productData.stock || 0,
         isActive: productData.isActive !== undefined ? productData.isActive : true,
         tags: productData.tags || [],
-        colorOptions: productData.colorOptions || []
+        colorOptions: productData.colorOptions || [],
+        isHotProduct: productData.isHotProduct || false,
+        isNewArrival: productData.isNewArrival || false,
+        isTopProduct: productData.isTopProduct || false,
+        isCustomisedProduct: productData.isCustomisedProduct || false
       });
       if (productData.gallery && productData.gallery.length > 0) {
         // Store original gallery data URLs (they contain base64 data)
@@ -1253,6 +1307,48 @@ const ProductManagement = () => {
                       <option value="true">Active</option>
                       <option value="false">Inactive</option>
                     </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Product Categories</label>
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.isNewArrival || false}
+                          onChange={(e) => setFormData({ ...formData, isNewArrival: e.target.checked })}
+                          className="w-4 h-4 rounded border-gray-300"
+                        />
+                        <span>New Arrivals</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.isHotProduct || false}
+                          onChange={(e) => setFormData({ ...formData, isHotProduct: e.target.checked })}
+                          className="w-4 h-4 rounded border-gray-300"
+                        />
+                        <span>Hot Products</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.isTopProduct || false}
+                          onChange={(e) => setFormData({ ...formData, isTopProduct: e.target.checked })}
+                          className="w-4 h-4 rounded border-gray-300"
+                        />
+                        <span>Top Products</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.isCustomisedProduct || false}
+                          onChange={(e) => setFormData({ ...formData, isCustomisedProduct: e.target.checked })}
+                          className="w-4 h-4 rounded border-gray-300"
+                        />
+                        <span>Customised Product</span>
+                      </label>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">You can select multiple categories</p>
                   </div>
                   <div className="text-xs text-muted-foreground">
                     * Required fields must be filled

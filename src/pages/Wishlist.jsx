@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Trash2, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import Header from "@/components/Header";
 import { useAuth } from "@/contexts/auth-context";
 import { useWishlist } from "@/contexts/wishlist-context";
 import { useCart } from "@/contexts/cart-context";
@@ -14,25 +13,7 @@ const Wishlist = () => {
   const { items: wishlistItems, removeItem } = useWishlist();
   const { addItem } = useCart();
 
-  useEffect(() => {
-    // Wait for auth to finish loading before checking
-    if (authLoading) {
-      return;
-    }
-    
-    if (!isAuthenticated) {
-      // Only redirect if not already on auth page to prevent loops
-      if (window.location.pathname !== '/auth') {
-        navigate(`/auth?redirect=${encodeURIComponent("/wishlist")}`, { replace: true });
-      }
-    }
-  }, [isAuthenticated, authLoading, navigate]);
-
   const handleMoveToCart = (item) => {
-    if (!isAuthenticated) {
-      navigate(`/auth?redirect=${encodeURIComponent(`/product/${item.id}`)}`);
-      return;
-    }
     addItem({
       id: item.id,
       name: item.name,
@@ -58,9 +39,6 @@ const Wishlist = () => {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.12),_transparent_70%)]">
-      <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-2">
-        <Header />
-      </div>
       <div className="px-4 py-10">
         <div className="mx-auto max-w-5xl space-y-10 rounded-[48px] border border-white/15 bg-[var(--card)]/95 p-8 shadow-[var(--shadow-soft)]">
         <div className="flex items-center justify-between">
