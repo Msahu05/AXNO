@@ -60,7 +60,9 @@ const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:5173",
   "https://looklyn.in",
-  "https://www.looklyn.in"
+  "https://www.looklyn.in",
+  "https://misitemized-janet-quodlibetical.ngrok-free.dev"
+
 ];
 
 // In development, allow all localhost origins
@@ -3631,13 +3633,16 @@ app.get('/api/products', async (req, res) => {
     if (search) {
       query.$text = { $search: search };
     }
-    // Filter by product categories (new, hot, top)
+    // Filter by product categories (new, hot, top, custom)
     if (filter === 'new') {
       query.isNewArrival = true;
     } else if (filter === 'hot') {
       query.isHotProduct = true;
     } else if (filter === 'top') {
       query.isTopProduct = true;
+    } else if (filter === 'custom') {
+      // Filter products where category contains "custom" (case-insensitive)
+      query.category = { $regex: /custom/i };
     }
     
     const skip = (parseInt(page) - 1) * parseInt(limit);

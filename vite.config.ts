@@ -7,6 +7,7 @@ export default defineConfig({
   server: {
     host: "::",
     port: 8080,
+    allowedHosts: ["misitemized-janet-quodlibetical.ngrok-free.dev"],
   },
   plugins: [react()],
   resolve: {

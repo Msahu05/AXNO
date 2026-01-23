@@ -160,9 +160,9 @@ const Category = () => {
             className="flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wider transition-all duration-200 bg-white dark:bg-[#2a2538] border border-gray-200 dark:border-white/10 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-600 text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400" 
             onClick={() => navigate(-1)}
           >
-            <ArrowLeft className="h-4 w-4" /> Back
+            <ArrowLeft className="h-4 w-4" />   
           </button>
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-heading font-bold text-gray-900 dark:text-white">{displayName}</h1>
+          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-heading font-bold text-gray-900 dark:text-white">{displayName}</h1>
           <div className="ml-auto">
             <Select value={category || 'hoodies'} onValueChange={handleCategoryChange}>
               <SelectTrigger className="w-[180px] bg-white dark:bg-[#2a2538] border border-gray-200 dark:border-white/10">
@@ -179,30 +179,32 @@ const Category = () => {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-4 rounded-[16px] border border-[rgba(47,37,64,0.08)] dark:border-white/10 bg-white dark:bg-[#2a2538] p-4 sm:p-6 shadow-[0_4px_16px_rgba(47,37,64,0.04)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.2)]">
-          <span className="font-body text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Filter by:</span>
-          {['all', 'unisex', 'men', 'women'].map((filter) => (
-            <Button
-              key={filter}
-              variant={audienceFilter === filter ? "default" : "outline"}
-              className={`rounded-full font-body text-sm font-medium px-6 py-2 transition-all ${
-                audienceFilter === filter 
-                  ? "bg-primary text-primary-foreground border-primary" 
-                  : "bg-background dark:bg-[#2a2538] text-foreground dark:text-gray-300 border-border dark:border-white/20 hover:border-primary dark:hover:border-purple-500"
-              }`}
-              onClick={() => {
-                setAudienceFilter(filter);
-                // Update URL with filter parameter
-                if (filter === 'all') {
-                  navigate(`/category/${category}`, { replace: true });
-                } else {
-                  navigate(`/category/${category}?filter=${filter}`, { replace: true });
-                }
-              }}
-            >
-              {filter === "all" ? "All" : filter.charAt(0).toUpperCase() + filter.slice(1)}
-            </Button>
-          ))}
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4 rounded-[16px] border border-[rgba(47,37,64,0.08)] dark:border-white/10 bg-white dark:bg-[#2a2538] p-3 sm:p-4 lg:p-6 shadow-[0_4px_16px_rgba(47,37,64,0.04)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.2)]">
+          <span className="font-body text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-normal whitespace-nowrap">Filter by:</span>
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 lg:gap-3">
+            {['all', 'unisex', 'men', 'women'].map((filter) => (
+              <Button
+                key={filter}
+                variant={audienceFilter === filter ? "default" : "outline"}
+                className={`rounded-full font-body text-xs sm:text-sm font-medium px-3 py-1 sm:px-6 sm:py-2 transition-all tracking-normal ${
+                  audienceFilter === filter 
+                    ? "bg-primary text-primary-foreground border-primary" 
+                    : "bg-background dark:bg-[#2a2538] text-foreground dark:text-gray-300 border-border dark:border-white/20 hover:border-primary dark:hover:border-purple-500"
+                }`}
+                onClick={() => {
+                  setAudienceFilter(filter);
+                  // Update URL with filter parameter
+                  if (filter === 'all') {
+                    navigate(`/category/${category}`, { replace: true });
+                  } else {
+                    navigate(`/category/${category}?filter=${filter}`, { replace: true });
+                  }
+                }}
+              >
+                {filter === "all" ? "All" : filter.charAt(0).toUpperCase() + filter.slice(1)}
+              </Button>
+            ))}
+          </div>
         </div>
 
         {loading ? (

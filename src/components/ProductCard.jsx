@@ -126,47 +126,45 @@ export function ProductCard({
 
         {/* Discount badge */}
         {originalPrice && (
-          <span className="absolute left-3 top-3 rounded-full bg-primary px-2 py-1 text-xs font-medium text-primary-foreground">
+          <span className="absolute left-2 top-2 sm:left-3 sm:top-3 rounded-full bg-primary px-0.5 py-0.5 sm:px-2 sm:py-1 lg:px-1.5 lg:py-1 text-[6px] sm:text-[4px] lg:text-[8px] font-medium text-primary-foreground leading-tight">
             -{Math.round(((originalPrice - price) / originalPrice) * 100)}%
           </span>
         )}
       </div>
 
-      <div className="p-4 flex flex-col flex-grow w-full max-w-full overflow-hidden" style={{ minHeight: '180px', maxWidth: '100%' }}>
-        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+      <div className="p-3 sm:p-4 flex flex-col flex-grow w-full max-w-full overflow-hidden" style={{ minHeight: '180px', maxWidth: '100%' }}>
+        <p className="text-[10px] sm:text-xs font-medium uppercase tracking-wider text-muted-foreground">
           {category}
         </p>
-        <h3 className="mt-1 font-medium text-foreground line-clamp-2 min-h-[2.5rem]">{name}</h3>
+        <h3 className="mt-1 text-sm sm:text-base font-medium text-foreground line-clamp-2 min-h-[2.5rem]">{name}</h3>
 
         <div className="mt-2 flex items-center gap-2">
-          <span className="font-semibold text-foreground">₹{price}</span>
+          <span className="text-sm sm:text-base font-semibold text-foreground">₹{price}</span>
           {originalPrice && (
-            <span className="text-sm text-muted-foreground line-through">
+            <span className="text-xs sm:text-sm text-muted-foreground line-through">
               ₹{originalPrice}
             </span>
           )}
         </div>
 
         {/* Buy Now and Add to Cart Buttons */}
-        <div className="mt-auto pt-2 sm:pt-3 flex gap-1 sm:gap-2 w-full max-w-full">
+        <div className="mt-auto pt-2 sm:pt-3 flex gap-1.5 sm:gap-2 w-full max-w-full">
           <Button
             onClick={handleBuyNow}
-            className="flex-1 gap-0.5 bg-primary hover:bg-primary/90 text-primary-foreground h-7 text-[9px] px-1 sm:h-8 sm:text-xs sm:px-2 lg:h-9 lg:text-sm lg:px-3 w-full max-w-full"
+            className="flex-1 gap-2 sm:gap-2.5 lg:gap-3 bg-primary hover:bg-primary/90 text-primary-foreground h-8 sm:h-9 lg:h-10 text-[8px] sm:text-[9px] lg:text-[10px] px-3 sm:px-5 lg:px-6 w-full max-w-full min-w-0"
             style={{ maxWidth: '100%' }}
           >
-            <ShoppingBag className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-            <span className="hidden sm:inline">Buy Now</span>
-            <span className="sm:hidden text-[9px]">Buy</span>
+            <ShoppingBag className="h-3 w-3 sm:h-3.5 sm:w-3.5 lg:h-4 lg:w-4 flex-shrink-0" />
+            <span className="whitespace-nowrap">Buy</span>
           </Button>
           <Button
             onClick={handleAddToCart}
             variant="outline"
-            className="flex-1 gap-0.5 border-primary text-primary hover:bg-primary/10 h-7 text-[9px] px-1 sm:h-8 sm:text-xs sm:px-2 lg:h-9 lg:text-sm lg:px-3 w-full max-w-full"
+            className="flex-1 gap-2 sm:gap-2.5 lg:gap-3 border-primary text-primary hover:bg-primary/10 h-8 sm:h-9 lg:h-10 text-[8px] sm:text-[9px] lg:text-[10px] px-3 sm:px-5 lg:px-6 w-full max-w-full min-w-0"
             style={{ maxWidth: '100%' }}
           >
-            <ShoppingCart className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-            <span className="hidden sm:inline">Add to Cart</span>
-            <span className="sm:hidden text-[9px]">Cart</span>
+            <ShoppingCart className="h-3 w-3 sm:h-3.5 sm:w-3.5 lg:h-4 lg:w-4 flex-shrink-0" />
+            <span className="whitespace-nowrap">Cart</span>
           </Button>
         </div>
       </div>

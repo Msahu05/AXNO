@@ -700,28 +700,30 @@ const Product = () => {
 
   return (
     <div className="min-h-screen bg-background w-full max-w-full overflow-x-hidden">
-      <main className="w-full max-w-full overflow-x-hidden px-1 sm:px-0 md:px-4 py-1 sm:py-2 lg:py-4 xl:py-6 lg:px-8">
+      <main className="w-full max-w-full overflow-x-hidden px-0.5 sm:px-4 md:px-6 lg:px-8 xl:px-12 py-0.5 sm:py-4 md:py-6 lg:py-8">
         {/* Breadcrumb */}
-        <nav className="mb-2 sm:mb-3 lg:mb-6 text-[10px] xs:text-xs sm:text-sm text-muted-foreground overflow-hidden w-full max-w-full sm:max-w-[200px] md:max-w-none mx-auto sm:mx-auto md:mx-0 px-1 sm:px-0">
-          <button onClick={() => navigate('/')} className="hover:text-foreground truncate">Home</button>
-          <span className="mx-1 sm:mx-2">/</span>
-          <button onClick={() => navigate('/category/hoodies')} className="hover:text-foreground truncate">Products</button>
-          <span className="mx-1 sm:mx-2">/</span>
-          <span className="text-foreground truncate block max-w-[200px] sm:max-w-none">{product.name}</span>
+        <nav className="mb-1 sm:mb-4 md:mb-6 text-[8px] sm:text-sm text-muted-foreground overflow-hidden w-full max-w-full">
+          <div className="flex items-center gap-0.5 sm:gap-2 flex-wrap">
+            <button onClick={() => navigate('/')} className="hover:text-foreground truncate text-[8px] sm:text-sm">Home</button>
+            <span className="text-[8px] sm:text-sm">/</span>
+            <button onClick={() => navigate('/category/hoodies')} className="hover:text-foreground truncate text-[8px] sm:text-sm">Products</button>
+            <span className="text-[8px] sm:text-sm">/</span>
+            <span className="text-foreground truncate max-w-[80px] sm:max-w-[300px] md:max-w-none text-[8px] sm:text-sm">{product.name}</span>
+          </div>
         </nav>
 
-        <div className="grid gap-2 sm:gap-4 lg:gap-8 xl:gap-12 lg:grid-cols-2 w-full max-w-full sm:max-w-[200px] md:max-w-none overflow-hidden mx-auto sm:mx-auto md:mx-0 px-1 sm:px-0">
+        <div className="grid gap-1 sm:gap-6 md:gap-8 lg:gap-12 xl:gap-16 lg:grid-cols-2 w-full max-w-[80%] sm:max-w-full mx-auto" style={{ boxSizing: 'border-box' }}>
           {/* Product Images */}
-          <div className="space-y-1.5 sm:space-y-2 lg:space-y-4 w-full max-w-full overflow-hidden" style={{ maxWidth: '100%' }}>
+          <div className="space-y-1 sm:space-y-4 md:space-y-6 w-full max-w-full overflow-hidden" style={{ maxWidth: '100%', boxSizing: 'border-box' }}>
             {/* Main Image */}
             <div 
-              className="relative aspect-square overflow-hidden rounded-lg sm:rounded-xl lg:rounded-2xl bg-secondary shadow-soft group w-full max-w-full"
-              style={{ maxWidth: '100%' }}
+              className="relative aspect-square overflow-hidden rounded sm:rounded-xl md:rounded-2xl bg-secondary shadow-soft group w-full mx-auto"
+              style={{ maxWidth: '75%', width: '75%', boxSizing: 'border-box' }}
               onTouchStart={onTouchStart}
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
             >
-              <div className="relative h-full w-full overflow-hidden">
+              <div className="relative h-full w-full overflow-hidden" style={{ maxWidth: '100%', boxSizing: 'border-box' }}>
                 {/* Previous image sliding out */}
                 {isSliding && (
                   <div 
@@ -741,7 +743,7 @@ const Product = () => {
                   </div>
                 )}
                 
-                {/* Current/New image sliding in */}
+                  {/* Current/New image sliding in */}
                 <div 
                   className="absolute inset-0 transition-transform duration-500 ease-in-out"
                   style={{
@@ -759,15 +761,18 @@ const Product = () => {
                         : slideDirection === 'right'
                         ? 'slideInFromLeft 0.5s ease-in-out'
                         : 'none'
-                      : 'none'
+                      : 'none',
+                    maxWidth: '100%', 
+                    width: '100%',
+                    height: '100%'
                   }}
                 >
                   <img
                     key={selectedImage}
                     src={getImageUrl(productImages[selectedImage] || productImages[0])}
                     alt={product.name}
-                    className="h-full w-full max-w-full object-cover hover:scale-105 transition-transform duration-500"
-                    style={{ maxWidth: '100%', height: 'auto' }}
+                    className="h-full w-full object-cover hover:scale-105 transition-transform duration-500"
+                    style={{ maxWidth: '100%', width: '100%', height: '100%', objectFit: 'cover' }}
                   />
                 </div>
               </div>
@@ -796,7 +801,7 @@ const Product = () => {
                   {/* Left Arrow */}
                   <button
                     onClick={prevImage}
-                    className="absolute left-2 sm:left-4 bg-white/80 hover:bg-white/90 active:bg-white text-gray-800 rounded-full p-2 sm:p-3 transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 z-10 shadow-lg backdrop-blur-sm flex items-center justify-center"
+                    className="absolute left-1 sm:left-4 md:left-6 bg-white/90 hover:bg-white active:bg-white text-gray-800 rounded-full p-1.5 sm:p-3 md:p-4 transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 z-10 shadow-lg backdrop-blur-sm flex items-center justify-center"
                     style={{ 
                       top: '50%',
                       transform: 'translateY(-50%)',
@@ -804,13 +809,13 @@ const Product = () => {
                     }}
                     aria-label="Previous image"
                   >
-                    <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+                    <ArrowLeft className="h-3 w-3 sm:h-5 sm:w-5 md:h-6 md:w-6" />
                   </button>
                   
                   {/* Right Arrow */}
                   <button
                     onClick={nextImage}
-                    className="absolute right-2 sm:right-4 bg-white/80 hover:bg-white/90 active:bg-white text-gray-800 rounded-full p-2 sm:p-3 transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 z-10 shadow-lg backdrop-blur-sm flex items-center justify-center"
+                    className="absolute right-1 sm:right-4 md:right-6 bg-white/90 hover:bg-white active:bg-white text-gray-800 rounded-full p-1.5 sm:p-3 md:p-4 transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 z-10 shadow-lg backdrop-blur-sm flex items-center justify-center"
                     style={{ 
                       top: '50%',
                       transform: 'translateY(-50%)',
@@ -818,11 +823,11 @@ const Product = () => {
                     }}
                     aria-label="Next image"
                   >
-                    <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
+                    <ArrowRight className="h-3 w-3 sm:h-5 sm:w-5 md:h-6 md:w-6" />
                   </button>
                   
                   {/* Image Counter */}
-                  <div className="absolute bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-full">
+                  <div className="absolute bottom-2 sm:bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 bg-black/60 text-white text-[10px] sm:text-sm md:text-base px-2 sm:px-4 py-1 sm:py-2 rounded-full backdrop-blur-sm">
                     {selectedImage + 1} / {productImages.length}
                   </div>
                 </>
@@ -830,49 +835,48 @@ const Product = () => {
         </div>
 
             {/* Thumbnail Gallery */}
-            <div className="flex gap-1.5 sm:gap-2 justify-center overflow-x-auto pb-2 w-full max-w-full" style={{ maxWidth: '100%' }}>
+            <div className="flex gap-0.5 sm:gap-3 md:gap-4 justify-center overflow-x-auto pb-0.5 sm:pb-2 w-full max-w-full scrollbar-hide mx-auto" style={{ maxWidth: '75%', width: '75%' }}>
               {productImages.length > 0 ? (
                 productImages.map((image, index) => (
-              <button
+                  <button
                     key={index}
                     onClick={() => setSelectedImage(index)}
                     className={cn(
-                      "relative h-10 w-10 xs:h-12 xs:w-12 sm:h-14 sm:w-14 flex-shrink-0 overflow-hidden rounded-md border-2 transition-all cursor-pointer",
+                      "relative h-8 w-8 sm:h-16 sm:w-16 md:h-20 md:w-20 flex-shrink-0 overflow-hidden rounded sm:rounded-lg border border-solid sm:border-2 transition-all cursor-pointer",
                       selectedImage === index
-                        ? "border-primary shadow-soft"
+                        ? "border-primary shadow-soft scale-105"
                         : "border-border hover:border-primary/50"
                     )}
                   >
                     <img
                       src={getImageUrl(image)}
                       alt={`${product.name} ${index + 1}`}
-                      className="h-full w-full object-cover max-w-full"
-                      style={{ maxWidth: '100%' }}
+                      className="h-full w-full object-cover"
                       onError={(e) => {
                         e.target.src = "https://via.placeholder.com/80";
                       }}
                     />
-              </button>
+                  </button>
                 ))
               ) : (
-                <div className="h-10 w-10 xs:h-12 xs:w-12 sm:h-14 sm:w-14 flex-shrink-0 rounded-md border-2 border-border bg-secondary flex items-center justify-center">
-                  <span className="text-[10px] xs:text-xs text-muted-foreground">No images</span>
-            </div>
+                <div className="h-7 w-7 sm:h-16 sm:w-16 md:h-20 md:w-20 flex-shrink-0 rounded sm:rounded-lg border border-solid sm:border-2 border-border bg-secondary flex items-center justify-center">
+                  <span className="text-[6px] sm:text-xs text-muted-foreground">No images</span>
+                </div>
               )}
             </div>
           </div>
 
           {/* Product Info */}
-          <div className="space-y-2 sm:space-y-3 lg:space-y-5 xl:space-y-6 w-full max-w-full sm:max-w-[200px] md:max-w-none overflow-hidden mx-auto sm:mx-auto md:mx-0 box-border" style={{ maxWidth: '100%', boxSizing: 'border-box' }}>
+          <div className="space-y-1 sm:space-y-5 md:space-y-6 lg:space-y-8 w-full max-w-full overflow-hidden mx-auto" style={{ maxWidth: '80%', boxSizing: 'border-box' }}>
             <div className="w-full max-w-full overflow-hidden">
-              <p className="text-[10px] xs:text-xs sm:text-sm font-medium uppercase tracking-wider text-primary">
+              <p className="text-[8px] sm:text-sm md:text-base font-medium uppercase tracking-wider text-primary mb-0.5 sm:mb-2">
                 {product.category}
               </p>
-              <div className="flex items-start justify-between gap-2 sm:gap-4 mt-0.5 sm:mt-1 lg:mt-2 w-full max-w-full">
-                <h1 className="font-display text-base xs:text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-foreground leading-tight flex-1 min-w-0 overflow-hidden">
+              <div className="flex items-start justify-between gap-1 sm:gap-4 md:gap-6 mt-0.5 sm:mt-2 w-full max-w-full">
+                <h1 className="font-display text-sm sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold text-foreground leading-tight flex-1 min-w-0 overflow-hidden">
                   <span className="line-clamp-2 break-words">{product.name}</span>
                 </h1>
-                <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+                <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0">
                   <a
                     href="https://wa.me/917016925325"
                     target="_blank"
@@ -880,18 +884,18 @@ const Product = () => {
                     className="text-[#25D366] hover:scale-110 transition-all duration-300 cursor-pointer flex-shrink-0"
                     aria-label="WhatsApp"
                   >
-                    <svg className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6" fill="currentColor" viewBox="0 0 24 24">
+                    <svg className="h-3 w-3 sm:h-6 sm:w-6 md:h-7 md:w-7" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.372a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
                     </svg>
                   </a>
                   <Button
                     variant="outline"
                     size="icon"
-                    className={cn("flex-shrink-0 h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12", inWishlist && "border-primary text-primary")}
+                    className={cn("flex-shrink-0 h-6 w-6 sm:h-10 sm:w-10 md:h-12 md:w-12", inWishlist && "border-primary text-primary")}
                     onClick={handleWishlist}
                   >
                     <Heart
-                      className={cn("h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6", inWishlist && "fill-primary")}
+                      className={cn("h-3 w-3 sm:h-6 sm:w-6 md:h-7 md:w-7", inWishlist && "fill-primary")}
                     />
                   </Button>
                 </div>
@@ -927,55 +931,55 @@ const Product = () => {
             </div> */}
 
             {/* Price */}
-            <div className="flex flex-wrap items-baseline gap-1.5 sm:gap-2 lg:gap-3 max-w-full">
-              <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">
+            <div className="flex flex-wrap items-baseline gap-1 sm:gap-3 md:gap-4 max-w-full">
+              <span className="text-sm sm:text-3xl md:text-4xl lg:text-5xl font-bold text-foreground">
                 ₹{product.price}
               </span>
               {(product.original || product.originalPrice) && (
-                <span className="text-base sm:text-lg lg:text-xl text-muted-foreground line-through">
+                <span className="text-xs sm:text-xl md:text-2xl lg:text-3xl text-muted-foreground line-through">
                   ₹{product.original || product.originalPrice}
                 </span>
               )}
               {(product.original || product.originalPrice) && (
-                <span className="rounded-full bg-primary/10 px-1.5 sm:px-2 lg:px-3 py-0.5 sm:py-1 text-[10px] xs:text-xs sm:text-sm font-medium text-primary whitespace-nowrap">
+                <span className="rounded-full bg-primary/10 px-1 sm:px-3 md:px-4 py-0.5 sm:py-1.5 text-[8px] sm:text-sm md:text-base font-medium text-primary whitespace-nowrap">
                   {Math.round(((product.original || product.originalPrice) - product.price) / (product.original || product.originalPrice) * 100)}% OFF
                 </span>
               )}
             </div>
 
             {/* Description */}
-            <p className="text-xs sm:text-sm lg:text-base text-muted-foreground leading-relaxed max-w-full">{product.description || "Premium quality product with elegant design."}</p>
+            <p className="text-[9px] sm:text-base md:text-lg text-muted-foreground leading-relaxed max-w-full">{product.description || "Premium quality product with elegant design."}</p>
 
             {/* Why You Will Love This Product */}
-            <div className="mt-2 sm:mt-4 lg:mt-6 rounded-lg border border-border dark:border-white/15 bg-purple-soft/30 dark:bg-card/50 p-1.5 sm:p-2 lg:p-5 xl:p-6 max-w-full box-border" style={{ boxSizing: 'border-box' }}>
-              <h3 className="text-xs sm:text-sm lg:text-base xl:text-lg font-semibold text-foreground mb-2 sm:mb-3 lg:mb-4 xl:mb-6">
+            <div className="mt-2 sm:mt-6 md:mt-8 rounded sm:rounded-xl border border-border dark:border-white/15 bg-purple-soft/30 dark:bg-card/50 p-2 sm:p-5 md:p-6 lg:p-8 max-w-full">
+              <h3 className="text-[9px] sm:text-base md:text-lg lg:text-xl font-semibold text-foreground mb-2 sm:mb-4 md:mb-6">
                 Why You Will Love This Product:
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2 lg:gap-3 xl:gap-4">
-                <div className="flex items-start gap-1 sm:gap-1.5 lg:gap-2 xl:gap-3">
-                  <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-primary flex-shrink-0 mt-0.5" />
-                  <p className="text-[11px] xs:text-xs sm:text-sm lg:text-base text-muted-foreground">Thick Long Lasting Fabric</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 md:gap-5">
+                <div className="flex items-start gap-1 sm:gap-3">
+                  <CheckCircle2 className="h-2.5 w-2.5 sm:h-5 sm:w-5 md:h-6 md:w-6 text-primary flex-shrink-0 mt-0.5" />
+                  <p className="text-[8px] sm:text-sm md:text-base text-muted-foreground">Thick Long Lasting Fabric</p>
                 </div>
-                <div className="flex items-start gap-1 sm:gap-1.5 lg:gap-2 xl:gap-3">
-                  <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-primary flex-shrink-0 mt-0.5" />
-                  <p className="text-[11px] xs:text-xs sm:text-sm lg:text-base text-muted-foreground">Long Lasting Print</p>
+                <div className="flex items-start gap-1 sm:gap-3">
+                  <CheckCircle2 className="h-2.5 w-2.5 sm:h-5 sm:w-5 md:h-6 md:w-6 text-primary flex-shrink-0 mt-0.5" />
+                  <p className="text-[8px] sm:text-sm md:text-base text-muted-foreground">Long Lasting Print</p>
                 </div>
-                <div className="flex items-start gap-1 sm:gap-1.5 lg:gap-2 xl:gap-3">
-                  <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-primary flex-shrink-0 mt-0.5" />
-                  <p className="text-[11px] xs:text-xs sm:text-sm lg:text-base text-muted-foreground">Oversized Street Fit</p>
+                <div className="flex items-start gap-1 sm:gap-3">
+                  <CheckCircle2 className="h-2.5 w-2.5 sm:h-5 sm:w-5 md:h-6 md:w-6 text-primary flex-shrink-0 mt-0.5" />
+                  <p className="text-[8px] sm:text-sm md:text-base text-muted-foreground">Oversized Street Fit</p>
                 </div>
-                <div className="flex items-start gap-1 sm:gap-1.5 lg:gap-2 xl:gap-3">
-                  <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-primary flex-shrink-0 mt-0.5" />
-                  <p className="text-[11px] xs:text-xs sm:text-sm lg:text-base text-muted-foreground">Printed Only After You Order</p>
+                <div className="flex items-start gap-1 sm:gap-3">
+                  <CheckCircle2 className="h-2.5 w-2.5 sm:h-5 sm:w-5 md:h-6 md:w-6 text-primary flex-shrink-0 mt-0.5" />
+                  <p className="text-[8px] sm:text-sm md:text-base text-muted-foreground">Printed Only After You Order</p>
                 </div>
               </div>
             </div>
 
             {/* Colors */}
             {productColors.length > 0 && (
-              <div className="space-y-2 sm:space-y-3 w-full max-w-full overflow-hidden">
-                <p className="font-medium text-xs sm:text-sm lg:text-base text-foreground">Color</p>
-                <div className="flex gap-2 sm:gap-3 lg:gap-4 flex-wrap items-center max-w-full">
+              <div className="space-y-2 sm:space-y-4 w-full max-w-full overflow-hidden">
+                <p className="font-medium text-[9px] sm:text-base md:text-lg text-foreground">Color</p>
+                <div className="flex gap-2 sm:gap-4 md:gap-5 flex-wrap items-center max-w-full">
                   {productColors.map((color, index) => {
                     const colorKey = color.name || color.hex || `color-${index}`;
                     // Use the hex from the formatted color object, with fallback to color name mapping
@@ -983,7 +987,7 @@ const Product = () => {
                     const isSelected = selectedColor === color.name || selectedColor === color.hex || selectedColor === colorKey;
                     console.log('Rendering color:', { name: color.name, hex: colorHex, color });
                     return (
-                      <div key={colorKey} className="flex flex-col items-center gap-1.5 sm:gap-2">
+                      <div key={colorKey} className="flex flex-col items-center gap-0.5 sm:gap-2">
                         <button
                           type="button"
                           onClick={() => {
@@ -998,47 +1002,46 @@ const Product = () => {
                             }
                           }}
                           className={cn(
-                            "relative rounded-full border-2 transition-all hover:scale-110 shadow-md flex-shrink-0",
-                            "h-10 w-10 xs:h-11 xs:w-11 sm:h-12 sm:w-12",
+                            "relative rounded-full border transition-all hover:scale-110 shadow-md flex-shrink-0",
+                            "h-7 w-7 sm:h-14 sm:w-14 md:h-16 md:w-16 border-solid",
                             isSelected
-                              ? "border-primary ring-1 sm:ring-2 ring-primary ring-offset-1 sm:ring-offset-2 ring-offset-background scale-110"
-                              : "border-border hover:border-primary/50"
+                              ? "border-primary ring-1 sm:ring-2 ring-primary ring-offset-1 sm:ring-offset-2 ring-offset-background scale-110 border-2"
+                              : "border-border hover:border-primary/50 border"
                           )}
                           style={{ 
-                            backgroundColor: colorHex || '#000000',
-                            maxWidth: '100%'
+                            backgroundColor: colorHex || '#000000'
                           }}
                           title={color.name || `Color ${index + 1}`}
                         >
                           {isSelected && (
                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                              <div className="h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full bg-white shadow-sm"></div>
-                  </div>
-                )}
+                              <div className="h-1.5 w-1.5 sm:h-3 sm:w-3 rounded-full bg-white shadow-sm"></div>
+                            </div>
+                          )}
                         </button>
                         {color.name && (
-                          <span className="text-[10px] xs:text-xs font-medium text-foreground text-center break-words max-w-[60px] sm:max-w-none">{color.name}</span>
+                          <span className="text-[8px] sm:text-sm font-medium text-foreground text-center break-words max-w-[50px] sm:max-w-none">{color.name}</span>
                         )}
                       </div>
                     );
                   })}
                 </div>
                 {selectedColor && (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-[9px] sm:text-base text-muted-foreground">
                     Selected: {productColors.find(c => c.name === selectedColor || c.hex === selectedColor)?.name || selectedColor}
                   </p>
                 )}
-                  </div>
-                )}
+              </div>
+            )}
 
             {/* Sizes */}
-            <div className="space-y-2 sm:space-y-3 w-full max-w-full overflow-hidden">
+            <div className="space-y-2 sm:space-y-4 w-full max-w-full overflow-hidden">
               <div className="flex items-center justify-between gap-2 max-w-full">
-                <p className="font-medium text-xs sm:text-sm lg:text-base text-foreground">Size</p>
+                <p className="font-medium text-[9px] sm:text-base md:text-lg text-foreground">Size</p>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-[10px] xs:text-xs sm:text-sm text-primary hover:text-primary/80 h-auto py-0.5 sm:py-1 px-1.5 sm:px-2 flex-shrink-0"
+                  className="text-[8px] sm:text-sm md:text-base text-primary hover:text-primary/80 h-auto py-1 sm:py-1.5 px-1.5 sm:px-3 flex-shrink-0"
                   onClick={async () => {
                     setShowSizeChart(true);
                     if (!sizeChartData && product?.category) {
@@ -1059,12 +1062,12 @@ const Product = () => {
                     }
                   }}
                 >
-                  <Ruler className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" />
-                  <span className="hidden xs:inline">Size Chart</span>
-                  <span className="xs:hidden">Chart</span>
+                  <Ruler className="h-2.5 w-2.5 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
+                  <span className="hidden xs:inline text-[8px] sm:text-sm">Size Chart</span>
+                  <span className="xs:hidden text-[8px]">Chart</span>
                 </Button>
               </div>
-              <div className="flex flex-wrap gap-1.5 sm:gap-2 lg:gap-3 max-w-full">
+              <div className="flex flex-wrap gap-1.5 sm:gap-3 md:gap-4 max-w-full">
                 {productSizes.map((size) => {
                   // Clean the size value for display (remove brackets, quotes, and backslashes)
                   const cleanSize = String(size).replace(/[\[\]"]/g, '').replace(/\\/g, '').trim();
@@ -1073,10 +1076,11 @@ const Product = () => {
                       key={size}
                       onClick={() => setSelectedSize(cleanSize)}
                       className={cn(
-                        "flex h-9 xs:h-10 sm:h-12 min-w-[45px] xs:min-w-[50px] sm:min-w-[60px] px-2 xs:px-2.5 sm:px-3 lg:px-4 items-center justify-center rounded-lg border-2 text-[11px] xs:text-xs sm:text-sm font-medium transition-all flex-shrink-0",
+                        "flex h-8 sm:h-12 md:h-14 min-w-[38px] sm:min-w-[60px] md:min-w-[70px] px-1.5 sm:px-4 md:px-5 items-center justify-center rounded sm:rounded-lg border transition-all flex-shrink-0",
+                        "text-[9px] sm:text-sm md:text-base font-medium border-solid",
                         selectedSize === cleanSize || selectedSize === size
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : "border-border text-foreground hover:border-primary"
+                          ? "border-primary bg-primary text-primary-foreground border-2"
+                          : "border-border text-foreground hover:border-primary border"
                       )}
                     >
                       {cleanSize}
@@ -1087,82 +1091,82 @@ const Product = () => {
             </div>
 
             {/* Quantity */}
-            <div className="space-y-1.5 sm:space-y-2 lg:space-y-3 w-full max-w-full overflow-hidden">
-              <p className="font-medium text-xs sm:text-sm lg:text-base text-foreground">Quantity</p>
-              <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-3 xl:gap-4">
-                <div className="flex items-center rounded-lg border border-border">
+            <div className="space-y-2 sm:space-y-4 w-full max-w-full overflow-hidden">
+              <p className="font-medium text-[9px] sm:text-base md:text-lg text-foreground">Quantity</p>
+              <div className="flex items-center gap-2 sm:gap-4">
+                <div className="flex items-center rounded sm:rounded-lg border border-solid sm:border-2 border-border">
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 xs:h-8 xs:w-8 sm:h-9 sm:w-9 lg:h-10 lg:w-10"
+                    className="h-8 w-8 sm:h-12 sm:w-12 md:h-14 md:w-14"
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
                     disabled={quantity <= 1}
                   >
-                    <Minus className="h-2.5 w-2.5 xs:h-3 xs:w-3 sm:h-3.5 sm:w-3.5 lg:h-4 lg:w-4" />
+                    <Minus className="h-3 w-3 sm:h-5 sm:w-5 md:h-6 md:w-6" />
                   </Button>
-                  <span className="w-7 xs:w-8 sm:w-10 lg:w-12 text-center text-xs xs:text-sm sm:text-base font-medium">{quantity}</span>
+                  <span className="w-10 sm:w-14 md:w-16 text-center text-[10px] sm:text-base md:text-lg font-medium">{quantity}</span>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 xs:h-8 xs:w-8 sm:h-9 sm:w-9 lg:h-10 lg:w-10"
+                    className="h-8 w-8 sm:h-12 sm:w-12 md:h-14 md:w-14"
                     onClick={() => setQuantity(quantity + 1)}
                   >
-                    <Plus className="h-2.5 w-2.5 xs:h-3 xs:w-3 sm:h-3.5 sm:w-3.5 lg:h-4 lg:w-4" />
-              </Button>
+                    <Plus className="h-3 w-3 sm:h-5 sm:w-5 md:h-6 md:w-6" />
+                  </Button>
                 </div>
               </div>
             </div>
 
             {/* Actions */}
-            <div className="flex flex-col sm:flex-row gap-1 sm:gap-2 lg:gap-3 xl:gap-4 pt-2 sm:pt-3 lg:pt-4 w-full max-w-full">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 md:gap-5 pt-2 sm:pt-5 md:pt-6 w-full max-w-full">
               <Button
                 size="lg"
-                className="flex-1 gap-0.5 sm:gap-1.5 lg:gap-2 shadow-soft hover:shadow-elevated text-[9px] xs:text-[10px] sm:text-sm lg:text-base h-8 sm:h-10 lg:h-12 xl:h-auto py-1 sm:py-2 lg:py-3 xl:py-0 w-full max-w-full px-1 sm:px-2"
+                className="flex-1 gap-1.5 sm:gap-3 shadow-soft hover:shadow-elevated text-[9px] sm:text-base md:text-lg h-9 sm:h-14 md:h-16 w-full px-2 sm:px-4"
                 onClick={handleAddToCart}
               >
-                <ShoppingBag className="h-2.5 w-2.5 xs:h-3 xs:w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
-                <span className="whitespace-nowrap text-[9px] xs:text-[10px]">Add to Cart</span>
+                <ShoppingBag className="h-3 w-3 sm:h-6 sm:w-6 md:h-7 md:w-7" />
+                <span className="whitespace-nowrap">Add to Cart</span>
               </Button>
               <Button
                 size="lg"
-                className="flex-1 gap-0.5 sm:gap-1.5 lg:gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-soft hover:shadow-elevated text-[9px] xs:text-[10px] sm:text-sm lg:text-base h-8 sm:h-10 lg:h-12 xl:h-auto py-1 sm:py-2 lg:py-3 xl:py-0 w-full max-w-full px-1 sm:px-2"
+                className="flex-1 gap-1.5 sm:gap-3 bg-primary hover:bg-primary/90 text-primary-foreground shadow-soft hover:shadow-elevated text-[9px] sm:text-base md:text-lg h-9 sm:h-14 md:h-16 w-full px-2 sm:px-4"
                 onClick={handleBuyNow}
               >
-                <Zap className="h-2.5 w-2.5 xs:h-3 xs:w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
-                <span className="whitespace-nowrap text-[9px] xs:text-[10px]">Buy Now</span>
+                <Zap className="h-3 w-3 sm:h-6 sm:w-6 md:h-7 md:w-7" />
+                <span className="whitespace-nowrap">Buy Now</span>
               </Button>
             </div>
 
             {/* Shipping Info */}
-            <div className="space-y-1.5 sm:space-y-2 lg:space-y-3 rounded-lg bg-accent/50 p-1.5 sm:p-2 lg:p-4 max-w-full box-border" style={{ boxSizing: 'border-box' }}>
-              <div className="flex items-start gap-1.5 sm:gap-2 lg:gap-3">
-                <Truck className="h-3.5 w-3.5 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-primary flex-shrink-0 mt-0.5" />
+            <div className="space-y-2 sm:space-y-4 rounded sm:rounded-xl bg-accent/50 p-2 sm:p-5 md:p-6 max-w-full">
+              <div className="flex items-start gap-2 sm:gap-4">
+                <Truck className="h-4 w-4 sm:h-6 sm:w-6 md:h-7 md:w-7 text-primary flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0 max-w-full">
                   {pincodeChecked && detectedLocation ? (
                     <>
-                      <p className="font-medium text-xs sm:text-sm lg:text-base text-foreground">Free Shipping to {detectedLocation}</p>
-                      <p className="text-[10px] xs:text-xs sm:text-sm text-muted-foreground mt-0.5">
+                      <p className="font-medium text-[9px] sm:text-base md:text-lg text-foreground">Free Shipping to {detectedLocation}</p>
+                      <p className="text-[8px] sm:text-sm md:text-base text-muted-foreground mt-1 sm:mt-1">
                         Estimated delivery:  Shipped within 3-5 days and delivered within 7-10 days
                       </p>
                     </>
                   ) : pincodeChecked && !detectedLocation ? (
                     <>
-                      <p className="font-medium text-xs sm:text-sm lg:text-base text-foreground">Delivery Not Available</p>
-                      <p className="text-[10px] xs:text-xs sm:text-sm text-muted-foreground mt-0.5">
+                      <p className="font-medium text-[9px] sm:text-base md:text-lg text-foreground">Delivery Not Available</p>
+                      <p className="text-[8px] sm:text-sm md:text-base text-muted-foreground mt-1 sm:mt-1">
                         Currently not delivering to your area
                       </p>
                     </>
                   ) : (
                     <>
-                      <p className="font-medium text-xs sm:text-sm lg:text-base text-foreground">Check Delivery</p>
-                      <p className="text-[10px] xs:text-xs sm:text-sm text-muted-foreground mt-0.5">
+                      <p className="font-medium text-[9px] sm:text-base md:text-lg text-foreground">Check Delivery</p>
+                      <p className="text-[8px] sm:text-sm md:text-base text-muted-foreground mt-1 sm:mt-1">
                         Enter your pincode to check delivery availability
                       </p>
                     </>
                   )}
                 </div>
               </div>
-              <form onSubmit={handlePincodeSubmit} className="flex flex-col sm:flex-row gap-1.5 sm:gap-2 w-full max-w-full">
+              <form onSubmit={handlePincodeSubmit} className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full max-w-full">
                 <Input
                   type="text"
                   placeholder="Enter pincode"
@@ -1173,12 +1177,11 @@ const Product = () => {
                     setPincodeChecked(false);
                     setDetectedLocation(null);
                   }}
-                  className="flex-1 text-xs sm:text-sm lg:text-base h-8 sm:h-9 lg:h-10 w-full min-w-0"
-                  style={{ maxWidth: '100%' }}
+                  className="flex-1 text-[9px] sm:text-base md:text-lg h-9 sm:h-12 md:h-14 w-full min-w-0"
                   maxLength={6}
                   disabled={checkingPincode}
                 />
-                <Button type="submit" size="default" className="px-2.5 sm:px-3 lg:px-4 xl:px-6 text-xs sm:text-sm lg:text-base whitespace-nowrap h-8 sm:h-9 lg:h-10 flex-shrink-0" disabled={checkingPincode || pincode.length !== 6}>
+                <Button type="submit" size="default" className="px-3 sm:px-6 md:px-8 text-[9px] sm:text-base md:text-lg whitespace-nowrap h-9 sm:h-12 md:h-14 flex-shrink-0" disabled={checkingPincode || pincode.length !== 6}>
                   {checkingPincode ? "Checking..." : "Check"}
                 </Button>
               </form>
@@ -1187,8 +1190,8 @@ const Product = () => {
         </div>
 
         {/* Ratings and Reviews */}
-        <section className="mt-6 sm:mt-8 lg:mt-12 xl:mt-16 w-full max-w-full overflow-hidden">
-          <div className="mx-auto px-1 sm:px-0 md:px-4 lg:px-6 xl:px-8 w-full max-w-full sm:max-w-[200px] md:max-w-4xl">
+        <section className="mt-8 sm:mt-12 md:mt-16 lg:mt-20 w-full max-w-full overflow-hidden">
+          <div className="mx-auto px-0.5 sm:px-4 md:px-6 lg:px-8 w-full max-w-[80%] sm:max-w-full md:max-w-6xl" style={{ boxSizing: 'border-box' }}>
           <div className="mb-4 sm:mb-6 lg:mb-8">
             <div className="flex flex-col xs:flex-row items-start xs:items-center justify-between gap-3 xs:gap-4 mb-4 sm:mb-6">
               <h2 className="font-display text-lg sm:text-xl lg:text-2xl font-black text-foreground">
@@ -1393,40 +1396,40 @@ const Product = () => {
               const recentReviews = reviews.slice(0, 3);
               
               return (
-                <div className="flex flex-col md:flex-row gap-4 sm:gap-6 lg:gap-8">
+                <div className="flex flex-col md:flex-row gap-6 sm:gap-8 md:gap-10">
                   {/* Rating Summary */}
-                  <div className="space-y-4 sm:space-y-6 rounded-lg border border-border bg-card p-3 sm:p-4 lg:p-6 w-full md:w-64 md:max-w-64 flex-shrink-0">
+                  <div className="space-y-4 sm:space-y-6 rounded-lg sm:rounded-xl border border-border bg-card p-4 sm:p-5 md:p-6 w-full md:w-80 md:max-w-80 flex-shrink-0">
                     <div className="flex items-center justify-center md:justify-start gap-4">
                       <div className="text-center">
-                        <div className="text-3xl sm:text-4xl font-black text-foreground">{avgRating}</div>
-                        <div className="flex items-center justify-center gap-1 mt-1">
+                        <div className="text-4xl sm:text-5xl md:text-6xl font-black text-foreground">{avgRating}</div>
+                        <div className="flex items-center justify-center gap-1 mt-2">
                           {[1, 2, 3, 4, 5].map((i) => (
                             <Star
                               key={i}
                               className={cn(
-                                "h-3 w-3 sm:h-4 sm:w-4",
+                                "h-4 w-4 sm:h-5 sm:w-5",
                                 i <= parseFloat(avgRating) ? "fill-primary text-primary" : "fill-muted text-muted"
                               )}
                             />
                           ))}
                         </div>
-                        <p className="text-xs sm:text-sm text-muted-foreground mt-2">{reviews.length} review{reviews.length !== 1 ? 's' : ''}</p>
+                        <p className="text-sm sm:text-base text-muted-foreground mt-2">{reviews.length} review{reviews.length !== 1 ? 's' : ''}</p>
                       </div>
                     </div>
                     
                     {/* Rating Breakdown */}
-                    <div className="space-y-1.5 sm:space-y-2">
+                    <div className="space-y-2 sm:space-y-3">
                       {ratingCounts.map(({ rating, percentage }) => (
-                        <div key={rating} className="flex items-center gap-2 sm:gap-3">
-                          <span className="text-xs sm:text-sm font-medium text-foreground w-6 sm:w-8">{rating}</span>
-                          <Star className="h-3 w-3 sm:h-4 sm:w-4 fill-primary text-primary" />
-                          <div className="flex-1 h-1.5 sm:h-2 bg-muted rounded-full overflow-hidden">
+                        <div key={rating} className="flex items-center gap-3 sm:gap-4">
+                          <span className="text-sm sm:text-base font-medium text-foreground w-8">{rating}</span>
+                          <Star className="h-4 w-4 sm:h-5 sm:w-5 fill-primary text-primary" />
+                          <div className="flex-1 h-2 sm:h-2.5 bg-muted rounded-full overflow-hidden">
                             <div
                               className="h-full bg-primary rounded-full transition-all"
                               style={{ width: `${percentage}%` }}
                             />
                           </div>
-                          <span className="text-xs sm:text-sm text-muted-foreground w-8 sm:w-10 text-right">
+                          <span className="text-sm sm:text-base text-muted-foreground w-10 sm:w-12 text-right">
                             {percentage}%
                           </span>
                         </div>
@@ -1435,55 +1438,55 @@ const Product = () => {
                   </div>
 
                   {/* Recent Reviews */}
-                  <div className="space-y-4 sm:space-y-6 flex-1">
-                    <h3 className="text-base sm:text-lg font-semibold text-foreground">Recent Reviews</h3>
+                  <div className="space-y-4 sm:space-y-6 md:space-y-8 flex-1">
+                    <h3 className="text-lg sm:text-xl md:text-2xl font-semibold text-foreground">Recent Reviews</h3>
                     
                     {recentReviews.length > 0 ? (
                       <>
                         {recentReviews.map((review) => (
-                          <div key={review.id} className="space-y-2 sm:space-y-3 rounded-lg border border-border bg-card p-3 sm:p-4">
-                            <div className="flex items-start justify-between gap-2">
+                          <div key={review.id} className="space-y-3 sm:space-y-4 rounded-lg sm:rounded-xl border border-border bg-card p-4 sm:p-5 md:p-6">
+                            <div className="flex items-start justify-between gap-3 sm:gap-4">
                               <div className="flex-1 min-w-0">
-                                <p className="font-semibold text-sm sm:text-base text-foreground truncate">{review.userName}</p>
+                                <p className="font-semibold text-sm sm:text-base md:text-lg text-foreground truncate">{review.userName}</p>
                                 {review.verified && (
-                                  <p className="text-[10px] xs:text-xs text-muted-foreground">Verified Purchase</p>
+                                  <p className="text-xs sm:text-sm text-muted-foreground">Verified Purchase</p>
                                 )}
                               </div>
-                              <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
+                              <div className="flex items-center gap-1 flex-shrink-0">
                                 {[1, 2, 3, 4, 5].map((i) => (
                                   <Star
                                     key={i}
                                     className={cn(
-                                      "h-2.5 w-2.5 sm:h-3 sm:w-3",
+                                      "h-3 w-3 sm:h-4 sm:w-4",
                                       i <= review.rating ? "fill-primary text-primary" : "fill-muted text-muted"
                                     )}
                                   />
                                 ))}
                               </div>
                             </div>
-                            <p className="text-xs sm:text-sm text-foreground break-words">{review.comment}</p>
+                            <p className="text-sm sm:text-base md:text-lg text-foreground break-words">{review.comment}</p>
                             {review.attachments && review.attachments.length > 0 && (
-                              <div className="flex flex-wrap gap-2 mt-2">
+                              <div className="flex flex-wrap gap-2 sm:gap-3 mt-3">
                                 {review.attachments.map((attachment, idx) => (
                                   attachment.type === 'image' ? (
                                     <img
                                       key={idx}
                                       src={getImageUrl(attachment.url)}
                                       alt={`Review image ${idx + 1}`}
-                                      className="h-12 w-12 object-cover rounded-md border border-border cursor-pointer hover:opacity-80 transition-opacity"
+                                      className="h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24 object-cover rounded-lg border border-border cursor-pointer hover:opacity-80 transition-opacity"
                                       onClick={() => setSelectedImageModal({ open: true, url: getImageUrl(attachment.url) })}
                                     />
                                   ) : null
                                 ))}
                               </div>
                             )}
-                            <p className="text-xs text-muted-foreground">{review.date}</p>
+                            <p className="text-xs sm:text-sm text-muted-foreground">{review.date}</p>
                           </div>
                         ))}
                       </>
                     ) : (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <p>No reviews yet. Be the first to review!</p>
+                      <div className="text-center py-12 sm:py-16 text-muted-foreground">
+                        <p className="text-sm sm:text-base md:text-lg">No reviews yet. Be the first to review!</p>
                       </div>
                     )}
                   </div>
@@ -1624,27 +1627,27 @@ const Product = () => {
 
         {/* Related Products */}
         {related.length > 0 && (
-          <section className="mt-6 sm:mt-8 lg:mt-12 xl:mt-16 w-full max-w-full overflow-hidden">
-            <div className="mx-auto px-1 sm:px-0 md:px-4 lg:px-6 xl:px-8 w-full max-w-full sm:max-w-[200px] md:max-w-none">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mb-3 sm:mb-4 lg:mb-6 max-w-full">
-              <h2 className="font-display text-lg sm:text-xl lg:text-2xl font-black text-foreground">
-                Related <span className="text-gradient">Products</span>
-              </h2>
-              <Button
-                variant="ghost"
-                className="text-primary hover:text-primary/80 text-xs sm:text-sm lg:text-base h-8 sm:h-10 px-3 sm:px-4"
-                onClick={() => {
-                  const categoryMap = {
-                    'Hoodie': 'hoodies',
-                    'T-Shirt': 't-shirts',
-                    'Sweatshirt': 'sweatshirts'
-                  };
-                  const route = categoryMap[product.category] || 'hoodies';
-                  navigate(`/category/${route}`);
-                }}
-              >
-                View All
-              </Button>
+          <section className="mt-8 sm:mt-12 md:mt-16 lg:mt-20 w-full max-w-full overflow-hidden">
+            <div className="mx-auto px-0.5 sm:px-4 md:px-6 lg:px-8 w-full max-w-[80%] sm:max-w-full md:max-w-7xl" style={{ boxSizing: 'border-box' }}>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 mb-6 sm:mb-8 md:mb-10 max-w-full">
+                <h2 className="font-display text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-foreground">
+                  Related <span className="text-gradient">Products</span>
+                </h2>
+                <Button
+                  variant="ghost"
+                  className="text-primary hover:text-primary/80 text-sm sm:text-base md:text-lg h-10 sm:h-12 px-4 sm:px-6"
+                  onClick={() => {
+                    const categoryMap = {
+                      'Hoodie': 'hoodies',
+                      'T-Shirt': 't-shirts',
+                      'Sweatshirt': 'sweatshirts'
+                    };
+                    const route = categoryMap[product.category] || 'hoodies';
+                    navigate(`/category/${route}`);
+                  }}
+                >
+                  View All
+                </Button>
               </div>
               {/* Mobile: Carousel (one at a time) */}
               <div className="block md:hidden">
@@ -1677,17 +1680,13 @@ const Product = () => {
                 </Carousel>
               </div>
               {/* Desktop: Grid (3 items side by side) */}
-              <div className="hidden md:flex md:flex-row md:justify-center md:items-start px-2 sm:px-0" style={{ gap: '32px', alignItems: 'stretch' }}>
+              <div className="hidden md:grid md:grid-cols-3 gap-6 lg:gap-8 xl:gap-10">
                 {related.map((item, index) => (
                   <div
                     key={item.id}
-                    className="animate-fade-in flex-shrink-0"
+                    className="animate-fade-in"
                     style={{ 
-                      animationDelay: `${index * 0.1}s`,
-                      width: '280px',
-                      minWidth: '280px',
-                      maxWidth: '280px',
-                      display: 'flex'
+                      animationDelay: `${index * 0.1}s`
                     }}
                   >
                     <ProductCard

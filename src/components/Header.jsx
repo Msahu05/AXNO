@@ -21,17 +21,17 @@ const Header = () => {
 
   return (
         <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-lg">
-          <nav className="container mx-auto flex h-14 sm:h-16 lg:h-20 items-center justify-between px-2 sm:px-3 lg:px-8">
+          <nav className="container mx-auto flex h-16 sm:h-20 lg:h-24 items-center justify-between px-4 sm:px-6 lg:px-8">
             {/* Left side - Sidebar Trigger */}
-            <div className="flex items-center">
+            <div className="flex items-center flex-shrink-0">
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 sm:h-9 sm:w-9 hover:bg-accent"
+                className="h-9 w-9 sm:h-10 sm:w-10 lg:h-12 lg:w-12 hover:bg-accent"
                 onClick={toggleSidebar}
                 aria-label="Open sidebar"
               >
-                <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
+                <Menu className="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7" />
                 <span className="sr-only">Toggle Sidebar</span>
               </Button>
             </div>
@@ -45,24 +45,24 @@ const Header = () => {
                 <img
                   src={theme === "light" ? looklynLogoLight : looklynLogoDark}
                   alt="LOOKLYN"
-                  className="h-8 sm:h-9 md:h-10 lg:h-8 xl:h-8 w-auto object-contain max-h-8 sm:max-h-10"
+                  className="h-10 sm:h-12 md:h-14 lg:h-12 xl:h-14 w-auto object-contain"
                 />
               </Link>
             </div>
 
         {/* Right side - Icons */}
-        <div className="flex items-center gap-1 sm:gap-2">
+        <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 flex-shrink-0">
           <Button
             variant="ghost"
             size="icon"
-            className="relative hover:bg-accent h-8 w-8 sm:h-9 sm:w-9"
+            className="relative hover:bg-accent h-9 w-9 sm:h-10 sm:w-10 lg:h-12 lg:w-12"
             aria-label="Wishlist"
             asChild
           >
             <Link to="/wishlist">
-              <Heart className="h-4 w-4 sm:h-5 sm:w-5" />
+              <Heart className="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7" />
               {wishlistCount > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 sm:-right-1 sm:-top-1 flex h-3.5 w-3.5 sm:h-4 sm:w-4 items-center justify-center rounded-full bg-primary text-[9px] sm:text-[10px] font-medium text-primary-foreground">
+                <span className="absolute right-0 top-0 flex h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7 items-center justify-center rounded-full bg-primary text-[11px] sm:text-[12px] lg:text-[13px] font-medium text-primary-foreground border-2 border-background">
                   {wishlistCount > 9 ? '9+' : wishlistCount}
                 </span>
               )}
@@ -71,14 +71,14 @@ const Header = () => {
           <Button
             variant="ghost"
             size="icon"
-            className="relative hover:bg-accent h-8 w-8 sm:h-9 sm:w-9"
+            className="relative hover:bg-accent h-9 w-9 sm:h-10 sm:w-10 lg:h-12 lg:w-12"
             aria-label="Cart"
             asChild
           >
             <Link to="/cart">
-              <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
+              <ShoppingCart className="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7" />
               {cartCount > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 sm:-right-1 sm:-top-1 flex h-3.5 w-3.5 sm:h-4 sm:w-4 items-center justify-center rounded-full bg-primary text-[9px] sm:text-[10px] font-medium text-primary-foreground">
+                <span className="absolute right-0 top-0 flex h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7 items-center justify-center rounded-full bg-primary text-[11px] sm:text-[12px] lg:text-[13px] font-medium text-primary-foreground border-2 border-background">
                   {cartCount > 9 ? '9+' : cartCount}
                 </span>
               )}
@@ -90,12 +90,12 @@ const Header = () => {
             <Button 
               variant="ghost" 
               size="icon" 
-              className="hover:bg-accent h-8 w-8 sm:h-9 sm:w-9" 
+              className="hover:bg-accent h-9 w-9 sm:h-10 sm:w-10 lg:h-12 lg:w-12" 
               aria-label="Login" 
               asChild
             >
               <Link to="/auth">
-                <User className="h-4 w-4 sm:h-5 sm:w-5" />
+                <User className="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7" />
               </Link>
             </Button>
           )}

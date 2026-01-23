@@ -1,15 +1,23 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
-import { ArrowLeft, UploadCloud, MessageCircle, ShieldCheck, MapPin, Plus, Minus, ChevronRight, ChevronDown } from "lucide-react";
+import { ArrowLeft, UploadCloud, MessageCircle, ShieldCheck, MapPin, Plus, Minus, ChevronRight, ChevronDown, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/auth-context";
 import { useCart } from "@/contexts/cart-context";
-import { userAPI, couponsAPI, paymentsAPI, ordersAPI, productsAPI } from "@/lib/api";
+import { userAPI, couponsAPI, paymentsAPI, ordersAPI, productsAPI, authAPI } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import TermsAndConditions from "@/components/TermsAndConditions";
 
 // Indian cities and states data
 const INDIAN_STATES = [
@@ -80,12 +88,19 @@ const Checkout = () => {
   const [isValidPincode, setIsValidPincode] = useState(true);
   const [isShippingOpen, setIsShippingOpen] = useState(true);
   const [isCustomDesignOpen, setIsCustomDesignOpen] = useState(false);
-  const [acceptedRefundPolicy, setAcceptedRefundPolicy] = useState(false);
   const [hasCustomisedProducts, setHasCustomisedProducts] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState("signup"); // "signup" or "login"
+  const [authForm, setAuthForm] = useState({ name: "", email: "", password: "", phone: "", otp: "", termsAccepted: false });
+  const [authLoading, setAuthLoading] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showTermsDialog, setShowTermsDialog] = useState(false);
+  const [pendingGoogleSignIn, setPendingGoogleSignIn] = useState(null);
   const descriptionRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated, user, loading: authLoading } = useAuth();
+  const { isAuthenticated, user, loading: authContextLoading, login, signup, googleLogin, refreshUser } = useAuth();
   const { items: cartItems, total: cartTotal, updateQuantity, clearCart } = useCart();
   const { toast } = useToast();
   
@@ -216,7 +231,7 @@ const Checkout = () => {
     checkPreviousOrders();
   }, [isAuthenticated]);
 
-  // Check if any product in checkout is customized
+  // Check if any product in checkout is in customised category
   useEffect(() => {
     const checkCustomisedProducts = async () => {
       if (displayItems.length === 0) {
@@ -229,20 +244,27 @@ const Checkout = () => {
         
         for (const item of displayItems) {
           try {
-            // Try to get product by slug first, then by ID
-            let productData;
-            if (item.slug) {
-              productData = await productsAPI.getBySlug(item.slug);
-            } else {
-              productData = await productsAPI.getById(item.id);
+            // First check if item has category field directly
+            let category = item.category || '';
+            
+            // If category not in item, fetch product data
+            if (!category) {
+              let productData;
+              if (item.slug) {
+                productData = await productsAPI.getBySlug(item.slug);
+              } else {
+                productData = await productsAPI.getById(item.id);
+              }
+              category = productData?.category || '';
             }
             
-            if (productData?.isCustomisedProduct) {
+            // Check if product category contains "custom" (case-insensitive)
+            if (category && category.toLowerCase().includes('custom')) {
               hasCustomised = true;
               break; // No need to check further if we found one
             }
           } catch (error) {
-            console.error(`Error fetching product ${item.id || item.slug}:`, error);
+            console.error(`Error checking product ${item.id || item.slug}:`, error);
             // Continue checking other products even if one fails
           }
         }
@@ -327,9 +349,6 @@ const Checkout = () => {
         return;
       }
       
-      // Get total quantity
-      const totalQuantity = displayItems.reduce((sum, item) => sum + item.quantity, 0);
-      
       // Find matching coupon based on quantity and category
       // Skip firstOrderOnly coupons if user is not authenticated (will be validated at checkout)
       const matchingCoupon = coupons.find(coupon => {
@@ -341,16 +360,31 @@ const Checkout = () => {
           return false;
         }
         
-        // Check if quantity matches
-        if (coupon.minQuantity && totalQuantity >= coupon.minQuantity) {
-          // Check if category matches
-          if (coupon.category === 'All') return true;
-          
-          // Check if any item matches the category
-          return displayItems.some(item => item.category === coupon.category);
+        // Check if category matches first
+        if (coupon.category && coupon.category !== 'All') {
+          const hasMatchingCategory = displayItems.some(item => item.category === coupon.category);
+          if (!hasMatchingCategory) return false;
         }
         
-        return false;
+        // Check if quantity matches - for category-specific coupons, check quantity in that category only
+        if (coupon.minQuantity) {
+          let quantityToCheck;
+          if (coupon.category && coupon.category !== 'All') {
+            // For category-specific coupons, check quantity of items in that category only
+            quantityToCheck = displayItems
+              .filter(item => item.category === coupon.category)
+              .reduce((sum, item) => sum + item.quantity, 0);
+          } else {
+            // For "All" category, check total quantity
+            quantityToCheck = displayItems.reduce((sum, item) => sum + item.quantity, 0);
+          }
+          
+          if (quantityToCheck < coupon.minQuantity) {
+            return false;
+          }
+        }
+        
+        return true;
       });
       
       if (matchingCoupon && (!appliedCoupon || appliedCoupon.code !== matchingCoupon.code)) {
@@ -440,14 +474,27 @@ const Checkout = () => {
         }
       }
 
-      // Check minimum quantity
+      // Check minimum quantity - for category-specific coupons, check quantity in that category only
       if (coupon.minQuantity) {
-        const totalQuantity = displayItems.reduce((sum, item) => sum + item.quantity, 0);
-        if (totalQuantity < coupon.minQuantity) {
+        let quantityToCheck;
+        if (coupon.category && coupon.category !== 'All') {
+          // For category-specific coupons, check quantity of items in that category only
+          quantityToCheck = displayItems
+            .filter(item => item.category === coupon.category)
+            .reduce((sum, item) => sum + item.quantity, 0);
+        } else {
+          // For "All" category, check total quantity
+          quantityToCheck = displayItems.reduce((sum, item) => sum + item.quantity, 0);
+        }
+        
+        if (quantityToCheck < coupon.minQuantity) {
           isValid = false;
+          const categoryText = coupon.category && coupon.category !== 'All' 
+            ? ` for ${coupon.category} category` 
+            : '';
           toast({
             title: "Coupon Not Applicable",
-            description: `Minimum quantity of ${coupon.minQuantity} required`,
+            description: `Minimum quantity of ${coupon.minQuantity} required${categoryText}`,
             variant: "destructive",
           });
           return;
@@ -576,10 +623,20 @@ const Checkout = () => {
       if (!hasMatchingCategory) return false;
     }
     
-    // Check minimum quantity - using checkout items only
+    // Check minimum quantity - for category-specific coupons, check quantity in that category only
     if (coupon.minQuantity) {
-      const totalQuantity = displayItems.reduce((sum, item) => sum + item.quantity, 0);
-      if (totalQuantity < coupon.minQuantity) return false;
+      let quantityToCheck;
+      if (coupon.category && coupon.category !== 'All') {
+        // For category-specific coupons, check quantity of items in that category only
+        quantityToCheck = displayItems
+          .filter(item => item.category === coupon.category)
+          .reduce((sum, item) => sum + item.quantity, 0);
+      } else {
+        // For "All" category, check total quantity
+        quantityToCheck = displayItems.reduce((sum, item) => sum + item.quantity, 0);
+      }
+      
+      if (quantityToCheck < coupon.minQuantity) return false;
     }
     
     // Check minimum price - using checkout subtotal only
@@ -655,16 +712,15 @@ const Checkout = () => {
     }
   }, [user, selectedAddressId]);
 
-  // Validate pincode for Ahmedabad and Gandhinagar
-  // Ahmedabad pincodes start with 380 (380001-380999)
-  // Gandhinagar pincodes start with 382 (382010-382999)
+  // Validate pincode - accept any valid 6-digit Indian pincode
   const validatePincode = (pincode) => {
+    // Indian pincodes are 6 digits
     if (pincode.length !== 6 || !/^\d{6}$/.test(pincode)) {
       return false;
     }
     
-    // Check if pincode starts with 380 (Ahmedabad) or 382 (Gandhinagar)
-    return pincode.startsWith('380') || pincode.startsWith('382');
+    // Accept any valid 6-digit pincode (pan-India delivery)
+    return true;
   };
 
   // Fetch city and state from pincode
@@ -681,7 +737,7 @@ const Checkout = () => {
     if (!isValid) {
       toast({
         title: "Invalid Pincode",
-        description: "We currently deliver only to Ahmedabad and Gandhinagar. Please enter a valid pincode from these cities.",
+        description: "Please enter a valid 6-digit Indian pincode.",
         variant: "destructive",
       });
       return;
@@ -693,80 +749,27 @@ const Checkout = () => {
       const data = await response.json();
       
       if (data && data[0] && data[0].Status === "Success" && data[0].PostOffice && data[0].PostOffice.length > 0) {
-        // Check all post offices to find Ahmedabad or Gandhinagar
-        let foundValidCity = false;
-        let validCity = "";
-        let validState = "";
-        
-        for (const postOffice of data[0].PostOffice) {
-          const district = (postOffice.District || "").toLowerCase();
-          const name = (postOffice.Name || "").toLowerCase();
-          const state = (postOffice.State || "").toLowerCase();
-          
-          // Check if it's Ahmedabad or Gandhinagar
-          if (district.includes('ahmedabad') || name.includes('ahmedabad') || 
-              (state.includes('gujarat') && (district.includes('ahmedabad') || name.includes('ahmedabad')))) {
-            foundValidCity = true;
-            validCity = postOffice.District || postOffice.Name || "Ahmedabad";
-            validState = postOffice.State || "Gujarat";
-            break;
-          }
-          
-          if (district.includes('gandhinagar') || name.includes('gandhinagar') ||
-              (state.includes('gujarat') && (district.includes('gandhinagar') || name.includes('gandhinagar')))) {
-            foundValidCity = true;
-            validCity = postOffice.District || postOffice.Name || "Gandhinagar";
-            validState = postOffice.State || "Gujarat";
-            break;
-          }
-        }
-        
-        if (!foundValidCity) {
-          setIsValidPincode(false);
-          toast({
-            title: "Invalid Location",
-            description: "We currently deliver only to Ahmedabad and Gandhinagar. Please enter a valid pincode from these cities.",
-            variant: "destructive",
-          });
-          return;
-        }
+        // Get city and state from first post office
+        const postOffice = data[0].PostOffice[0];
+        const validCity = postOffice.District || postOffice.Name || "";
+        const validState = postOffice.State || "";
         
         // Mark as valid and auto-fill if fields are empty
         setIsValidPincode(true);
-        if (!city) {
+        if (!city && validCity) {
           setCity(validCity);
         }
-        if (!state) {
+        if (!state && validState) {
           setState(validState);
         }
       } else {
-        // If API fails but pincode starts with 380 or 382, assume it's valid
-        if (pincode.startsWith('380') || pincode.startsWith('382')) {
-          setIsValidPincode(true);
-          if (!city) {
-            setCity(pincode.startsWith('380') ? 'Ahmedabad' : 'Gandhinagar');
-          }
-          if (!state) {
-            setState('Gujarat');
-          }
-        } else {
-          setIsValidPincode(false);
-        }
+        // If API fails, still accept the pincode (pan-India delivery)
+        setIsValidPincode(true);
       }
     } catch (error) {
       console.error("Error fetching pincode details:", error);
-      // If API fails but pincode starts with 380 or 382, assume it's valid
-      if (pincode.startsWith('380') || pincode.startsWith('382')) {
-        setIsValidPincode(true);
-        if (!city) {
-          setCity(pincode.startsWith('380') ? 'Ahmedabad' : 'Gandhinagar');
-        }
-        if (!state) {
-          setState('Gujarat');
-        }
-      } else {
-        setIsValidPincode(false);
-      }
+      // If API fails, still accept the pincode (pan-India delivery)
+      setIsValidPincode(true);
     } finally {
       setLoadingPincode(false);
     }
@@ -847,7 +850,7 @@ const Checkout = () => {
     if (!validatePincode(zipCode)) {
       toast({
         title: "Invalid Pincode",
-        description: "We currently deliver only to Ahmedabad and Gandhinagar. Please enter a valid pincode from these cities.",
+        description: "Please enter a valid 6-digit Indian pincode.",
         variant: "destructive",
       });
       return;
@@ -857,18 +860,7 @@ const Checkout = () => {
     if (!isValidPincode) {
       toast({
         title: "Invalid Pincode",
-        description: "We currently deliver only to Ahmedabad and Gandhinagar. Please enter a valid pincode from these cities.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Verify city is Ahmedabad or Gandhinagar (case-insensitive)
-    const cityLower = (city || "").toLowerCase();
-    if (cityLower && !cityLower.includes('ahmedabad') && !cityLower.includes('gandhinagar')) {
-      toast({
-        title: "Invalid Location",
-        description: "We currently deliver only to Ahmedabad and Gandhinagar. Please enter a valid address from these cities.",
+        description: "Please enter a valid 6-digit Indian pincode.",
         variant: "destructive",
       });
       return;
@@ -883,20 +875,28 @@ const Checkout = () => {
       return;
     }
 
-    // Check if any product is customized and require design upload
+    // Check if any product is in customised category and require design upload
     try {
       let hasCustomisedProduct = false;
       
       for (const item of displayItems) {
         try {
-          // Use getBySlug which works with both slug and ID
-          const productData = await productsAPI.getBySlug(item.id);
-          if (productData?.isCustomisedProduct) {
+          // First check if item has category field directly
+          let category = item.category || '';
+          
+          // If category not in item, fetch product data
+          if (!category) {
+            const productData = await productsAPI.getBySlug(item.id);
+            category = productData?.category || '';
+          }
+          
+          // Check if product category contains "custom" (case-insensitive)
+          if (category && category.toLowerCase().includes('custom')) {
             hasCustomisedProduct = true;
             break;
           }
         } catch (error) {
-          console.error(`Error fetching product ${item.id}:`, error);
+          console.error(`Error checking product ${item.id}:`, error);
           // Continue checking other products
         }
       }
@@ -1192,8 +1192,321 @@ const Checkout = () => {
     }
   };
 
+  // Check if user needs to authenticate
+  useEffect(() => {
+    if (!authContextLoading && !isAuthenticated && displayItems.length > 0) {
+      setShowAuthModal(true);
+    } else if (isAuthenticated) {
+      setShowAuthModal(false);
+    }
+  }, [authContextLoading, isAuthenticated, displayItems.length]);
+
+  // Helper function to format and validate phone number
+  const formatPhoneNumber = (phone) => {
+    if (!phone || phone.trim() === '') {
+      throw new Error('Phone number is required');
+    }
+
+    // Check if phone starts with +91
+    if (phone.trim().startsWith('+91')) {
+      // Extract digits after +91
+      const afterPrefix = phone.replace(/^\+91\s*/, '');
+      const digits = afterPrefix.replace(/\D/g, '');
+      
+      if (digits.length !== 10) {
+        throw new Error('Phone number must have exactly 10 digits after +91');
+      }
+      
+      return '+91 ' + digits;
+    } else {
+      // Extract all digits
+      const digits = phone.replace(/\D/g, '');
+      let cleanedDigits = digits;
+      
+      // Remove leading 91 if present
+      if (cleanedDigits.startsWith('91') && cleanedDigits.length > 10) {
+        cleanedDigits = cleanedDigits.substring(2);
+      }
+      
+      if (cleanedDigits.length !== 10) {
+        throw new Error('Phone number must have exactly 10 digits');
+      }
+      
+      return '+91 ' + cleanedDigits;
+    }
+  };
+
+  // Google Sign-In handler
+  useEffect(() => {
+    if (!showAuthModal) {
+      // Clear button when modal is closed
+      const buttonContainer = document.getElementById('checkout-google-signin-button');
+      if (buttonContainer) {
+        buttonContainer.innerHTML = '';
+      }
+      return;
+    }
+
+    const handleGoogleSignIn = async (response) => {
+      try {
+        setAuthLoading(true);
+        const { credential } = response;
+        
+        // Decode JWT token to get user info
+        const base64Url = credential.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map((c) => {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        
+        const googleUser = JSON.parse(jsonPayload);
+        
+        // Try login first - if it fails with Terms error, show Terms dialog
+        const result = await googleLogin(
+          googleUser.sub,
+          googleUser.email,
+          googleUser.name,
+          googleUser.picture,
+          false // Don't send termsAccepted yet - backend will check if user exists
+        );
+
+        if (result.success) {
+          if (!result.user?.phone || result.user.phone === '') {
+            // Phone number required - show phone modal
+            toast({
+              title: "Phone Number Required",
+              description: "Please add your phone number to continue",
+              variant: "destructive",
+            });
+            setAuthLoading(false);
+            return;
+          }
+          
+          toast({
+            title: "Login Successful",
+            description: `Welcome to Looklyn, ${googleUser.name}!`,
+          });
+          setShowAuthModal(false);
+          await refreshUser();
+        } else if (result.error && result.error.includes('Terms')) {
+          // New user - Terms required
+          setPendingGoogleSignIn({
+            googleId: googleUser.sub,
+            email: googleUser.email,
+            name: googleUser.name,
+            image: googleUser.picture
+          });
+          setShowTermsDialog(true);
+          setAuthLoading(false);
+        } else {
+          toast({
+            title: "Authentication Failed",
+            description: result.error || "Please try again",
+            variant: "destructive",
+          });
+          setAuthLoading(false);
+        }
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: error.message || "Something went wrong",
+          variant: "destructive",
+        });
+        setAuthLoading(false);
+      }
+    };
+
+    // Initialize Google Sign-In when Google API is loaded
+    const initGoogleSignIn = () => {
+      if (!window.google || !window.google.accounts) {
+        return;
+      }
+
+      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+      if (!clientId) {
+        console.warn('Google Client ID not configured. Add VITE_GOOGLE_CLIENT_ID to .env');
+        return;
+      }
+
+      window.google.accounts.id.initialize({
+        client_id: clientId,
+        callback: handleGoogleSignIn,
+      });
+
+      // Wait for DOM to be ready, then render button
+      const renderButton = () => {
+        const buttonContainer = document.getElementById('checkout-google-signin-button');
+        if (buttonContainer && !buttonContainer.hasChildNodes()) {
+          try {
+            window.google.accounts.id.renderButton(buttonContainer, {
+              type: 'standard',
+              size: 'large',
+              theme: 'outline',
+              text: 'signup_with',
+              shape: 'rectangular',
+              logo_alignment: 'left',
+              width: '100%'
+            });
+          } catch (error) {
+            console.error('Error rendering Google Sign-In button:', error);
+          }
+        } else if (!buttonContainer) {
+          // Retry after a short delay if container not found
+          setTimeout(renderButton, 100);
+        }
+      };
+
+      // Try to render immediately, or wait a bit for DOM
+      setTimeout(renderButton, 100);
+    };
+
+    // Wait for Google API to load
+    if (window.google && window.google.accounts) {
+      initGoogleSignIn();
+    } else {
+      // Check periodically if Google API is loaded
+      const checkInterval = setInterval(() => {
+        if (window.google && window.google.accounts) {
+          initGoogleSignIn();
+          clearInterval(checkInterval);
+        }
+      }, 100);
+
+      // Cleanup after 10 seconds
+      setTimeout(() => clearInterval(checkInterval), 10000);
+    }
+
+    return () => {
+      const buttonContainer = document.getElementById('checkout-google-signin-button');
+      if (buttonContainer) {
+        buttonContainer.innerHTML = '';
+      }
+    };
+  }, [showAuthModal, googleLogin, refreshUser, toast]);
+
+  // Handle Terms acceptance for Google Sign-In
+  const handleAcceptTermsForGoogle = async () => {
+    if (!pendingGoogleSignIn) return;
+    
+    try {
+      setAuthLoading(true);
+      const result = await googleLogin(
+        pendingGoogleSignIn.googleId,
+        pendingGoogleSignIn.email,
+        pendingGoogleSignIn.name,
+        pendingGoogleSignIn.image,
+        true // Terms accepted
+      );
+
+      if (result.success) {
+        if (!result.user?.phone || result.user.phone === '') {
+          toast({
+            title: "Phone Number Required",
+            description: "Please add your phone number to continue",
+            variant: "destructive",
+          });
+          setAuthLoading(false);
+          setShowTermsDialog(false);
+          return;
+        }
+        
+        toast({
+          title: "Account Created",
+          description: `Welcome to Looklyn, ${pendingGoogleSignIn.name}!`,
+        });
+        setShowAuthModal(false);
+        setShowTermsDialog(false);
+        setPendingGoogleSignIn(null);
+        await refreshUser();
+      } else {
+        toast({
+          title: "Authentication Failed",
+          description: result.error || "Please try again",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message || "Something went wrong",
+        variant: "destructive",
+      });
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  // Handle email/phone signup
+  const handleEmailSignup = async () => {
+    if (!authForm.name || !authForm.email || !authForm.phone) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!authForm.termsAccepted) {
+      toast({
+        title: "Terms & Conditions Required",
+        description: "You must accept the Terms & Conditions to create an account",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setAuthLoading(true);
+      
+      if (otpSent) {
+        // Verify OTP and signup
+        const formattedPhone = formatPhoneNumber(authForm.phone);
+        const response = await authAPI.signupWithOtp(
+          authForm.name,
+          authForm.email,
+          authForm.otp,
+          formattedPhone,
+          authForm.termsAccepted
+        );
+        
+        if (response.token && response.user) {
+          localStorage.setItem('authToken', response.token);
+          toast({
+            title: "Account Created",
+            description: "Welcome to Looklyn!",
+          });
+          setShowAuthModal(false);
+          await refreshUser();
+        } else {
+          toast({
+            title: "Signup Failed",
+            description: response.error || "Please try again",
+            variant: "destructive",
+          });
+        }
+      } else {
+        // Send OTP
+        await authAPI.sendOtp(authForm.email, "signup", authForm.phone);
+        setOtpSent(true);
+        toast({
+          title: "OTP Sent",
+          description: "Check your email and WhatsApp for the OTP code",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message || "Something went wrong",
+        variant: "destructive",
+      });
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
   // Wait for auth to finish loading before checking
-  if (authLoading) {
+  if (authContextLoading) {
     return (
       <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(124,90,255,0.12),_transparent_70%)]">
         <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-2">
@@ -1272,6 +1585,142 @@ const Checkout = () => {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(124,90,255,0.12),_transparent_70%)]">
+      {/* Authentication Modal */}
+      <Dialog open={showAuthModal} onOpenChange={setShowAuthModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Sign In or Create Account</DialogTitle>
+            <DialogDescription>
+              Please sign in or create an account to continue with checkout
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 mt-4">
+            {/* Google Sign In */}
+            <div>
+              <div id="checkout-google-signin-button" className="w-full min-h-[40px] flex items-center justify-center"></div>
+            </div>
+            
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">Or</span>
+              </div>
+            </div>
+
+            {/* Email/Phone Signup Form */}
+            <div className="space-y-4">
+              {!otpSent ? (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Name</label>
+                    <Input
+                      value={authForm.name}
+                      onChange={(e) => setAuthForm({ ...authForm, name: e.target.value })}
+                      placeholder="Enter your name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Email</label>
+                    <Input
+                      type="email"
+                      value={authForm.email}
+                      onChange={(e) => setAuthForm({ ...authForm, email: e.target.value })}
+                      placeholder="Enter your email"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Phone Number</label>
+                    <Input
+                      value={authForm.phone}
+                      onChange={(e) => {
+                        const formatted = formatPhone(e.target.value);
+                        setAuthForm({ ...authForm, phone: formatted });
+                      }}
+                      placeholder="+91 1234567890"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="terms-checkout"
+                      checked={authForm.termsAccepted}
+                      onCheckedChange={(checked) => setAuthForm({ ...authForm, termsAccepted: checked === true })}
+                    />
+                    <label htmlFor="terms-checkout" className="text-sm cursor-pointer">
+                      I accept the <button type="button" onClick={() => setShowTermsDialog(true)} className="text-primary underline">Terms & Conditions</button>
+                    </label>
+                  </div>
+                  <Button
+                    onClick={handleEmailSignup}
+                    disabled={authLoading || !authForm.name || !authForm.email || !authForm.phone || !authForm.termsAccepted}
+                    className="w-full"
+                  >
+                    {authLoading ? "Sending..." : "Send OTP"}
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Enter OTP</label>
+                    <Input
+                      value={authForm.otp}
+                      onChange={(e) => setAuthForm({ ...authForm, otp: e.target.value.replace(/\D/g, '').slice(0, 6) })}
+                      placeholder="Enter 6-digit OTP"
+                      maxLength={6}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Check your email and WhatsApp for the OTP
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setOtpSent(false);
+                        setAuthForm({ ...authForm, otp: "" });
+                      }}
+                      className="flex-1"
+                    >
+                      Back
+                    </Button>
+                    <Button
+                      onClick={handleEmailSignup}
+                      disabled={authLoading || authForm.otp.length !== 6}
+                      className="flex-1"
+                    >
+                      {authLoading ? "Verifying..." : "Verify & Create Account"}
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Terms Dialog */}
+      <Dialog open={showTermsDialog} onOpenChange={setShowTermsDialog}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Terms & Conditions</DialogTitle>
+            <DialogDescription>
+              Please read and accept the terms to continue
+            </DialogDescription>
+          </DialogHeader>
+          <TermsAndConditions />
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setShowTermsDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAcceptTermsForGoogle} disabled={authLoading}>
+              Accept & Continue
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <div className="px-2 sm:px-4 lg:px-6 py-6 sm:py-10">
         <div className="mx-auto max-w-7xl">
           {/* Breadcrumb */}
@@ -1439,7 +1888,7 @@ const Checkout = () => {
                   {!isValidPincode && zipCode.length === 6 && (
                     <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
                       <MapPin className="h-3 w-3" />
-                      We deliver only to Ahmedabad and Gandhinagar
+                      Please enter a valid 6-digit Indian pincode
                     </p>
                   )}
                 </div>
@@ -1764,35 +2213,9 @@ const Checkout = () => {
                   Assured delivery by 8-10 days
                 </p>
 
-                {/* Non-refundable and Non-exchangeable Policy Checkbox */}
-                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
-                  <div className="flex items-start gap-3">
-                    <Checkbox
-                      id="refund-policy"
-                      checked={acceptedRefundPolicy}
-                      onCheckedChange={(checked) => setAcceptedRefundPolicy(checked === true)}
-                      className="mt-0.5"
-                    />
-                    <label
-                      htmlFor="refund-policy"
-                      className="text-sm text-gray-800 cursor-pointer leading-relaxed"
-                    >
-                      <span className="font-semibold text-red-700">I understand and agree</span> that this product is custom-made and therefore not eligible for returns due to a change of mind.{" "}
-                      <span className="font-semibold text-red-700"></span>
-                      <span className="font-semibold text-red-700"></span>However, in the event of a damaged, misprinted, or incorrect item being delivered, a replacement or refund will be provided.
-                    </label>
-                  </div>
-                </div>
-
             <button 
-                  className={`w-full font-semibold py-3 px-4 rounded-md transition-all duration-200 ${
-                    acceptedRefundPolicy
-                      ? 'bg-black hover:bg-gray-800 text-white cursor-pointer'
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-40'
-                  }`}
-              onClick={acceptedRefundPolicy ? handlePlaceOrder : undefined}
-              disabled={!acceptedRefundPolicy}
-                  style={acceptedRefundPolicy ? { backgroundColor: '#000000' } : { backgroundColor: '#d1d5db', opacity: 0.4 }}
+                  className="w-full font-semibold py-3 px-4 rounded-md transition-all duration-200 bg-black hover:bg-gray-800 text-white cursor-pointer"
+              onClick={handlePlaceOrder}
             >
                   Continue to payment
             </button>

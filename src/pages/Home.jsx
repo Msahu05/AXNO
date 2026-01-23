@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { CheckCircle2, PhoneCall, UploadCloud, HeartHandshake, Truck, ArrowRight, Leaf, Sparkles, Zap, Award, Shield, Star, Instagram, Mail, Facebook } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { CheckCircle2, PhoneCall, UploadCloud, HeartHandshake, Truck, ArrowRight, Leaf, Sparkles, Zap, Award, Shield, Star, Instagram, Mail, Facebook, Headphones, Shirt } from "lucide-react";
 import { HeroSection } from "@/components/HeroSection";
 import ProductCard from "@/components/ProductCard";
 import ProductCardSkeleton from "@/components/ProductCardSkeleton";
@@ -10,9 +10,9 @@ import { useWishlist } from "@/contexts/wishlist-context";
 import { productsAPI, userAPI, getImageUrl } from "@/lib/api";
 
 const productTypes = [
-  { key: "Hoodie", label: "Hoodies", route: "hoodies" },
   { key: "T-Shirt", label: "T-Shirts", route: "t-shirts" },
   { key: "Sweatshirt", label: "Sweatshirts", route: "sweatshirts" },
+  { key: "Hoodie", label: "Hoodies", route: "hoodies" },
 ];
 
 const customizationSteps = [
@@ -35,15 +35,12 @@ const customizationSteps = [
 
 const Home = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { isAuthenticated, user } = useAuth();
   const { items: wishlistItems } = useWishlist();
   const [allProducts, setAllProducts] = useState([]);
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isLargeScreen, setIsLargeScreen] = useState(false);
-
-  const filterParam = searchParams.get('filter'); // new, hot, or top
 
   useEffect(() => {
     const checkScreenSize = () => {
@@ -58,9 +55,8 @@ const Home = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        // If filter is present, pass it to API
-        const params = filterParam ? { filter: filterParam } : {};
-        const productsResponse = await productsAPI.getAll(params);
+        // Load all products without any filter
+        const productsResponse = await productsAPI.getAll({});
         setAllProducts(productsResponse.products || []);
       } catch (error) {
         console.error('Error loading products:', error);
@@ -70,7 +66,7 @@ const Home = () => {
       }
     };
     loadData();
-  }, [filterParam]);
+  }, []);
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -98,10 +94,10 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-purple-soft/40 dark:bg-background">
-      <main className="container mx-auto px-4 lg:px-8 py-2 sm:py-4 lg:py-6 space-y-8 sm:space-y-8 lg:space-y-16">
+      <main className="container mx-auto px-2 sm:px-4 lg:px-6 py-1 sm:py-2 lg:py-4 space-y-4 sm:space-y-6 lg:space-y-8">
         <HeroSection />
 
-        <div className="border-t border-border/50 my-12"></div>
+        <div className="border-t border-border/50 my-4 sm:my-6"></div>
 
         <section id="catalogue" className="space-y-6 sm:space-y-8 lg:space-y-12">
           <div className="space-y-8 sm:space-y-8 lg:space-y-16">
@@ -110,14 +106,14 @@ const Home = () => {
               
               return (
                 <div key={type.key} id={`${type.key.toLowerCase()}-section`} className="space-y-6">
-                  <div className="flex flex-wrap items-end justify-between gap-4">
-                    <div>
-                      <p className="font-display text-2xl font-bold uppercase tracking-[0.16em] text-foreground">{type.label}</p>
+                  <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-4">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-display text-lg sm:text-xl lg:text-2xl font-bold uppercase tracking-[0.05em] sm:tracking-[0.08em] text-foreground">{type.label}</p>
                     </div>
-                    <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-3">
                       <Button
                         variant="outline"
-                        className="font-display rounded-full border-foreground px-4 py-2 text-sm tracking-[0.12em]"
+                        className="font-display rounded-full border-foreground px-2 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm tracking-normal"
                         onClick={() => {
                           window.scrollTo({ top: 0, behavior: "smooth" });
                           navigate(`/category/${type.route}?filter=unisex`);
@@ -127,7 +123,7 @@ const Home = () => {
                       </Button>
                       <Button
                         variant="outline"
-                        className="font-display rounded-full border-foreground px-4 py-2 text-sm tracking-[0.12em]"
+                        className="font-display rounded-full border-foreground px-2 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm tracking-normal"
                         onClick={() => {
                           window.scrollTo({ top: 0, behavior: "smooth" });
                           navigate(`/category/${type.route}?filter=men`);
@@ -137,7 +133,7 @@ const Home = () => {
                       </Button>
                       <Button
                         variant="outline"
-                        className="font-display rounded-full border-foreground px-4 py-2 text-sm tracking-[0.12em]"
+                        className="font-display rounded-full border-foreground px-2 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm tracking-normal"
                         onClick={() => {
                           window.scrollTo({ top: 0, behavior: "smooth" });
                           navigate(`/category/${type.route}?filter=women`);
@@ -200,38 +196,86 @@ const Home = () => {
 
         <div className="border-t border-border/50 my-6 sm:my-8 lg:my-12"></div>
 
-        <section id="custom" className="space-y-6 sm:space-y-8 rounded-[28px] sm:rounded-[40px] lg:rounded-[56px] border border-border dark:border-white/15 bg-purple-soft/50 dark:bg-gradient-to-r dark:from-[var(--card)] dark:via-[var(--muted)] dark:to-[var(--card)] p-4 sm:p-6 lg:p-10 shadow-[var(--shadow-soft)]">
-          {/* <div className="space-y-4">
-            <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Custom studio</p>
-            <h2 className="text-4xl font-black">Upload, confirm, conquer.</h2>
-            <p className="text-muted-foreground">
-              Start with our templates or drop your own artwork. Checkout collects your inspiration, Pinterest links or AI prompts. We ping you on WhatsApp within 12 hours to align colours, placements, and fit. Satisfaction over everything.
-            </p>
-          </div>
-          
-          <div className="flex items-center justify-center gap-4 md:gap-8 flex-wrap">
-            {customizationSteps.map((step, index) => (
-              <div key={step.title} className="flex items-center gap-4 md:gap-8">
-                <div className="flex flex-col items-center justify-center text-center space-y-4 rounded-[20px] sm:rounded-[24px] lg:rounded-[28px] border border-border dark:border-white/20 bg-background/60 p-4 sm:p-5 lg:p-6 backdrop-blur w-full sm:w-[240px] lg:w-[280px] h-auto sm:h-[240px] lg:h-[280px]">
-                  <div className="rounded-2xl bg-primary/10 p-4 text-primary">{step.icon}</div>
-                  <div className="space-y-2">
-                    <p className="text-lg font-semibold">{step.title}</p>
-                    <p className="text-sm text-muted-foreground">{step.description}</p>
-                  </div>
-                </div>
-                {index < customizationSteps.length - 1 && (
-                  <ArrowRight className="h-8 w-8 text-primary flex-shrink-0 hidden md:block" />
-                )}
-              </div>
-            ))}
-          </div>
-          
-          <div className="flex justify-center">
-            <Button className="rounded-full bg-primary px-8 py-6 text-xs font-semibold uppercase tracking-[0.4em]" onClick={() => navigate("/category/hoodies")}>
-              Start custom order
-            </Button>
-          </div> */}
+        {/* Text Section - Made For You, Designed By You - Only visible on small screens (below md) */}
+        <section className="md:hidden space-y-6 sm:space-y-8 rounded-[28px] sm:rounded-[40px] lg:rounded-[56px] border border-border dark:border-white/15 bg-white dark:bg-[var(--card)]/95 p-6 sm:p-8 lg:p-10 shadow-[var(--shadow-soft)]">
+          <div className="flex flex-col items-start justify-center space-y-4 sm:space-y-6">
+            {/* Top Banner */}
+            <div className="inline-flex w-fit items-center gap-1 rounded-lg bg-primary/10 px-3 py-1.5 sm:px-4 sm:py-2 text-base sm:text-lg md:text-xl font-bold text-primary">
+              Looklyn - Own The Look
+            </div>
 
+            {/* Headline */}
+            <h2 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight tracking-tight">
+              <span className="text-foreground">Made For You,</span>
+              <br />
+              <span className="text-primary">Designed By You!!</span>
+            </h2>
+
+            {/* Description */}
+            <p className="max-w-2xl text-sm sm:text-base text-muted-foreground leading-relaxed">
+              Built by a young mind, driven by bold ideas.
+              <br />
+              Made for people who don't follow trends — they create them.
+              <br />
+              Your design. Your vibe. Your look.
+            </p>
+
+            {/* CTA Buttons */}
+            <div className="flex flex-wrap gap-3 sm:gap-4 pt-2">
+              <Button 
+                size="lg" 
+                className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-soft hover:shadow-elevated rounded-lg px-4 sm:px-6 py-3 sm:py-6 text-sm sm:text-base"
+                onClick={() => navigate('/category/hoodies')}
+              >
+                Shop Now
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="lg"
+                className="border-2 border-primary text-foreground hover:bg-accent rounded-lg px-4 sm:px-6 py-3 sm:py-6 text-sm sm:text-base"
+                onClick={() => document.getElementById('custom')?.scrollIntoView({ behavior: 'smooth' })}
+              >
+                Learn More
+              </Button>
+            </div>
+
+            {/* Features */}
+            <div className="flex flex-wrap gap-4 sm:gap-6 pt-4 sm:pt-6 w-full">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-primary/10 flex-shrink-0">
+                  <Truck className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm sm:text-base font-semibold text-foreground">Free Shipping</p>
+                  <p className="text-xs text-muted-foreground">All Over India</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-primary/10 flex-shrink-0">
+                  <Headphones className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm sm:text-base font-semibold text-foreground">24/7 WhatsApp Support</p>
+                  <p className="text-xs text-muted-foreground">Always here to help</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-primary/10 flex-shrink-0">
+                  <Shirt className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm sm:text-base font-semibold text-foreground">Printed After Order</p>
+                  <p className="text-xs text-muted-foreground">Made just for you</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div className="border-t border-border/50 my-6 sm:my-8 lg:my-12"></div>
+
+        <section id="custom" className="space-y-6 sm:space-y-8 rounded-[28px] sm:rounded-[40px] lg:rounded-[56px] border border-border dark:border-white/15 bg-purple-soft/50 dark:bg-gradient-to-r dark:from-[var(--card)] dark:via-[var(--muted)] dark:to-[var(--card)] p-4 sm:p-6 lg:p-10 shadow-[var(--shadow-soft)]">
           <div className="space-y-8">
             <div>
               <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground mb-4">Why Choose Us</p>

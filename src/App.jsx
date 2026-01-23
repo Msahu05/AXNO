@@ -16,6 +16,7 @@ import { CartProvider } from './contexts/cart-context.jsx';
 import { WishlistProvider } from './contexts/wishlist-context.jsx';
 import Cart from './pages/Cart';
 import Category from './pages/Category';
+import FilteredProducts from './pages/FilteredProducts';
 import Account from './pages/Account';
 import Admin from './pages/Admin';
 import ResetPassword from './pages/ResetPassword';
@@ -48,6 +49,7 @@ const App = () => (
                     <Route path="/" element={<Home />} />
                     <Route path="/product/:slug" element={<Product />} />
                     <Route path="/category/:category" element={<Category />} />
+                    <Route path="/filter/:filterType" element={<FilteredProducts />} />
                     <Route path="/cart" element={<Cart />} />
                     <Route path="/checkout" element={<Checkout />} />
                     <Route path="/payment" element={<Payment />} />

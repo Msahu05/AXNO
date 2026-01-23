@@ -94,6 +94,7 @@ const navItems = [
         url: "/",
         icon: Package,
         scrollTo: "catalogue",
+        queryParams: null, // Explicitly clear filter
       },
       ...categories.map(cat => ({
         title: cat.title,
@@ -103,30 +104,27 @@ const navItems = [
       })),
       {
         title: "New Arrivals",
-        url: "/",
+        url: "/filter/new",
         icon: Star,
-        scrollTo: "catalogue",
-        queryParams: "?filter=new",
+        scrollTo: null,
       },
       {
         title: "Hot Products",
-        url: "/",
+        url: "/filter/hot",
         icon: Flame,
-        scrollTo: "catalogue",
-        queryParams: "?filter=hot",
+        scrollTo: null,
       },
       {
         title: "Top Products",
-        url: "/",
+        url: "/filter/top",
         icon: TrendingUp,
-        scrollTo: "catalogue",
-        queryParams: "?filter=top",
+        scrollTo: null,
       },
       {
         title: "Customised Products",
-        url: "/",
+        url: "/filter/custom",
         icon: Sparkles,
-        scrollTo: "custom",
+        scrollTo: null,
       },
     ],
   },
@@ -147,11 +145,11 @@ export function NavigationSidebar() {
       setOpen(false);
     }
 
+    // For items with scrollTo (like "All Products" on home page)
     if (item.scrollTo) {
       e.preventDefault();
-      const url = item.queryParams ? item.url + item.queryParams : item.url;
       if (location.pathname !== "/") {
-        navigate(url);
+        navigate(item.url);
         setTimeout(() => {
           const element = document.getElementById(item.scrollTo);
           if (element) {
@@ -159,19 +157,9 @@ export function NavigationSidebar() {
           }
         }, 100);
       } else {
-        if (item.queryParams) {
-          navigate(url);
-          setTimeout(() => {
-            const element = document.getElementById(item.scrollTo);
-            if (element) {
-              element.scrollIntoView({ behavior: "smooth" });
-            }
-          }, 100);
-        } else {
-          const element = document.getElementById(item.scrollTo);
-          if (element) {
-            element.scrollIntoView({ behavior: "smooth" });
-          }
+        const element = document.getElementById(item.scrollTo);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth" });
         }
       }
     } else if (item.title === "Home") {
@@ -184,20 +172,27 @@ export function NavigationSidebar() {
       } else {
         window.scrollTo({ top: 0, behavior: "smooth" });
       }
-    } else if (item.queryParams) {
-      e.preventDefault();
-      navigate(item.url + item.queryParams);
+    } else {
+      // For regular navigation items (categories, filter pages, etc.)
+      // Let the Link component handle navigation
+      // No need to preventDefault or navigate manually
     }
   };
 
   const isActive = (item) => {
-    if (item.url === "/" && location.pathname === "/") {
-      return item.scrollTo === null && !item.queryParams;
+    // For "All Products", it's active when on home page with no filter
+    if (item.url === "/" && item.queryParams === null) {
+      return location.pathname === "/" && (!location.search || location.search === '');
     }
-    if (item.queryParams) {
-      const currentUrl = location.pathname + location.search;
-      return currentUrl === (item.url + item.queryParams);
+    // For filter pages (new, hot, top, custom), check if pathname matches
+    if (item.url.startsWith("/filter/")) {
+      return location.pathname === item.url || location.pathname.startsWith(item.url + "/");
     }
+    // For category pages
+    if (item.url.startsWith("/category/")) {
+      return location.pathname === item.url || location.pathname.startsWith(item.url + "/");
+    }
+    // For other pages
     return location.pathname === item.url || location.pathname.startsWith(item.url + "/");
   };
 

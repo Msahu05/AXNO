@@ -6,10 +6,10 @@ const THEME_KEY = 'looklyn-theme';
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {
-    if (typeof window === 'undefined') return 'dark';
+    if (typeof window === 'undefined') return 'light';
     const stored = window.localStorage.getItem(THEME_KEY);
     if (stored) return stored;
-    return 'dark';
+    return 'light';
   });
 
   useEffect(() => {
