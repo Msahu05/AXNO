@@ -186,7 +186,7 @@ const Category = () => {
               <Button
                 key={filter}
                 variant={audienceFilter === filter ? "default" : "outline"}
-                className={`rounded-full font-body text-xs sm:text-sm font-medium px-3 py-1 sm:px-6 sm:py-2 transition-all tracking-normal ${
+                className={`rounded-md font-body text-xs sm:text-sm font-medium px-3 py-1 sm:px-6 sm:py-2 transition-all tracking-normal ${
                   audienceFilter === filter 
                     ? "bg-primary text-primary-foreground border-primary" 
                     : "bg-background dark:bg-[#2a2538] text-foreground dark:text-gray-300 border-border dark:border-white/20 hover:border-primary dark:hover:border-purple-500"

@@ -11,8 +11,8 @@ import { productsAPI, userAPI, getImageUrl } from "@/lib/api";
 
 const productTypes = [
   { key: "T-Shirt", label: "T-Shirts", route: "t-shirts" },
-  { key: "Sweatshirt", label: "Sweatshirts", route: "sweatshirts" },
   { key: "Hoodie", label: "Hoodies", route: "hoodies" },
+  { key: "Sweatshirt", label: "Sweatshirts", route: "sweatshirts" },
 ];
 
 const customizationSteps = [
@@ -113,7 +113,7 @@ const Home = () => {
                     <div className="flex flex-wrap items-center gap-1.5 sm:gap-3">
                       <Button
                         variant="outline"
-                        className="font-display rounded-full border-foreground px-2 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm tracking-normal"
+                        className="font-display rounded-md border-foreground px-2 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm tracking-normal"
                         onClick={() => {
                           window.scrollTo({ top: 0, behavior: "smooth" });
                           navigate(`/category/${type.route}?filter=unisex`);
@@ -123,7 +123,7 @@ const Home = () => {
                       </Button>
                       <Button
                         variant="outline"
-                        className="font-display rounded-full border-foreground px-2 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm tracking-normal"
+                        className="font-display rounded-md border-foreground px-2 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm tracking-normal"
                         onClick={() => {
                           window.scrollTo({ top: 0, behavior: "smooth" });
                           navigate(`/category/${type.route}?filter=men`);
@@ -133,7 +133,7 @@ const Home = () => {
                       </Button>
                       <Button
                         variant="outline"
-                        className="font-display rounded-full border-foreground px-2 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm tracking-normal"
+                        className="font-display rounded-md border-foreground px-2 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm tracking-normal"
                         onClick={() => {
                           window.scrollTo({ top: 0, behavior: "smooth" });
                           navigate(`/category/${type.route}?filter=women`);
