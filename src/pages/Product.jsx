@@ -951,7 +951,7 @@ const Product = () => {
             <p className="text-[9px] sm:text-base md:text-lg text-muted-foreground leading-relaxed max-w-full">{product.description || "Premium quality product with elegant design."}</p>
 
             {/* Why You Will Love This Product */}
-            <div className="mt-2 sm:mt-6 md:mt-8 rounded sm:rounded-xl border border-border dark:border-white/15 bg-purple-soft/30 dark:bg-card/50 p-2 sm:p-5 md:p-6 lg:p-8 max-w-full">
+            <div className="mt-4 sm:mt-8 md:mt-10 rounded-lg sm:rounded-xl border border-border dark:border-white/15 bg-purple-soft/30 dark:bg-card/50 p-2 sm:p-5 md:p-6 lg:p-8 max-w-full">
               <h3 className="text-[9px] sm:text-base md:text-lg lg:text-xl font-semibold text-foreground mb-2 sm:mb-4 md:mb-6">
                 Why You Will Love This Product:
               </h3>
@@ -1118,7 +1118,7 @@ const Product = () => {
             </div>
 
             {/* Actions */}
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 md:gap-5 pt-2 sm:pt-5 md:pt-6 w-full max-w-full">
+            <div className="flex flex-row gap-2 sm:gap-4 md:gap-5 pt-2 sm:pt-5 md:pt-6 w-full max-w-full">
               <Button
                 size="lg"
                 className="flex-1 gap-1.5 sm:gap-3 shadow-soft hover:shadow-elevated text-[9px] sm:text-base md:text-lg h-9 sm:h-14 md:h-16 w-full px-2 sm:px-4"
@@ -1191,7 +1191,7 @@ const Product = () => {
 
         {/* Ratings and Reviews */}
         <section className="mt-8 sm:mt-12 md:mt-16 lg:mt-20 w-full max-w-full overflow-hidden">
-          <div className="mx-auto px-0.5 sm:px-4 md:px-6 lg:px-8 w-full max-w-[80%] sm:max-w-full md:max-w-6xl" style={{ boxSizing: 'border-box' }}>
+          <div className="mx-auto px-4 sm:px-4 md:px-6 lg:px-8 w-full max-w-[75%] sm:max-w-[90%] md:max-w-6xl" style={{ boxSizing: 'border-box' }}>
           <div className="mb-4 sm:mb-6 lg:mb-8">
             <div className="flex flex-col xs:flex-row items-start xs:items-center justify-between gap-3 xs:gap-4 mb-4 sm:mb-6">
               <h2 className="font-display text-lg sm:text-xl lg:text-2xl font-black text-foreground">
@@ -1398,7 +1398,7 @@ const Product = () => {
               return (
                 <div className="flex flex-col md:flex-row gap-6 sm:gap-8 md:gap-10">
                   {/* Rating Summary */}
-                  <div className="space-y-4 sm:space-y-6 rounded-lg sm:rounded-xl border border-border bg-card p-4 sm:p-5 md:p-6 w-full md:w-80 md:max-w-80 flex-shrink-0">
+                  <div className="space-y-4 sm:space-y-6 rounded-lg sm:rounded-xl border border-border bg-card p-4 sm:p-5 md:p-6 w-full max-w-[55%] mx-auto md:w-80 md:max-w-80 md:mx-0 flex-shrink-0">
                     <div className="flex items-center justify-center md:justify-start gap-4">
                       <div className="text-center">
                         <div className="text-4xl sm:text-5xl md:text-6xl font-black text-foreground">{avgRating}</div>
@@ -1628,7 +1628,7 @@ const Product = () => {
         {/* Related Products */}
         {related.length > 0 && (
           <section className="mt-8 sm:mt-12 md:mt-16 lg:mt-20 w-full max-w-full overflow-hidden">
-            <div className="mx-auto px-0.5 sm:px-4 md:px-6 lg:px-8 w-full max-w-[80%] sm:max-w-full md:max-w-7xl" style={{ boxSizing: 'border-box' }}>
+            <div className="mx-auto px-4 sm:px-4 md:px-6 lg:px-8 w-full max-w-[75%] sm:max-w-[90%] md:max-w-7xl" style={{ boxSizing: 'border-box' }}>
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 mb-6 sm:mb-8 md:mb-10 max-w-full">
                 <h2 className="font-display text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-foreground">
                   Related <span className="text-gradient">Products</span>
