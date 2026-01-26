@@ -93,7 +93,7 @@ const Home = () => {
   const wishlistPicks = wishlistItems.slice(0, 4);
 
   return (
-    <div className="min-h-screen bg-purple-soft/40 dark:bg-background">
+    <div className="min-h-screen bg-muted/40 dark:bg-background">
       <main className="container mx-auto px-2 sm:px-4 lg:px-6 py-1 sm:py-2 lg:py-4 space-y-4 sm:space-y-6 lg:space-y-8">
         <HeroSection />
 
@@ -275,7 +275,7 @@ const Home = () => {
 
         <div className="border-t border-border/50 my-6 sm:my-8 lg:my-12"></div>
 
-        <section id="custom" className="space-y-6 sm:space-y-8 rounded-[28px] sm:rounded-[40px] lg:rounded-[56px] border border-border dark:border-white/15 bg-purple-soft/50 dark:bg-gradient-to-r dark:from-[var(--card)] dark:via-[var(--muted)] dark:to-[var(--card)] p-4 sm:p-6 lg:p-10 shadow-[var(--shadow-soft)]">
+        <section id="custom" className="space-y-6 sm:space-y-8 rounded-[28px] sm:rounded-[40px] lg:rounded-[56px] border border-border dark:border-white/15 bg-muted/50 dark:bg-gradient-to-r dark:from-[var(--card)] dark:via-[var(--muted)] dark:to-[var(--card)] p-4 sm:p-6 lg:p-10 shadow-[var(--shadow-soft)]">
           <div className="space-y-8">
             <div>
               <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground mb-4">Why Choose Us</p>

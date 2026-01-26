@@ -1508,7 +1508,7 @@ const Checkout = () => {
   // Wait for auth to finish loading before checking
   if (authContextLoading) {
     return (
-      <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(124,90,255,0.12),_transparent_70%)]">
+      <div className="min-h-screen bg-background">
         <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-2">
         </div>
         <div className="px-2 sm:px-4 lg:px-6 py-6 sm:py-10">
@@ -1534,7 +1534,7 @@ const Checkout = () => {
   // Show loading if buy now product is being loaded
   if (isBuyNow && buyNowLoading) {
     return (
-      <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(124,90,255,0.12),_transparent_70%)]">
+      <div className="min-h-screen bg-background">
         <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-2">
         </div>
         <div className="px-2 sm:px-4 lg:px-6 py-6 sm:py-10">
@@ -1567,7 +1567,7 @@ const Checkout = () => {
     }
     
     return (
-      <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(124,90,255,0.12),_transparent_70%)]">
+      <div className="min-h-screen bg-background">
         <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-2">
         </div>
         <div className="px-4 py-10">
@@ -1584,7 +1584,7 @@ const Checkout = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(124,90,255,0.12),_transparent_70%)]">
+    <div className="min-h-screen bg-background">
       {/* Authentication Modal */}
       <Dialog open={showAuthModal} onOpenChange={setShowAuthModal}>
         <DialogContent className="max-w-md">
@@ -1752,14 +1752,14 @@ const Checkout = () => {
               {/* Shipping Address Section */}
               <section className={`rounded-lg border shadow-sm overflow-hidden transition-colors ${
                 isShippingOpen 
-                  ? 'bg-white border-purple-100' 
+                  ? 'bg-white border-border' 
                   : 'bg-foreground border-gray-700'
               }`}>
                 <button
                   onClick={() => setIsShippingOpen(!isShippingOpen)}
                   className={`w-full flex items-center justify-between p-6 transition-colors ${
                     isShippingOpen 
-                      ? 'hover:bg-purple-50' 
+                      ? 'hover:bg-muted' 
                       : 'hover:bg-gray-900'
                   }`}
                 >
@@ -1788,15 +1788,15 @@ const Checkout = () => {
                       key={addr._id}
                       className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
                         selectedAddressId === addr._id
-                          ? 'border-purple-500 bg-purple-50'
-                                  : 'border-gray-200 hover:border-purple-200'
+                          ? 'border-primary bg-primary/10'
+                                  : 'border-gray-200 hover:border-primary/50'
                       }`}
                       onClick={() => selectSavedAddress(addr)}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           {addr.isDefault && (
-                            <span className="text-xs font-semibold text-purple-600 uppercase tracking-wide mb-1 block">
+                            <span className="text-xs font-semibold text-primary uppercase tracking-wide mb-1 block">
                               Default
                             </span>
                           )}
@@ -1809,7 +1809,7 @@ const Checkout = () => {
                             <p className="text-sm text-gray-600">Phone: {addr.phone}</p>
                           )}
                         </div>
-                                <MapPin className="h-5 w-5 text-purple-500 flex-shrink-0 ml-2" />
+                                <MapPin className="h-5 w-5 text-primary flex-shrink-0 ml-2" />
                       </div>
                     </div>
                   ))}
@@ -1826,7 +1826,7 @@ const Checkout = () => {
                     setZipCode("");
                     setPhone("+91 ");
                   }}
-                  className="mt-4 text-sm text-purple-600 hover:text-purple-700 font-medium"
+                  className="mt-4 text-sm text-primary hover:text-primary/80 font-medium"
                 >
                   + Add New Address
                 </button>
@@ -1907,7 +1907,7 @@ const Checkout = () => {
                       {citySuggestions.map((suggestion, idx) => (
                         <div
                           key={idx}
-                              className="px-4 py-2 hover:bg-purple-50 cursor-pointer"
+                              className="px-4 py-2 hover:bg-muted cursor-pointer"
                           onClick={() => selectCity(suggestion)}
                         >
                           {suggestion}
@@ -1921,7 +1921,7 @@ const Checkout = () => {
                       <select
                     value={state}
                         onChange={(e) => setState(e.target.value)}
-                        className="w-full px-3 py-2 bg-background border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        className="w-full px-3 py-2 bg-background border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                       >
                         <option value="">Select...</option>
                         {INDIAN_STATES.map((s) => (
@@ -1955,7 +1955,7 @@ const Checkout = () => {
                           id="saveAddress"
                           checked={saveAddress}
                           onChange={(e) => setSaveAddress(e.target.checked)}
-                          className="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                         />
                         <label htmlFor="saveAddress" className="text-sm text-gray-700 cursor-pointer">
                           Save this address for future orders
@@ -1972,14 +1972,14 @@ const Checkout = () => {
               {hasCustomisedProducts && (
                 <section className={`rounded-lg border shadow-sm overflow-hidden transition-colors ${
                   isCustomDesignOpen 
-                    ? 'bg-white border-purple-100' 
+                    ? 'bg-white border-border' 
                     : 'bg-foreground border-gray-700'
                 }`}>
                   <button
                     onClick={() => setIsCustomDesignOpen(!isCustomDesignOpen)}
                     className={`w-full flex items-center justify-between p-6 transition-colors ${
                       isCustomDesignOpen 
-                        ? 'hover:bg-purple-50' 
+                        ? 'hover:bg-muted' 
                         : 'hover:bg-gray-900'
                     }`}
                   >
@@ -2048,7 +2048,7 @@ const Checkout = () => {
             {/* Right Column */}
             <aside className="space-y-6">
               {/* Order Summary */}
-              <div className="bg-white rounded-lg border border-purple-100 p-6 shadow-sm">
+              <div className="bg-white rounded-lg border border-border p-6 shadow-sm">
                 <h2 className="text-lg font-semibold mb-4 text-gray-800">
                   Order subtotal ({displayItems.reduce((sum, item) => sum + item.quantity, 0)} {displayItems.reduce((sum, item) => sum + item.quantity, 0) === 1 ? 'item' : 'items'}): ₹{displaySubtotal.toLocaleString()}
                 </h2>
@@ -2102,9 +2102,9 @@ const Checkout = () => {
                             disabled={!isApplicable && !isApplied}
                             className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
                               isApplied
-                                ? 'border-purple-500 bg-purple-50'
+                                ? 'border-primary bg-primary/10'
                                 : isApplicable
-                                ? 'border-purple-200 bg-white hover:border-purple-400 hover:bg-purple-50 cursor-pointer'
+                                ? 'border-primary/30 bg-white hover:border-primary hover:bg-primary/10 cursor-pointer'
                                 : 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed'
                             }`}
                           >
@@ -2113,7 +2113,7 @@ const Checkout = () => {
                                 <div className="flex items-center gap-2 mb-1">
                                   <span className="font-semibold text-gray-900">{coupon.code}</span>
                                   {isApplied && (
-                                    <span className="text-xs bg-purple-500 text-white px-2 py-0.5 rounded">Applied</span>
+                                    <span className="text-xs bg-primary text-white px-2 py-0.5 rounded">Applied</span>
                                   )}
                                   {!isApplicable && !isApplied && (
                                     <span className="text-xs bg-gray-400 text-white px-2 py-0.5 rounded">Not Applicable</span>
@@ -2145,7 +2145,7 @@ const Checkout = () => {
                               </div>
                               {isApplicable && discountAmount > 0 && (
                                 <div className="text-right">
-                                  <div className="text-sm font-semibold text-purple-600">
+                                  <div className="text-sm font-semibold text-primary">
                                     Save ₹{discountAmount.toLocaleString()}
                                   </div>
                                 </div>
@@ -2209,7 +2209,7 @@ const Checkout = () => {
             </div>
                 </div>
 
-                <p className="text-sm text-purple-600 font-medium mb-4 text-center">
+                <p className="text-sm text-primary font-medium mb-4 text-center">
                   Assured delivery by 8-10 days
                 </p>
 
@@ -2222,7 +2222,7 @@ const Checkout = () => {
               </div>
 
               {/* Cart Items */}
-              <div className="bg-white rounded-lg border border-purple-100 p-6 shadow-sm">
+              <div className="bg-white rounded-lg border border-border p-6 shadow-sm">
                 <h2 className="text-lg font-semibold mb-4 text-gray-800">
                   Cart ({displayItems.reduce((sum, item) => sum + item.quantity, 0)} {displayItems.reduce((sum, item) => sum + item.quantity, 0) === 1 ? 'Item' : 'Items'})
                 </h2>
@@ -2257,7 +2257,7 @@ const Checkout = () => {
                       <div className="flex-1 min-w-0">
                         <Link 
                           to={productUrl}
-                          className="block hover:text-purple-600 transition-colors"
+                          className="block hover:text-primary transition-colors"
                         >
                           <p className="font-semibold text-xs text-gray-900 mb-0.5 leading-tight">{nameWithoutColor}</p>
                         </Link>
@@ -2265,7 +2265,7 @@ const Checkout = () => {
                           {item.category} · Size {String(item.size).replace(/[\[\]"]/g, '').replace(/\\/g, '').trim()}
                         </p>
                         {displayColor && (
-                          <p className="text-xs text-purple-600 font-medium mb-1.5">
+                          <p className="text-xs text-primary font-medium mb-1.5">
                             Color: {displayColor}
                           </p>
                         )}

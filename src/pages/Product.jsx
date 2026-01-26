@@ -699,26 +699,15 @@ const Product = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background w-full max-w-full overflow-x-hidden">
-      <main className="w-full max-w-full overflow-x-hidden px-0.5 sm:px-4 md:px-6 lg:px-8 xl:px-12 py-0.5 sm:py-4 md:py-6 lg:py-8">
-        {/* Breadcrumb */}
-        <nav className="mb-1 sm:mb-4 md:mb-6 text-[8px] sm:text-sm text-muted-foreground overflow-hidden w-full max-w-full">
-          <div className="flex items-center gap-0.5 sm:gap-2 flex-wrap">
-            <button onClick={() => navigate('/')} className="hover:text-foreground truncate text-[8px] sm:text-sm">Home</button>
-            <span className="text-[8px] sm:text-sm">/</span>
-            <button onClick={() => navigate('/category/hoodies')} className="hover:text-foreground truncate text-[8px] sm:text-sm">Products</button>
-            <span className="text-[8px] sm:text-sm">/</span>
-            <span className="text-foreground truncate max-w-[80px] sm:max-w-[300px] md:max-w-none text-[8px] sm:text-sm">{product.name}</span>
-          </div>
-        </nav>
-
-        <div className="grid gap-1 sm:gap-6 md:gap-8 lg:gap-12 xl:gap-16 lg:grid-cols-2 w-full max-w-[80%] sm:max-w-full mx-auto" style={{ boxSizing: 'border-box' }}>
+    <div className="min-h-screen bg-background w-full overflow-x-hidden" style={{ maxWidth: '100vw', boxSizing: 'border-box' }}>
+      <main className="w-full overflow-x-hidden py-2 sm:py-0 md:py-6 lg:py-8" style={{ maxWidth: '100vw', boxSizing: 'border-box' }}>
+        <div className="grid gap-2 sm:gap-6 md:gap-8 lg:gap-12 xl:gap-16 lg:grid-cols-2 w-full mx-auto" style={{ maxWidth: '100%', boxSizing: 'border-box' }}>
           {/* Product Images */}
           <div className="space-y-1 sm:space-y-4 md:space-y-6 w-full max-w-full overflow-hidden" style={{ maxWidth: '100%', boxSizing: 'border-box' }}>
             {/* Main Image */}
             <div 
               className="relative aspect-square overflow-hidden rounded sm:rounded-xl md:rounded-2xl bg-secondary shadow-soft group w-full mx-auto"
-              style={{ maxWidth: '75%', width: '75%', boxSizing: 'border-box' }}
+              style={{ maxWidth: '100%', width: '100%', boxSizing: 'border-box' }}
               onTouchStart={onTouchStart}
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
@@ -835,7 +824,7 @@ const Product = () => {
         </div>
 
             {/* Thumbnail Gallery */}
-            <div className="flex gap-0.5 sm:gap-3 md:gap-4 justify-center overflow-x-auto pb-0.5 sm:pb-2 w-full max-w-full scrollbar-hide mx-auto" style={{ maxWidth: '75%', width: '75%' }}>
+            <div className="flex gap-0.5 sm:gap-3 md:gap-4 justify-center overflow-x-auto pb-0.5 sm:pb-2 w-full max-w-full scrollbar-hide mx-auto" style={{ maxWidth: '100%', width: '100%' }}>
               {productImages.length > 0 ? (
                 productImages.map((image, index) => (
                   <button
@@ -867,7 +856,7 @@ const Product = () => {
           </div>
 
           {/* Product Info */}
-          <div className="space-y-1 sm:space-y-5 md:space-y-6 lg:space-y-8 w-full max-w-full overflow-hidden mx-auto" style={{ maxWidth: '80%', boxSizing: 'border-box' }}>
+          <div className="space-y-1 sm:space-y-5 md:space-y-6 lg:space-y-8 w-full max-w-full overflow-hidden mx-auto" style={{ maxWidth: '100%', boxSizing: 'border-box' }}>
             <div className="w-full max-w-full overflow-hidden">
               <p className="text-[8px] sm:text-sm md:text-base font-medium uppercase tracking-wider text-primary mb-0.5 sm:mb-2">
                 {product.category}
@@ -951,7 +940,7 @@ const Product = () => {
             <p className="text-[9px] sm:text-base md:text-lg text-muted-foreground leading-relaxed max-w-full">{product.description || "Premium quality product with elegant design."}</p>
 
             {/* Why You Will Love This Product */}
-            <div className="mt-4 sm:mt-8 md:mt-10 rounded-lg sm:rounded-xl border border-border dark:border-white/15 bg-purple-soft/30 dark:bg-card/50 p-2 sm:p-5 md:p-6 lg:p-8 max-w-full">
+            <div className="mt-4 sm:mt-8 md:mt-10 rounded-lg sm:rounded-xl border border-border dark:border-white/15 bg-muted/30 dark:bg-card/50 p-2 sm:p-5 md:p-6 lg:p-8 max-w-full">
               <h3 className="text-[9px] sm:text-base md:text-lg lg:text-xl font-semibold text-foreground mb-2 sm:mb-4 md:mb-6">
                 Why You Will Love This Product:
               </h3>
@@ -1191,7 +1180,7 @@ const Product = () => {
 
         {/* Ratings and Reviews */}
         <section className="mt-8 sm:mt-12 md:mt-16 lg:mt-20 w-full max-w-full overflow-hidden">
-          <div className="mx-auto px-4 sm:px-4 md:px-6 lg:px-8 w-full max-w-[75%] sm:max-w-[90%] md:max-w-6xl" style={{ boxSizing: 'border-box' }}>
+          <div className="mx-auto w-full max-w-full sm:max-w-[90%] md:max-w-6xl" style={{ boxSizing: 'border-box' }}>
           <div className="mb-4 sm:mb-6 lg:mb-8">
             <div className="flex flex-col xs:flex-row items-start xs:items-center justify-between gap-3 xs:gap-4 mb-4 sm:mb-6">
               <h2 className="font-display text-lg sm:text-xl lg:text-2xl font-black text-foreground">
@@ -1628,7 +1617,7 @@ const Product = () => {
         {/* Related Products */}
         {related.length > 0 && (
           <section className="mt-8 sm:mt-12 md:mt-16 lg:mt-20 w-full max-w-full overflow-hidden">
-            <div className="mx-auto px-4 sm:px-4 md:px-6 lg:px-8 w-full max-w-[75%] sm:max-w-[90%] md:max-w-7xl" style={{ boxSizing: 'border-box' }}>
+            <div className="mx-auto w-full max-w-full sm:max-w-[90%] md:max-w-7xl" style={{ boxSizing: 'border-box' }}>
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 mb-6 sm:mb-8 md:mb-10 max-w-full">
                 <h2 className="font-display text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-foreground">
                   Related <span className="text-gradient">Products</span>

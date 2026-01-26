@@ -20,18 +20,18 @@ const Header = () => {
   const { itemCount: cartCount = 0 } = useCart();
 
   return (
-        <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-lg">
+        <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-gray-100/80 backdrop-blur-lg m-0">
           <nav className="container mx-auto flex h-16 sm:h-20 lg:h-24 items-center justify-between px-4 sm:px-6 lg:px-8">
             {/* Left side - Sidebar Trigger */}
             <div className="flex items-center flex-shrink-0">
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-9 w-9 sm:h-10 sm:w-10 lg:h-12 lg:w-12 hover:bg-accent"
+                className="h-9 w-9 sm:h-10 sm:w-10 lg:h-12 lg:w-12 hover:bg-muted text-foreground"
                 onClick={toggleSidebar}
                 aria-label="Open sidebar"
               >
-                <Menu className="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7" />
+                <Menu className="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7 text-foreground stroke-[2.5]" />
                 <span className="sr-only">Toggle Sidebar</span>
               </Button>
             </div>
@@ -55,14 +55,14 @@ const Header = () => {
           <Button
             variant="ghost"
             size="icon"
-            className="relative hover:bg-accent h-9 w-9 sm:h-10 sm:w-10 lg:h-12 lg:w-12"
+            className="relative hover:bg-muted text-foreground h-9 w-9 sm:h-10 sm:w-10 lg:h-12 lg:w-12"
             aria-label="Wishlist"
             asChild
           >
             <Link to="/wishlist">
-              <Heart className="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7" />
+              <Heart className="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7 text-foreground stroke-[2.5]" />
               {wishlistCount > 0 && (
-                <span className="absolute right-0 top-0 flex h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7 items-center justify-center rounded-full bg-primary text-[11px] sm:text-[12px] lg:text-[13px] font-medium text-primary-foreground border-2 border-background">
+                <span className="absolute right-0 top-0 flex h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7 items-center justify-center rounded-full bg-primary text-[11px] sm:text-[12px] lg:text-[13px] font-medium text-white border-2 border-background">
                   {wishlistCount > 9 ? '9+' : wishlistCount}
                 </span>
               )}
@@ -71,14 +71,14 @@ const Header = () => {
           <Button
             variant="ghost"
             size="icon"
-            className="relative hover:bg-accent h-9 w-9 sm:h-10 sm:w-10 lg:h-12 lg:w-12"
+            className="relative hover:bg-muted text-foreground h-9 w-9 sm:h-10 sm:w-10 lg:h-12 lg:w-12"
             aria-label="Cart"
             asChild
           >
             <Link to="/cart">
-              <ShoppingCart className="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7" />
+              <ShoppingCart className="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7 text-foreground stroke-[2.5]" />
               {cartCount > 0 && (
-                <span className="absolute right-0 top-0 flex h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7 items-center justify-center rounded-full bg-primary text-[11px] sm:text-[12px] lg:text-[13px] font-medium text-primary-foreground border-2 border-background">
+                <span className="absolute right-0 top-0 flex h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7 items-center justify-center rounded-full bg-primary text-[11px] sm:text-[12px] lg:text-[13px] font-medium text-white border-2 border-background">
                   {cartCount > 9 ? '9+' : cartCount}
                 </span>
               )}
@@ -90,12 +90,12 @@ const Header = () => {
             <Button 
               variant="ghost" 
               size="icon" 
-              className="hover:bg-accent h-9 w-9 sm:h-10 sm:w-10 lg:h-12 lg:w-12" 
+              className="hover:bg-muted text-foreground h-9 w-9 sm:h-10 sm:w-10 lg:h-12 lg:w-12" 
               aria-label="Login" 
               asChild
             >
               <Link to="/auth">
-                <User className="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7" />
+                <User className="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7 text-foreground stroke-[2.5]" />
               </Link>
             </Button>
           )}
