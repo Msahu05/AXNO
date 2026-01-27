@@ -707,7 +707,7 @@ const Product = () => {
             {/* Main Image */}
             <div 
               className="relative aspect-square overflow-hidden rounded sm:rounded-xl md:rounded-2xl bg-secondary shadow-soft group w-full mx-auto"
-              style={{ maxWidth: '100%', width: '100%', boxSizing: 'border-box' }}
+              style={{ maxWidth: '85%', width: '85%', boxSizing: 'border-box' }}
               onTouchStart={onTouchStart}
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
@@ -790,29 +790,35 @@ const Product = () => {
                   {/* Left Arrow */}
                   <button
                     onClick={prevImage}
-                    className="absolute left-1 sm:left-4 md:left-6 bg-white/90 hover:bg-white active:bg-white text-gray-800 rounded-full p-1.5 sm:p-3 md:p-4 transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 z-10 shadow-lg backdrop-blur-sm flex items-center justify-center"
+                    className="absolute left-1 sm:left-4 md:left-6 bg-white/90 hover:bg-white active:bg-white text-gray-800 rounded-full p-2 sm:p-4 md:p-5 transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 z-10 shadow-lg backdrop-blur-sm flex items-center justify-center"
                     style={{ 
                       top: '50%',
                       transform: 'translateY(-50%)',
-                      height: 'fit-content'
+                      height: 'fit-content',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
                     }}
                     aria-label="Previous image"
                   >
-                    <ArrowLeft className="h-3 w-3 sm:h-5 sm:w-5 md:h-6 md:w-6" />
+                    <ArrowLeft className="h-5 w-5 sm:h-7 sm:w-7 md:h-8 md:w-8" />
                   </button>
                   
                   {/* Right Arrow */}
                   <button
                     onClick={nextImage}
-                    className="absolute right-1 sm:right-4 md:right-6 bg-white/90 hover:bg-white active:bg-white text-gray-800 rounded-full p-1.5 sm:p-3 md:p-4 transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 z-10 shadow-lg backdrop-blur-sm flex items-center justify-center"
+                    className="absolute right-1 sm:right-4 md:right-6 bg-white/90 hover:bg-white active:bg-white text-gray-800 rounded-full p-2 sm:p-4 md:p-5 transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 z-10 shadow-lg backdrop-blur-sm flex items-center justify-center"
                     style={{ 
                       top: '50%',
                       transform: 'translateY(-50%)',
-                      height: 'fit-content'
+                      height: 'fit-content',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
                     }}
                     aria-label="Next image"
                   >
-                    <ArrowRight className="h-3 w-3 sm:h-5 sm:w-5 md:h-6 md:w-6" />
+                    <ArrowRight className="h-5 w-5 sm:h-7 sm:w-7 md:h-8 md:w-8" />
                   </button>
                   
                   {/* Image Counter */}
@@ -833,8 +839,8 @@ const Product = () => {
                     className={cn(
                       "relative h-8 w-8 sm:h-16 sm:w-16 md:h-20 md:w-20 flex-shrink-0 overflow-hidden rounded sm:rounded-lg border border-solid sm:border-2 transition-all cursor-pointer",
                       selectedImage === index
-                        ? "border-primary shadow-soft scale-105"
-                        : "border-border hover:border-primary/50"
+                        ? "border-gray-500 shadow-soft scale-105"
+                        : "border-border hover:border-gray-400"
                     )}
                   >
                     <img
@@ -858,7 +864,7 @@ const Product = () => {
           {/* Product Info */}
           <div className="space-y-1 sm:space-y-5 md:space-y-6 lg:space-y-8 w-full max-w-full overflow-hidden mx-auto" style={{ maxWidth: '100%', boxSizing: 'border-box' }}>
             <div className="w-full max-w-full overflow-hidden">
-              <p className="text-[8px] sm:text-sm md:text-base font-medium uppercase tracking-wider text-primary mb-0.5 sm:mb-2">
+              <p className="text-[8px] sm:text-sm md:text-base font-medium uppercase tracking-wider text-gray-600 mb-0.5 sm:mb-2" style={{ color: '#4B5563' }}>
                 {product.category}
               </p>
               <div className="flex items-start justify-between gap-1 sm:gap-4 md:gap-6 mt-0.5 sm:mt-2 w-full max-w-full">
@@ -873,18 +879,18 @@ const Product = () => {
                     className="text-[#25D366] hover:scale-110 transition-all duration-300 cursor-pointer flex-shrink-0"
                     aria-label="WhatsApp"
                   >
-                    <svg className="h-3 w-3 sm:h-6 sm:w-6 md:h-7 md:w-7" fill="currentColor" viewBox="0 0 24 24">
+                    <svg className="h-5 w-5 sm:h-7 sm:w-7 md:h-8 md:w-8" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.372a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
                     </svg>
                   </a>
                   <Button
                     variant="outline"
                     size="icon"
-                    className={cn("flex-shrink-0 h-6 w-6 sm:h-10 sm:w-10 md:h-12 md:w-12", inWishlist && "border-primary text-primary")}
+                    className={cn("flex-shrink-0 h-6 w-6 sm:h-10 sm:w-10 md:h-12 md:w-12", inWishlist && "border-gray-500 text-gray-500")}
                     onClick={handleWishlist}
                   >
                     <Heart
-                      className={cn("h-3 w-3 sm:h-6 sm:w-6 md:h-7 md:w-7", inWishlist && "fill-primary")}
+                      className={cn("h-3 w-3 sm:h-6 sm:w-6 md:h-7 md:w-7", inWishlist && "fill-gray-500")}
                     />
                   </Button>
                 </div>
@@ -902,7 +908,7 @@ const Product = () => {
                       i < Math.floor(reviews.length > 0 
                         ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
                         : 0)
-                        ? "fill-primary text-primary"
+                        ? "fill-gray-500 text-gray-500"
                         : "text-muted-foreground"
                     )}
                   />
@@ -930,43 +936,43 @@ const Product = () => {
                 </span>
               )}
               {(product.original || product.originalPrice) && (
-                <span className="rounded-full bg-primary/10 px-1 sm:px-3 md:px-4 py-0.5 sm:py-1.5 text-[8px] sm:text-sm md:text-base font-medium text-primary whitespace-nowrap">
+                <span className="rounded-full bg-gray-200 px-1 sm:px-3 md:px-4 py-0.5 sm:py-1.5 text-[8px] sm:text-sm md:text-base font-medium text-gray-700 whitespace-nowrap" style={{ backgroundColor: '#E5E7EB', color: '#374151' }}>
                   {Math.round(((product.original || product.originalPrice) - product.price) / (product.original || product.originalPrice) * 100)}% OFF
                 </span>
               )}
             </div>
 
             {/* Description */}
-            <p className="text-[9px] sm:text-base md:text-lg text-muted-foreground leading-relaxed max-w-full">{product.description || "Premium quality product with elegant design."}</p>
-
+            <p className="text-[9px] sm:text-base md:text-lg text-foreground leading-relaxed max-w-full" style={{ color: '#4B5563' }}>{product.description || "Premium quality product with elegant design."}</p>
+            <br/>
             {/* Why You Will Love This Product */}
-            <div className="mt-4 sm:mt-8 md:mt-10 rounded-lg sm:rounded-xl border border-border dark:border-white/15 bg-muted/30 dark:bg-card/50 p-2 sm:p-5 md:p-6 lg:p-8 max-w-full">
-              <h3 className="text-[9px] sm:text-base md:text-lg lg:text-xl font-semibold text-foreground mb-2 sm:mb-4 md:mb-6">
+            <div className="mt-4 sm:mt-8 md:mt-10 rounded-lg sm:rounded-xl border border-border dark:border-white/15 bg-muted/30 dark:bg-card/50 p-2 sm:p-5 md:p-6 lg:p-8 mx-auto" style={{ maxWidth: '75%', marginLeft: 'auto', marginRight: 'auto' }}>
+              <h3 className="text-[8px] sm:text-sm md:text-base lg:text-lg font-semibold text-foreground mb-2 sm:mb-4 md:mb-6" style={{ fontSize: '0.75rem' }}>
                 Why You Will Love This Product:
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 md:gap-5">
                 <div className="flex items-start gap-1 sm:gap-3">
-                  <CheckCircle2 className="h-2.5 w-2.5 sm:h-5 sm:w-5 md:h-6 md:w-6 text-primary flex-shrink-0 mt-0.5" />
-                  <p className="text-[8px] sm:text-sm md:text-base text-muted-foreground">Thick Long Lasting Fabric</p>
+                  <CheckCircle2 className="h-2 w-2 sm:h-4 sm:w-4 md:h-5 md:w-5 text-gray-600 flex-shrink-0 mt-0.5" style={{ color: '#4B5563' }} />
+                  <p className="text-[7px] sm:text-xs md:text-sm text-muted-foreground" style={{ fontSize: '0.7rem' }}>Thick Long Lasting Fabric</p>
                 </div>
                 <div className="flex items-start gap-1 sm:gap-3">
-                  <CheckCircle2 className="h-2.5 w-2.5 sm:h-5 sm:w-5 md:h-6 md:w-6 text-primary flex-shrink-0 mt-0.5" />
-                  <p className="text-[8px] sm:text-sm md:text-base text-muted-foreground">Long Lasting Print</p>
+                  <CheckCircle2 className="h-2 w-2 sm:h-4 sm:w-4 md:h-5 md:w-5 text-gray-600 flex-shrink-0 mt-0.5" style={{ color: '#4B5563' }} />
+                  <p className="text-[7px] sm:text-xs md:text-sm text-muted-foreground" style={{ fontSize: '0.7rem' }}>Long Lasting Print</p>
                 </div>
                 <div className="flex items-start gap-1 sm:gap-3">
-                  <CheckCircle2 className="h-2.5 w-2.5 sm:h-5 sm:w-5 md:h-6 md:w-6 text-primary flex-shrink-0 mt-0.5" />
-                  <p className="text-[8px] sm:text-sm md:text-base text-muted-foreground">Oversized Street Fit</p>
+                  <CheckCircle2 className="h-2 w-2 sm:h-4 sm:w-4 md:h-5 md:w-5 text-gray-600 flex-shrink-0 mt-0.5" style={{ color: '#4B5563' }} />
+                  <p className="text-[7px] sm:text-xs md:text-sm text-muted-foreground" style={{ fontSize: '0.7rem' }}>Oversized Street Fit</p>
                 </div>
                 <div className="flex items-start gap-1 sm:gap-3">
-                  <CheckCircle2 className="h-2.5 w-2.5 sm:h-5 sm:w-5 md:h-6 md:w-6 text-primary flex-shrink-0 mt-0.5" />
-                  <p className="text-[8px] sm:text-sm md:text-base text-muted-foreground">Printed Only After You Order</p>
+                  <CheckCircle2 className="h-2 w-2 sm:h-4 sm:w-4 md:h-5 md:w-5 text-gray-600 flex-shrink-0 mt-0.5" style={{ color: '#4B5563' }} />
+                  <p className="text-[7px] sm:text-xs md:text-sm text-muted-foreground" style={{ fontSize: '0.7rem' }}>Printed Only After You Order</p>
                 </div>
               </div>
             </div>
-
+            <br/>
             {/* Colors */}
             {productColors.length > 0 && (
-              <div className="space-y-2 sm:space-y-4 w-full max-w-full overflow-hidden">
+              <div className="space-y-2 sm:space-y-4 w-full max-w-full overflow-hidden mt-4 sm:mt-6 md:mt-8">
                 <p className="font-medium text-[9px] sm:text-base md:text-lg text-foreground">Color</p>
                 <div className="flex gap-2 sm:gap-4 md:gap-5 flex-wrap items-center max-w-full">
                   {productColors.map((color, index) => {
@@ -994,8 +1000,8 @@ const Product = () => {
                             "relative rounded-full border transition-all hover:scale-110 shadow-md flex-shrink-0",
                             "h-7 w-7 sm:h-14 sm:w-14 md:h-16 md:w-16 border-solid",
                             isSelected
-                              ? "border-primary ring-1 sm:ring-2 ring-primary ring-offset-1 sm:ring-offset-2 ring-offset-background scale-110 border-2"
-                              : "border-border hover:border-primary/50 border"
+                              ? "border-gray-500 ring-1 sm:ring-2 ring-gray-500 ring-offset-1 sm:ring-offset-2 ring-offset-background scale-110 border-2"
+                              : "border-border hover:border-gray-400 border"
                           )}
                           style={{ 
                             backgroundColor: colorHex || '#000000'
@@ -1024,13 +1030,13 @@ const Product = () => {
             )}
 
             {/* Sizes */}
-            <div className="space-y-2 sm:space-y-4 w-full max-w-full overflow-hidden">
+            <div className="space-y-2 sm:space-y-4 w-full max-w-full overflow-hidden mt-4 sm:mt-6 md:mt-8">
               <div className="flex items-center justify-between gap-2 max-w-full">
                 <p className="font-medium text-[9px] sm:text-base md:text-lg text-foreground">Size</p>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-[8px] sm:text-sm md:text-base text-primary hover:text-primary/80 h-auto py-1 sm:py-1.5 px-1.5 sm:px-3 flex-shrink-0"
+                  className="text-[8px] sm:text-sm md:text-base text-gray-600 hover:text-gray-700 h-auto py-1 sm:py-1.5 px-1.5 sm:px-3 flex-shrink-0" style={{ color: '#4B5563' }}
                   onClick={async () => {
                     setShowSizeChart(true);
                     if (!sizeChartData && product?.category) {
@@ -1068,9 +1074,14 @@ const Product = () => {
                         "flex h-8 sm:h-12 md:h-14 min-w-[38px] sm:min-w-[60px] md:min-w-[70px] px-1.5 sm:px-4 md:px-5 items-center justify-center rounded sm:rounded-lg border transition-all flex-shrink-0",
                         "text-[9px] sm:text-sm md:text-base font-medium border-solid",
                         selectedSize === cleanSize || selectedSize === size
-                          ? "border-primary bg-primary text-primary-foreground border-2"
-                          : "border-border text-foreground hover:border-primary border"
+                          ? "border-gray-400 bg-gray-200 text-black border-2"
+                          : "border-border text-foreground hover:border-gray-400 border"
                       )}
+                      style={
+                        selectedSize === cleanSize || selectedSize === size
+                          ? { backgroundColor: '#E5E7EB', color: '#000000', borderColor: '#9CA3AF' }
+                          : {}
+                      }
                     >
                       {cleanSize}
                     </button>
@@ -1078,9 +1089,11 @@ const Product = () => {
                 })}
               </div>
             </div>
+            <br />
 
+            
             {/* Quantity */}
-            <div className="space-y-2 sm:space-y-4 w-full max-w-full overflow-hidden">
+            <div className="space-y-2 sm:space-y-4 w-full max-w-full overflow-hidden mt-4 sm:mt-6 md:mt-8">
               <p className="font-medium text-[9px] sm:text-base md:text-lg text-foreground">Quantity</p>
               <div className="flex items-center gap-2 sm:gap-4">
                 <div className="flex items-center rounded sm:rounded-lg border border-solid sm:border-2 border-border">
@@ -1105,12 +1118,15 @@ const Product = () => {
                 </div>
               </div>
             </div>
+            <br />
 
             {/* Actions */}
-            <div className="flex flex-row gap-2 sm:gap-4 md:gap-5 pt-2 sm:pt-5 md:pt-6 w-full max-w-full">
+            <div className="flex flex-row gap-2 sm:gap-4 md:gap-5 mt-6 sm:mt-8 md:mt-10 w-full max-w-full">
               <Button
                 size="lg"
-                className="flex-1 gap-1.5 sm:gap-3 shadow-soft hover:shadow-elevated text-[9px] sm:text-base md:text-lg h-9 sm:h-14 md:h-16 w-full px-2 sm:px-4"
+                variant="default"
+                className="flex-1 gap-1.5 sm:gap-3 bg-gray-200 hover:bg-gray-300 text-foreground shadow-soft hover:shadow-elevated text-[9px] sm:text-base md:text-lg h-9 sm:h-14 md:h-16 w-full px-2 sm:px-4 flex items-center justify-center"
+                style={{ backgroundColor: '#E5E7EB', color: '#2E2E2E', display: 'flex' }}
                 onClick={handleAddToCart}
               >
                 <ShoppingBag className="h-3 w-3 sm:h-6 sm:w-6 md:h-7 md:w-7" />
@@ -1118,18 +1134,21 @@ const Product = () => {
               </Button>
               <Button
                 size="lg"
-                className="flex-1 gap-1.5 sm:gap-3 bg-primary hover:bg-primary/90 text-primary-foreground shadow-soft hover:shadow-elevated text-[9px] sm:text-base md:text-lg h-9 sm:h-14 md:h-16 w-full px-2 sm:px-4"
+                variant="default"
+                className="flex-1 gap-1.5 sm:gap-3 bg-gray-500 hover:bg-gray-600 text-white shadow-soft hover:shadow-elevated text-[9px] sm:text-base md:text-lg h-9 sm:h-14 md:h-16 w-full px-2 sm:px-4 flex items-center justify-center"
+                style={{ backgroundColor: '#6B7280', color: '#FFFFFF', display: 'flex' }}
                 onClick={handleBuyNow}
               >
                 <Zap className="h-3 w-3 sm:h-6 sm:w-6 md:h-7 md:w-7" />
                 <span className="whitespace-nowrap">Buy Now</span>
               </Button>
             </div>
+            <br/>
 
             {/* Shipping Info */}
-            <div className="space-y-2 sm:space-y-4 rounded sm:rounded-xl bg-accent/50 p-2 sm:p-5 md:p-6 max-w-full">
+            <div className="space-y-2 sm:space-y-4 rounded sm:rounded-xl bg-accent/50 p-2 sm:p-5 md:p-6 max-w-full mt-4 sm:mt-6 md:mt-8">
               <div className="flex items-start gap-2 sm:gap-4">
-                <Truck className="h-4 w-4 sm:h-6 sm:w-6 md:h-7 md:w-7 text-primary flex-shrink-0 mt-0.5" />
+                <Truck className="h-4 w-4 sm:h-6 sm:w-6 md:h-7 md:w-7 text-gray-600 flex-shrink-0 mt-0.5" style={{ color: '#4B5563' }} />
                 <div className="flex-1 min-w-0 max-w-full">
                   {pincodeChecked && detectedLocation ? (
                     <>
@@ -1217,7 +1236,7 @@ const Product = () => {
                                 className={cn(
                                   "h-6 w-6 sm:h-8 sm:w-8 transition-colors cursor-pointer",
                                   rating <= newReview.rating
-                                    ? "fill-primary text-primary"
+                                    ? "fill-gray-500 text-gray-500"
                                     : "fill-muted text-muted"
                                 )}
                               />
@@ -1411,11 +1430,10 @@ const Product = () => {
                       {ratingCounts.map(({ rating, percentage }) => (
                         <div key={rating} className="flex items-center gap-3 sm:gap-4">
                           <span className="text-sm sm:text-base font-medium text-foreground w-8">{rating}</span>
-                          <Star className="h-4 w-4 sm:h-5 sm:w-5 fill-primary text-primary" />
+                          <Star className="h-4 w-4 sm:h-5 sm:w-5 fill-gray-500 text-gray-500" style={{ fill: '#6B7280', color: '#6B7280' }} />
                           <div className="flex-1 h-2 sm:h-2.5 bg-muted rounded-full overflow-hidden">
                             <div
-                              className="h-full bg-primary rounded-full transition-all"
-                              style={{ width: `${percentage}%` }}
+                              className="h-full bg-gray-500 rounded-full transition-all" style={{ backgroundColor: '#6B7280', width: `${percentage}%` }}
                             />
                           </div>
                           <span className="text-sm sm:text-base text-muted-foreground w-10 sm:w-12 text-right">
@@ -1617,14 +1635,14 @@ const Product = () => {
         {/* Related Products */}
         {related.length > 0 && (
           <section className="mt-8 sm:mt-12 md:mt-16 lg:mt-20 w-full max-w-full overflow-hidden">
-            <div className="mx-auto w-full max-w-full sm:max-w-[90%] md:max-w-7xl" style={{ boxSizing: 'border-box' }}>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 mb-6 sm:mb-8 md:mb-10 max-w-full">
-                <h2 className="font-display text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-foreground">
+            <div className="mx-auto w-full max-w-full sm:max-w-[85%] md:max-w-[75%]" style={{ boxSizing: 'border-box' }}>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 mb-4 sm:mb-6 md:mb-8 max-w-full">
+                <h2 className="font-display text-lg sm:text-xl md:text-2xl lg:text-3xl font-black text-foreground">
                   Related <span className="text-gradient">Products</span>
                 </h2>
                 <Button
                   variant="ghost"
-                  className="text-primary hover:text-primary/80 text-sm sm:text-base md:text-lg h-10 sm:h-12 px-4 sm:px-6"
+                  className="text-gray-600 hover:text-gray-700 text-sm sm:text-base md:text-lg h-10 sm:h-12 px-4 sm:px-6" style={{ color: '#4B5563' }}
                   onClick={() => {
                     const categoryMap = {
                       'Hoodie': 'hoodies',
@@ -1639,18 +1657,18 @@ const Product = () => {
                 </Button>
               </div>
               {/* Mobile: Carousel (one at a time) */}
-              <div className="block md:hidden">
+              <div className="block md:hidden relative">
                 <Carousel
                   opts={{
                     align: "start",
                     loop: false,
                   }}
-                  className="w-full"
+                  className="w-full relative"
                 >
                   <CarouselContent>
                     {related.map((item, index) => (
                       <CarouselItem key={item.id} className="basis-full">
-                        <div className="animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
+                        <div className="animate-fade-in flex justify-center" style={{ animationDelay: `${index * 0.1}s`, maxWidth: '85%', margin: '0 auto' }}>
                           <ProductCard
                             id={item.id}
                             name={item.name}
@@ -1664,18 +1682,38 @@ const Product = () => {
                       </CarouselItem>
                     ))}
                   </CarouselContent>
-                  <CarouselPrevious />
-                  <CarouselNext />
+                  <CarouselPrevious 
+                    className="h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14" 
+                    style={{ 
+                      top: '50%', 
+                      transform: 'translateY(-50%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }} 
+                  />
+                  <CarouselNext 
+                    className="h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14" 
+                    style={{ 
+                      top: '50%', 
+                      transform: 'translateY(-50%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }} 
+                  />
                 </Carousel>
               </div>
               {/* Desktop: Grid (3 items side by side) */}
-              <div className="hidden md:grid md:grid-cols-3 gap-6 lg:gap-8 xl:gap-10">
+              <div className="hidden md:grid md:grid-cols-3 gap-4 lg:gap-5 xl:gap-6">
                 {related.map((item, index) => (
                   <div
                     key={item.id}
-                    className="animate-fade-in"
+                    className="animate-fade-in flex justify-center"
                     style={{ 
-                      animationDelay: `${index * 0.1}s`
+                      animationDelay: `${index * 0.1}s`,
+                      maxWidth: '85%',
+                      margin: '0 auto'
                     }}
                   >
                     <ProductCard

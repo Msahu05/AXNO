@@ -65,7 +65,7 @@ export function HeroSection() {
           {/* Content - Left side on medium+ screens, hidden on small screens */}
           <div className="order-2 lg:order-1 hidden md:flex flex-col items-start justify-center space-y-2 sm:space-y-4 animate-fade-in py-4 sm:py-6">
             {/* Top Banner */}
-            <div className="inline-flex w-fit items-center gap-1 rounded-lg bg-primary/10 px-3 py-1 text-lg sm:text-xl md:text-2xl xl:text-3xl font-bold text-primary">
+            <div className="inline-flex w-fit items-center gap-1 rounded-lg bg-gray-500 px-3 py-1 text-lg sm:text-xl md:text-2xl xl:text-3xl font-bold text-white" style={{ backgroundColor: '#6B7280', color: '#FFFFFF' }}>
               Looklyn - Own The Look
             </div>
 
@@ -73,11 +73,11 @@ export function HeroSection() {
             <h1 className="font-display text-3xl sm:text-4xl font-bold leading-tight tracking-tight md:text-5xl lg:text-6xl">
               <span className="text-foreground">Made For You,</span>
               <br />
-              <span className="text-primary">Designed By You!!</span>
+              <span className="text-foreground" style={{ color: '#2E2E2E' }}>Designed By You!!</span>
             </h1>
 
             {/* Description */}
-            <p className="max-w-md text-sm sm:text-base text-muted-foreground leading-relaxed">
+            <p className="max-w-md text-sm sm:text-base text-foreground leading-relaxed" style={{ color: '#4B5563' }}>
               Built by a young mind, driven by bold ideas.
               <br />
               Made for people who don't follow trends — they create them.
@@ -89,16 +89,18 @@ export function HeroSection() {
             <div className="flex flex-wrap gap-3 sm:gap-4">
               <Button 
                 size="lg" 
-                className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-soft hover:shadow-elevated rounded-lg px-4 sm:px-6 py-3 sm:py-6 text-sm sm:text-base"
+                className="gap-2 bg-gray-500 hover:bg-gray-600 text-white shadow-soft hover:shadow-elevated rounded-lg px-4 sm:px-6 py-3 sm:py-6 text-sm sm:text-base"
+                style={{ backgroundColor: '#6B7280', color: '#FFFFFF' }}
                 onClick={() => navigate('/category/hoodies')}
               >
                 Shop Now
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className="h-4 w-4" style={{ color: '#FFFFFF' }} />
               </Button>
               <Button 
                 variant="outline" 
                 size="lg"
-                className="border-2 border-primary text-foreground hover:bg-accent rounded-lg px-4 sm:px-6 py-3 sm:py-6 text-sm sm:text-base"
+                className="border-2 border-gray-500 bg-transparent hover:bg-gray-100 text-foreground rounded-lg px-4 sm:px-6 py-3 sm:py-6 text-sm sm:text-base"
+                style={{ backgroundColor: 'transparent', color: '#2E2E2E', borderColor: '#6B7280' }}
                 onClick={() => document.getElementById('custom')?.scrollIntoView({ behavior: 'smooth' })}
               >
                 Learn More
@@ -108,8 +110,8 @@ export function HeroSection() {
             {/* Features */}
             <div className="flex flex-wrap gap-4 sm:gap-6 pt-4 sm:pt-6">
               <div className="flex items-center gap-2 sm:gap-3">
-                <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-primary/10">
-                  <Truck className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-gray-500" style={{ backgroundColor: '#6B7280' }}>
+                  <Truck className="h-4 w-4 sm:h-5 sm:w-5 text-white" style={{ color: '#FFFFFF' }} />
                 </div>
                 <div>
                   <p className="text-sm sm:text-base font-semibold text-foreground">Free Shipping</p>
@@ -117,8 +119,8 @@ export function HeroSection() {
                 </div>
               </div>
               <div className="flex items-center gap-2 sm:gap-3">
-                <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-primary/10">
-                  <Headphones className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-gray-500" style={{ backgroundColor: '#6B7280' }}>
+                  <Headphones className="h-4 w-4 sm:h-5 sm:w-5 text-white" style={{ color: '#FFFFFF' }} />
                 </div>
                 <div>
                   <p className="text-sm sm:text-base font-semibold text-foreground">24/7 WhatsApp Support</p>
@@ -126,8 +128,8 @@ export function HeroSection() {
                 </div>
               </div>
               <div className="flex items-center gap-2 sm:gap-3">
-                <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-primary/10">
-                  <Shirt className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-gray-500" style={{ backgroundColor: '#6B7280' }}>
+                  <Shirt className="h-4 w-4 sm:h-5 sm:w-5 text-white" style={{ color: '#FFFFFF' }} />
                 </div>
                 <div>
                   <p className="text-sm sm:text-base font-semibold text-foreground">Printed After Order</p>

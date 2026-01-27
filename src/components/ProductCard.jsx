@@ -101,7 +101,7 @@ export function ProductCard({
         {/* Wishlist icon - Always visible */}
         <button
           type="button"
-          className="absolute right-2 top-2 z-50 cursor-pointer p-1 rounded-full hover:bg-white/20 transition-colors"
+          className="absolute right-2 top-2 z-10 cursor-pointer p-1 rounded-full hover:bg-white/20 transition-colors"
           onClick={handleWishlistClick}
           style={{ 
             pointerEvents: 'auto',
@@ -151,10 +151,10 @@ export function ProductCard({
         <div className="mt-auto pt-2 sm:pt-3 flex gap-1.5 sm:gap-2 w-full max-w-full">
           <Button
             onClick={handleBuyNow}
-            className="hidden sm:flex flex-1 gap-2 sm:gap-2.5 lg:gap-3 bg-primary hover:bg-primary/90 text-primary-foreground h-8 sm:h-9 lg:h-10 text-[8px] sm:text-[9px] lg:text-[10px] px-3 sm:px-5 lg:px-6 w-full max-w-full min-w-0"
-            style={{ maxWidth: '100%' }}
+            className="hidden sm:flex flex-1 gap-2 sm:gap-2.5 lg:gap-3 bg-gray-500 hover:bg-gray-600 text-white h-8 sm:h-9 lg:h-10 text-[8px] sm:text-[9px] lg:text-[10px] px-3 sm:px-5 lg:px-6 w-full max-w-full min-w-0"
+            style={{ maxWidth: '100%', backgroundColor: '#6B7280', color: '#FFFFFF' }}
           >
-            <ShoppingBag className="h-3 w-3 sm:h-3.5 sm:w-3.5 lg:h-4 lg:w-4 flex-shrink-0" />
+            <ShoppingBag className="h-3 w-3 sm:h-3.5 sm:w-3.5 lg:h-4 lg:w-4 flex-shrink-0" style={{ color: '#FFFFFF' }} />
             <span className="whitespace-nowrap">Buy</span>
           </Button>
           <Button

@@ -93,7 +93,7 @@ const Home = () => {
   const wishlistPicks = wishlistItems.slice(0, 4);
 
   return (
-    <div className="min-h-screen bg-muted/40 dark:bg-background">
+    <div className="min-h-screen bg-gray-200 dark:bg-background" style={{ backgroundColor: '#E5E7EB' }}>
       <main className="container mx-auto px-2 sm:px-4 lg:px-6 py-1 sm:py-2 lg:py-4 space-y-4 sm:space-y-6 lg:space-y-8">
         <HeroSection />
 
@@ -113,7 +113,7 @@ const Home = () => {
                     <div className="flex flex-wrap items-center gap-1.5 sm:gap-3">
                       <Button
                         variant="outline"
-                        className="font-display rounded-md border-foreground px-2 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm tracking-normal"
+                        className="font-display rounded-md border-gray-400 bg-gray-200 hover:bg-gray-300 text-foreground px-2 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm tracking-normal"
                         onClick={() => {
                           window.scrollTo({ top: 0, behavior: "smooth" });
                           navigate(`/category/${type.route}?filter=unisex`);
@@ -123,7 +123,7 @@ const Home = () => {
                       </Button>
                       <Button
                         variant="outline"
-                        className="font-display rounded-md border-foreground px-2 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm tracking-normal"
+                        className="font-display rounded-md border-gray-400 bg-gray-200 hover:bg-gray-300 text-foreground px-2 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm tracking-normal"
                         onClick={() => {
                           window.scrollTo({ top: 0, behavior: "smooth" });
                           navigate(`/category/${type.route}?filter=men`);
@@ -133,7 +133,7 @@ const Home = () => {
                       </Button>
                       <Button
                         variant="outline"
-                        className="font-display rounded-md border-foreground px-2 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm tracking-normal"
+                        className="font-display rounded-md border-gray-400 bg-gray-200 hover:bg-gray-300 text-foreground px-2 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm tracking-normal"
                         onClick={() => {
                           window.scrollTo({ top: 0, behavior: "smooth" });
                           navigate(`/category/${type.route}?filter=women`);
@@ -179,7 +179,7 @@ const Home = () => {
                   <div className="flex justify-center">
                     <Button
                       variant="outline"
-                      className="font-display rounded-full border-foreground px-8 py-3 tracking-[0.12em] bg-black text-white hover:bg-purple-600 hover:text-white"
+                      className="font-display rounded-full border-gray-400 bg-gray-200 hover:bg-gray-300 text-foreground px-8 py-3 tracking-[0.12em]"
                       onClick={() => {
                         window.scrollTo({ top: 0, behavior: "smooth" });
                         navigate(`/category/${type.route}`);
@@ -200,7 +200,7 @@ const Home = () => {
         <section className="md:hidden space-y-6 sm:space-y-8 rounded-[28px] sm:rounded-[40px] lg:rounded-[56px] border border-border dark:border-white/15 bg-white dark:bg-[var(--card)]/95 p-6 sm:p-8 lg:p-10 shadow-[var(--shadow-soft)]">
           <div className="flex flex-col items-start justify-center space-y-4 sm:space-y-6">
             {/* Top Banner */}
-            <div className="inline-flex w-fit items-center gap-1 rounded-lg bg-primary/10 px-3 py-1.5 sm:px-4 sm:py-2 text-base sm:text-lg md:text-xl font-bold text-primary">
+            <div className="inline-flex w-fit items-center gap-1 rounded-lg bg-gray-500 px-3 py-1.5 sm:px-4 sm:py-2 text-base sm:text-lg md:text-xl font-bold text-white" style={{ backgroundColor: '#6B7280', color: '#FFFFFF' }}>
               Looklyn - Own The Look
             </div>
 
@@ -208,11 +208,11 @@ const Home = () => {
             <h2 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight tracking-tight">
               <span className="text-foreground">Made For You,</span>
               <br />
-              <span className="text-primary">Designed By You!!</span>
+              <span className="text-foreground" style={{ color: '#2E2E2E' }}>Designed By You!!</span>
             </h2>
 
             {/* Description */}
-            <p className="max-w-2xl text-sm sm:text-base text-muted-foreground leading-relaxed">
+            <p className="max-w-2xl text-sm sm:text-base text-foreground leading-relaxed" style={{ color: '#4B5563' }}>
               Built by a young mind, driven by bold ideas.
               <br />
               Made for people who don't follow trends — they create them.
@@ -224,16 +224,18 @@ const Home = () => {
             <div className="flex flex-wrap gap-3 sm:gap-4 pt-2">
               <Button 
                 size="lg" 
-                className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-soft hover:shadow-elevated rounded-lg px-4 sm:px-6 py-3 sm:py-6 text-sm sm:text-base"
+                className="gap-2 bg-gray-500 hover:bg-gray-600 text-white shadow-soft hover:shadow-elevated rounded-lg px-4 sm:px-6 py-3 sm:py-6 text-sm sm:text-base"
+                style={{ backgroundColor: '#6B7280', color: '#FFFFFF' }}
                 onClick={() => navigate('/category/hoodies')}
               >
                 Shop Now
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className="h-4 w-4" style={{ color: '#FFFFFF' }} />
               </Button>
               <Button 
                 variant="outline" 
                 size="lg"
-                className="border-2 border-primary text-foreground hover:bg-accent rounded-lg px-4 sm:px-6 py-3 sm:py-6 text-sm sm:text-base"
+                className="border-2 border-gray-500 bg-transparent hover:bg-gray-100 text-foreground rounded-lg px-4 sm:px-6 py-3 sm:py-6 text-sm sm:text-base"
+                style={{ backgroundColor: 'transparent', color: '#2E2E2E', borderColor: '#6B7280' }}
                 onClick={() => document.getElementById('custom')?.scrollIntoView({ behavior: 'smooth' })}
               >
                 Learn More
@@ -243,8 +245,8 @@ const Home = () => {
             {/* Features */}
             <div className="flex flex-wrap gap-4 sm:gap-6 pt-4 sm:pt-6 w-full">
               <div className="flex items-center gap-2 sm:gap-3">
-                <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-primary/10 flex-shrink-0">
-                  <Truck className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-gray-500 flex-shrink-0" style={{ backgroundColor: '#6B7280' }}>
+                  <Truck className="h-4 w-4 sm:h-5 sm:w-5 text-white" style={{ color: '#FFFFFF' }} />
                 </div>
                 <div>
                   <p className="text-sm sm:text-base font-semibold text-foreground">Free Shipping</p>
@@ -252,8 +254,8 @@ const Home = () => {
                 </div>
               </div>
               <div className="flex items-center gap-2 sm:gap-3">
-                <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-primary/10 flex-shrink-0">
-                  <Headphones className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-gray-500 flex-shrink-0" style={{ backgroundColor: '#6B7280' }}>
+                  <Headphones className="h-4 w-4 sm:h-5 sm:w-5 text-white" style={{ color: '#FFFFFF' }} />
                 </div>
                 <div>
                   <p className="text-sm sm:text-base font-semibold text-foreground">24/7 WhatsApp Support</p>
@@ -261,8 +263,8 @@ const Home = () => {
                 </div>
               </div>
               <div className="flex items-center gap-2 sm:gap-3">
-                <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-primary/10 flex-shrink-0">
-                  <Shirt className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-gray-500 flex-shrink-0" style={{ backgroundColor: '#6B7280' }}>
+                  <Shirt className="h-4 w-4 sm:h-5 sm:w-5 text-white" style={{ color: '#FFFFFF' }} />
                 </div>
                 <div>
                   <p className="text-sm sm:text-base font-semibold text-foreground">Printed After Order</p>
@@ -275,7 +277,7 @@ const Home = () => {
 
         <div className="border-t border-border/50 my-6 sm:my-8 lg:my-12"></div>
 
-        <section id="custom" className="space-y-6 sm:space-y-8 rounded-[28px] sm:rounded-[40px] lg:rounded-[56px] border border-border dark:border-white/15 bg-muted/50 dark:bg-gradient-to-r dark:from-[var(--card)] dark:via-[var(--muted)] dark:to-[var(--card)] p-4 sm:p-6 lg:p-10 shadow-[var(--shadow-soft)]">
+        <section id="custom" className="space-y-6 sm:space-y-8 rounded-[28px] sm:rounded-[40px] lg:rounded-[56px] border border-border dark:border-white/15 bg-white p-4 sm:p-6 lg:p-10 shadow-[var(--shadow-soft)]" style={{ backgroundColor: '#FFFFFF' }}>
           <div className="space-y-8">
             <div>
               <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground mb-4">Why Choose Us</p>
@@ -283,43 +285,43 @@ const Home = () => {
             </div>
             
             <div className="flex flex-wrap gap-6 justify-center">
-              <div className="flex flex-col items-center text-center gap-4 rounded-[28px] border border-border dark:border-white/20 bg-background/60 p-6 backdrop-blur hover:bg-background/80 transition-all min-w-[200px] flex-1 max-w-[250px]">
-                <div className="rounded-2xl bg-primary/10 p-4 text-primary">
-                  <Leaf className="h-6 w-6" />
+              <div className="flex flex-col items-center text-center gap-4 rounded-[28px] border border-border dark:border-white/20 bg-gray-200 p-6 transition-all min-w-[200px] flex-1 max-w-[250px]" style={{ backgroundColor: '#E5E7EB' }}>
+                <div className="rounded-2xl bg-gray-500 p-4 text-white" style={{ backgroundColor: '#6B7280' }}>
+                  <Leaf className="h-6 w-6" style={{ color: '#FFFFFF' }} />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-lg mb-1">Eco-Friendly Materials</h4>
-                  <p className="text-sm text-muted-foreground">Eco pigment + puff + reflective inks for sustainable fashion.</p>
+                  <h4 className="font-semibold text-lg mb-1" style={{ color: '#2E2E2E' }}>Eco-Friendly Materials</h4>
+                  <p className="text-sm" style={{ color: '#4B5563' }}>Eco pigment + puff + reflective inks for sustainable fashion.</p>
                 </div>
               </div>
               
-              <div className="flex flex-col items-center text-center gap-4 rounded-[28px] border border-border dark:border-white/20 bg-background/60 p-6 backdrop-blur hover:bg-background/80 transition-all min-w-[200px] flex-1 max-w-[250px]">
-                <div className="rounded-2xl bg-primary/10 p-4 text-primary">
-                  <Zap className="h-6 w-6" />
+              <div className="flex flex-col items-center text-center gap-4 rounded-[28px] border border-border dark:border-white/20 bg-gray-200 p-6 transition-all min-w-[200px] flex-1 max-w-[250px]" style={{ backgroundColor: '#E5E7EB' }}>
+                <div className="rounded-2xl bg-gray-500 p-4 text-white" style={{ backgroundColor: '#6B7280' }}>
+                  <Zap className="h-6 w-6" style={{ color: '#FFFFFF' }} />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-lg mb-1">Lightning Fast</h4>
-                  <p className="text-sm text-muted-foreground">Saved addresses & reorder within 30 seconds.</p>
+                  <h4 className="font-semibold text-lg mb-1" style={{ color: '#2E2E2E' }}>Lightning Fast</h4>
+                  <p className="text-sm" style={{ color: '#4B5563' }}>Saved addresses & reorder within 30 seconds.</p>
                 </div>
               </div>
               
-              <div className="flex flex-col items-center text-center gap-4 rounded-[28px] border border-border dark:border-white/20 bg-background/60 p-6 backdrop-blur hover:bg-background/80 transition-all min-w-[200px] flex-1 max-w-[250px]">
-                <div className="rounded-2xl bg-primary/10 p-4 text-primary">
-                  <Sparkles className="h-6 w-6" />
+              <div className="flex flex-col items-center text-center gap-4 rounded-[28px] border border-border dark:border-white/20 bg-gray-200 p-6 transition-all min-w-[200px] flex-1 max-w-[250px]" style={{ backgroundColor: '#E5E7EB' }}>
+                <div className="rounded-2xl bg-gray-500 p-4 text-white" style={{ backgroundColor: '#6B7280' }}>
+                  <Sparkles className="h-6 w-6" style={{ color: '#FFFFFF' }} />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-lg mb-1">Seamless Sync</h4>
-                  <p className="text-sm text-muted-foreground">Wishlist syncs everywhere after login.</p>
+                  <h4 className="font-semibold text-lg mb-1" style={{ color: '#2E2E2E' }}>Seamless Sync</h4>
+                  <p className="text-sm" style={{ color: '#4B5563' }}>Wishlist syncs everywhere after login.</p>
                 </div>
               </div>
               
-              <div className="flex flex-col items-center text-center gap-4 rounded-[28px] border border-border dark:border-white/20 bg-background/60 p-6 backdrop-blur hover:bg-background/80 transition-all min-w-[200px] flex-1 max-w-[250px]">
-                <div className="rounded-2xl bg-primary/10 p-4 text-primary">
-                  <Award className="h-6 w-6" />
+              <div className="flex flex-col items-center text-center gap-4 rounded-[28px] border border-border dark:border-white/20 bg-gray-200 p-6 transition-all min-w-[200px] flex-1 max-w-[250px]" style={{ backgroundColor: '#E5E7EB' }}>
+                <div className="rounded-2xl bg-gray-500 p-4 text-white" style={{ backgroundColor: '#6B7280' }}>
+                  <Award className="h-6 w-6" style={{ color: '#FFFFFF' }} />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-lg mb-1">Premium Quality</h4>
-                  <p className="text-sm text-muted-foreground">Color-calibrated proofs and stitch maps before production.</p>
+                  <h4 className="font-semibold text-lg mb-1" style={{ color: '#2E2E2E' }}>Premium Quality</h4>
+                  <p className="text-sm" style={{ color: '#4B5563' }}>Color-calibrated proofs and stitch maps before production.</p>
                 </div>
               </div>
             </div>
