@@ -20,7 +20,7 @@ const features = [
 
 export function FeaturesBanner() {
   return (
-    <section className="border-y border-border bg-accent/30 py-12">
+    <section className="border-y border-border bg-muted py-12">
       <div className="container mx-auto px-4 lg:px-8">
         <div className="grid gap-8 md:grid-cols-3">
           {features.map((feature, index) => (

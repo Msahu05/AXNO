@@ -533,7 +533,7 @@ const Auth = () => {
                   className={`text-xs font-bold px-4 py-2 rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
                     (mode === "login" || mode === "signup") 
                       ? "bg-primary text-primary-foreground shadow-sm" 
-                      : "bg-background border-2 border-primary hover:bg-accent"
+                      : "bg-background border-2 border-primary hover:bg-accent hover:text-accent-foreground"
                   }`}
                   style={{
                     minHeight: '36px'
@@ -560,7 +560,7 @@ const Auth = () => {
                   className={`text-xs font-bold px-4 py-2 rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
                     (mode === "login-otp" || mode === "signup-otp") 
                       ? "bg-primary text-primary-foreground shadow-sm" 
-                      : "bg-background border-2 border-primary hover:bg-accent"
+                      : "bg-background border-2 border-primary hover:bg-accent hover:text-accent-foreground"
                   }`}
                   style={{
                     minHeight: '36px',

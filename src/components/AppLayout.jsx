@@ -9,7 +9,7 @@ export function AppLayout({ children }) {
       <NavigationSidebar />
       <SidebarInset className="m-0">
         <Header />
-        <div className="flex flex-1 flex-col min-h-[calc(100vh-5rem)] pt-16 sm:pt-20 lg:pt-24">
+        <div className="flex flex-1 flex-col min-h-[calc(100vh-4rem)] pt-14 sm:pt-16 lg:pt-20">
           {children}
         </div>
       </SidebarInset>

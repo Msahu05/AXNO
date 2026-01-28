@@ -126,7 +126,7 @@ export function ProductCard({
 
         {/* Discount badge */}
         {originalPrice && (
-          <span className="absolute left-2 top-2 sm:left-3 sm:top-3 rounded-full bg-primary px-0.5 py-0.5 sm:px-2 sm:py-1 lg:px-1.5 lg:py-1 text-[6px] sm:text-[4px] lg:text-[8px] font-medium text-primary-foreground leading-tight">
+          <span className="absolute left-2 top-2 sm:left-3 sm:top-3 rounded-sm bg-primary px-2 py-0.5 sm:px-2.5 sm:py-1 lg:px-2 lg:py-1 text-[10px] sm:text-xs lg:text-sm font-semibold text-primary-foreground leading-none">
             -{Math.round(((originalPrice - price) / originalPrice) * 100)}%
           </span>
         )}
@@ -151,10 +151,10 @@ export function ProductCard({
         <div className="mt-auto pt-2 sm:pt-3 flex gap-1.5 sm:gap-2 w-full max-w-full">
           <Button
             onClick={handleBuyNow}
-            className="hidden sm:flex flex-1 gap-2 sm:gap-2.5 lg:gap-3 bg-gray-500 hover:bg-gray-600 text-white h-8 sm:h-9 lg:h-10 text-[8px] sm:text-[9px] lg:text-[10px] px-3 sm:px-5 lg:px-6 w-full max-w-full min-w-0"
-            style={{ maxWidth: '100%', backgroundColor: '#6B7280', color: '#FFFFFF' }}
+            className="hidden sm:flex flex-1 gap-2 sm:gap-2.5 lg:gap-3 bg-primary hover:bg-primary/90 text-primary-foreground h-8 sm:h-9 lg:h-10 text-[8px] sm:text-[9px] lg:text-[10px] px-3 sm:px-5 lg:px-6 w-full max-w-full min-w-0"
+            style={{ maxWidth: '100%' }}
           >
-            <ShoppingBag className="h-3 w-3 sm:h-3.5 sm:w-3.5 lg:h-4 lg:w-4 flex-shrink-0" style={{ color: '#FFFFFF' }} />
+            <ShoppingBag className="h-3 w-3 sm:h-3.5 sm:w-3.5 lg:h-4 lg:w-4 flex-shrink-0" />
             <span className="whitespace-nowrap">Buy</span>
           </Button>
           <Button

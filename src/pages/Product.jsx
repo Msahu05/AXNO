@@ -706,8 +706,7 @@ const Product = () => {
           <div className="space-y-1 sm:space-y-4 md:space-y-6 w-full max-w-full overflow-hidden" style={{ maxWidth: '100%', boxSizing: 'border-box' }}>
             {/* Main Image */}
             <div 
-              className="relative aspect-square overflow-hidden rounded sm:rounded-xl md:rounded-2xl bg-secondary shadow-soft group w-full mx-auto"
-              style={{ maxWidth: '85%', width: '85%', boxSizing: 'border-box' }}
+              className="relative aspect-square overflow-hidden rounded-none sm:rounded-xl md:rounded-2xl bg-secondary shadow-soft group w-full sm:w-[85%] mx-auto"
               onTouchStart={onTouchStart}
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
@@ -862,7 +861,7 @@ const Product = () => {
           </div>
 
           {/* Product Info */}
-          <div className="space-y-1 sm:space-y-5 md:space-y-6 lg:space-y-8 w-full max-w-full overflow-hidden mx-auto" style={{ maxWidth: '100%', boxSizing: 'border-box' }}>
+          <div className="space-y-1 sm:space-y-5 md:space-y-6 lg:space-y-8 w-full max-w-full overflow-hidden mx-auto px-4 sm:px-0" style={{ maxWidth: '100%', boxSizing: 'border-box' }}>
             <div className="w-full max-w-full overflow-hidden">
               <p className="text-[8px] sm:text-sm md:text-base font-medium uppercase tracking-wider text-gray-600 mb-0.5 sm:mb-2" style={{ color: '#4B5563' }}>
                 {product.category}
@@ -946,7 +945,7 @@ const Product = () => {
             <p className="text-[9px] sm:text-base md:text-lg text-foreground leading-relaxed max-w-full" style={{ color: '#4B5563' }}>{product.description || "Premium quality product with elegant design."}</p>
             <br/>
             {/* Why You Will Love This Product */}
-            <div className="mt-4 sm:mt-8 md:mt-10 rounded-lg sm:rounded-xl border border-border dark:border-white/15 bg-muted/30 dark:bg-card/50 p-2 sm:p-5 md:p-6 lg:p-8 mx-auto" style={{ maxWidth: '75%', marginLeft: 'auto', marginRight: 'auto' }}>
+            <div className="mt-4 sm:mt-8 md:mt-10 rounded-lg sm:rounded-xl border border-border dark:border-white/15 bg-muted/30 dark:bg-card/50 p-2 sm:p-5 md:p-6 lg:p-8 mx-auto w-[calc(100%-1.5rem)] sm:w-full max-w-none sm:max-w-[75%]">
               <h3 className="text-[8px] sm:text-sm md:text-base lg:text-lg font-semibold text-foreground mb-2 sm:mb-4 md:mb-6" style={{ fontSize: '0.75rem' }}>
                 Why You Will Love This Product:
               </h3>
@@ -997,7 +996,8 @@ const Product = () => {
                             }
                           }}
                           className={cn(
-                            "relative rounded-full border transition-all hover:scale-110 shadow-md flex-shrink-0",
+                            // Square swatch with rounded corners
+                            "relative rounded-none border transition-all hover:scale-110 shadow-md flex-shrink-0",
                             "h-7 w-7 sm:h-14 sm:w-14 md:h-16 md:w-16 border-solid",
                             isSelected
                               ? "border-gray-500 ring-1 sm:ring-2 ring-gray-500 ring-offset-1 sm:ring-offset-2 ring-offset-background scale-110 border-2"
@@ -1010,12 +1010,12 @@ const Product = () => {
                         >
                           {isSelected && (
                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                              <div className="h-1.5 w-1.5 sm:h-3 sm:w-3 rounded-full bg-white shadow-sm"></div>
+                              <div className="h-1.5 w-1.5 sm:h-3 sm:w-3 rounded-none bg-white shadow-sm"></div>
                             </div>
                           )}
                         </button>
                         {color.name && (
-                          <span className="text-[8px] sm:text-sm font-medium text-foreground text-center break-words max-w-[50px] sm:max-w-none">{color.name}</span>
+                          <span className="text-[6px] sm:text-[10px] font-medium text-foreground text-center break-words max-w-[50px] sm:max-w-none">{color.name}</span>
                         )}
                       </div>
                     );
@@ -1071,8 +1071,10 @@ const Product = () => {
                       key={size}
                       onClick={() => setSelectedSize(cleanSize)}
                       className={cn(
-                        "flex h-8 sm:h-12 md:h-14 min-w-[38px] sm:min-w-[60px] md:min-w-[70px] px-1.5 sm:px-4 md:px-5 items-center justify-center rounded sm:rounded-lg border transition-all flex-shrink-0",
-                        "text-[9px] sm:text-sm md:text-base font-medium border-solid",
+                        // Equal-sized, rounded squares
+                        "inline-flex h-8 w-8 sm:h-12 sm:w-12 md:h-14 md:w-14 items-center justify-center rounded-lg border border-solid transition-all flex-shrink-0",
+                        // Keep text centered with comfortable inner breathing room
+                        "text-[9px] sm:text-sm md:text-base font-medium leading-none",
                         selectedSize === cleanSize || selectedSize === size
                           ? "border-gray-400 bg-gray-200 text-black border-2"
                           : "border-border text-foreground hover:border-gray-400 border"
@@ -1135,8 +1137,8 @@ const Product = () => {
               <Button
                 size="lg"
                 variant="default"
-                className="flex-1 gap-1.5 sm:gap-3 bg-gray-500 hover:bg-gray-600 text-white shadow-soft hover:shadow-elevated text-[9px] sm:text-base md:text-lg h-9 sm:h-14 md:h-16 w-full px-2 sm:px-4 flex items-center justify-center"
-                style={{ backgroundColor: '#6B7280', color: '#FFFFFF', display: 'flex' }}
+                className="flex-1 gap-1.5 sm:gap-3 bg-primary hover:bg-primary/90 text-primary-foreground shadow-soft hover:shadow-elevated text-[9px] sm:text-base md:text-lg h-9 sm:h-14 md:h-16 w-full px-2 sm:px-4 flex items-center justify-center"
+                style={{ display: 'flex' }}
                 onClick={handleBuyNow}
               >
                 <Zap className="h-3 w-3 sm:h-6 sm:w-6 md:h-7 md:w-7" />
@@ -1146,9 +1148,9 @@ const Product = () => {
             <br/>
 
             {/* Shipping Info */}
-            <div className="space-y-2 sm:space-y-4 rounded sm:rounded-xl bg-accent/50 p-2 sm:p-5 md:p-6 max-w-full mt-4 sm:mt-6 md:mt-8">
+            <div className="space-y-2 sm:space-y-4 rounded sm:rounded-xl bg-muted p-2 sm:p-5 md:p-6 max-w-full mt-4 sm:mt-6 md:mt-8">
               <div className="flex items-start gap-2 sm:gap-4">
-                <Truck className="h-4 w-4 sm:h-6 sm:w-6 md:h-7 md:w-7 text-gray-600 flex-shrink-0 mt-0.5" style={{ color: '#4B5563' }} />
+                <Truck className="h-4 w-4 sm:h-6 sm:w-6 md:h-7 md:w-7 text-muted-foreground flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0 max-w-full">
                   {pincodeChecked && detectedLocation ? (
                     <>
@@ -1199,7 +1201,7 @@ const Product = () => {
 
         {/* Ratings and Reviews */}
         <section className="mt-8 sm:mt-12 md:mt-16 lg:mt-20 w-full max-w-full overflow-hidden">
-          <div className="mx-auto w-full max-w-full sm:max-w-[90%] md:max-w-6xl" style={{ boxSizing: 'border-box' }}>
+          <div className="mx-auto w-full max-w-full px-4 sm:px-0 sm:max-w-[90%] md:max-w-6xl" style={{ boxSizing: 'border-box' }}>
           <div className="mb-4 sm:mb-6 lg:mb-8">
             <div className="flex flex-col xs:flex-row items-start xs:items-center justify-between gap-3 xs:gap-4 mb-4 sm:mb-6">
               <h2 className="font-display text-lg sm:text-xl lg:text-2xl font-black text-foreground">
@@ -1635,14 +1637,14 @@ const Product = () => {
         {/* Related Products */}
         {related.length > 0 && (
           <section className="mt-8 sm:mt-12 md:mt-16 lg:mt-20 w-full max-w-full overflow-hidden">
-            <div className="mx-auto w-full max-w-full sm:max-w-[85%] md:max-w-[75%]" style={{ boxSizing: 'border-box' }}>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 mb-4 sm:mb-6 md:mb-8 max-w-full">
+            <div className="mx-auto w-full max-w-full px-4 sm:px-0 sm:max-w-[85%] md:max-w-[75%]" style={{ boxSizing: 'border-box' }}>
+              <div className="flex flex-row items-center justify-between gap-3 sm:gap-6 mb-4 sm:mb-6 md:mb-8 max-w-full">
                 <h2 className="font-display text-lg sm:text-xl md:text-2xl lg:text-3xl font-black text-foreground">
                   Related <span className="text-gradient">Products</span>
                 </h2>
                 <Button
                   variant="ghost"
-                  className="text-gray-600 hover:text-gray-700 text-sm sm:text-base md:text-lg h-10 sm:h-12 px-4 sm:px-6" style={{ color: '#4B5563' }}
+                  className="ml-auto flex-shrink-0 text-gray-600 hover:text-gray-700 text-sm sm:text-base md:text-lg h-10 sm:h-12 px-4 sm:px-6" style={{ color: '#4B5563' }}
                   onClick={() => {
                     const categoryMap = {
                       'Hoodie': 'hoodies',
@@ -1683,7 +1685,7 @@ const Product = () => {
                     ))}
                   </CarouselContent>
                   <CarouselPrevious 
-                    className="h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14" 
+                    className="h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 left-4 sm:left-6 md:left-8" 
                     style={{ 
                       top: '50%', 
                       transform: 'translateY(-50%)',
@@ -1693,7 +1695,7 @@ const Product = () => {
                     }} 
                   />
                   <CarouselNext 
-                    className="h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14" 
+                    className="h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 right-4 sm:right-6 md:right-8" 
                     style={{ 
                       top: '50%', 
                       transform: 'translateY(-50%)',

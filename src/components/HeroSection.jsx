@@ -59,13 +59,13 @@ export function HeroSection() {
   })();
 
   return (
-    <section className="relative min-h-[60vh] sm:min-h-[80vh] overflow-hidden bg-background">
-      <div className="container relative mx-auto flex min-h-[60vh] sm:min-h-[80vh] items-center px-4 lg:px-8 py-6 sm:py-12">
+    <section className="relative min-h-[60vh] sm:min-h-[80vh] overflow-hidden bg-transparent">
+      <div className="container relative mx-auto flex min-h-[60vh] sm:min-h-[80vh] items-center px-1 sm:px-4 lg:px-8 py-6 sm:py-12">
         <div className="grid gap-4 sm:gap-12 lg:grid-cols-2 lg:gap-12 w-full">
           {/* Content - Left side on medium+ screens, hidden on small screens */}
           <div className="order-2 lg:order-1 hidden md:flex flex-col items-start justify-center space-y-2 sm:space-y-4 animate-fade-in py-4 sm:py-6">
             {/* Top Banner */}
-            <div className="inline-flex w-fit items-center gap-1 rounded-lg bg-gray-500 px-3 py-1 text-lg sm:text-xl md:text-2xl xl:text-3xl font-bold text-white" style={{ backgroundColor: '#6B7280', color: '#FFFFFF' }}>
+            <div className="inline-flex w-fit items-center gap-1 rounded-lg bg-secondary px-3 py-1 text-lg sm:text-xl md:text-2xl xl:text-3xl font-bold text-secondary-foreground">
               Looklyn - Own The Look
             </div>
 
@@ -73,11 +73,11 @@ export function HeroSection() {
             <h1 className="font-display text-3xl sm:text-4xl font-bold leading-tight tracking-tight md:text-5xl lg:text-6xl">
               <span className="text-foreground">Made For You,</span>
               <br />
-              <span className="text-foreground" style={{ color: '#2E2E2E' }}>Designed By You!!</span>
+              <span className="text-foreground">Designed By You!!</span>
             </h1>
 
             {/* Description */}
-            <p className="max-w-md text-sm sm:text-base text-foreground leading-relaxed" style={{ color: '#4B5563' }}>
+            <p className="max-w-md text-sm sm:text-base text-muted-foreground leading-relaxed">
               Built by a young mind, driven by bold ideas.
               <br />
               Made for people who don't follow trends — they create them.
@@ -89,18 +89,16 @@ export function HeroSection() {
             <div className="flex flex-wrap gap-3 sm:gap-4">
               <Button 
                 size="lg" 
-                className="gap-2 bg-gray-500 hover:bg-gray-600 text-white shadow-soft hover:shadow-elevated rounded-lg px-4 sm:px-6 py-3 sm:py-6 text-sm sm:text-base"
-                style={{ backgroundColor: '#6B7280', color: '#FFFFFF' }}
+                className="gap-2 bg-secondary hover:bg-secondary/90 text-secondary-foreground shadow-soft hover:shadow-elevated rounded-lg px-4 sm:px-6 py-3 sm:py-6 text-sm sm:text-base"
                 onClick={() => navigate('/category/hoodies')}
               >
                 Shop Now
-                <ArrowRight className="h-4 w-4" style={{ color: '#FFFFFF' }} />
+                <ArrowRight className="h-4 w-4" />
               </Button>
               <Button 
                 variant="outline" 
                 size="lg"
-                className="border-2 border-gray-500 bg-transparent hover:bg-gray-100 text-foreground rounded-lg px-4 sm:px-6 py-3 sm:py-6 text-sm sm:text-base"
-                style={{ backgroundColor: 'transparent', color: '#2E2E2E', borderColor: '#6B7280' }}
+                className="border-2 border-secondary bg-transparent hover:bg-accent hover:text-accent-foreground text-foreground rounded-lg px-4 sm:px-6 py-3 sm:py-6 text-sm sm:text-base"
                 onClick={() => document.getElementById('custom')?.scrollIntoView({ behavior: 'smooth' })}
               >
                 Learn More
@@ -110,8 +108,8 @@ export function HeroSection() {
             {/* Features */}
             <div className="flex flex-wrap gap-4 sm:gap-6 pt-4 sm:pt-6">
               <div className="flex items-center gap-2 sm:gap-3">
-                <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-gray-500" style={{ backgroundColor: '#6B7280' }}>
-                  <Truck className="h-4 w-4 sm:h-5 sm:w-5 text-white" style={{ color: '#FFFFFF' }} />
+                <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-secondary">
+                  <Truck className="h-4 w-4 sm:h-5 sm:w-5 text-secondary-foreground" />
                 </div>
                 <div>
                   <p className="text-sm sm:text-base font-semibold text-foreground">Free Shipping</p>
@@ -119,8 +117,8 @@ export function HeroSection() {
                 </div>
               </div>
               <div className="flex items-center gap-2 sm:gap-3">
-                <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-gray-500" style={{ backgroundColor: '#6B7280' }}>
-                  <Headphones className="h-4 w-4 sm:h-5 sm:w-5 text-white" style={{ color: '#FFFFFF' }} />
+                <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-secondary">
+                  <Headphones className="h-4 w-4 sm:h-5 sm:w-5 text-secondary-foreground" />
                 </div>
                 <div>
                   <p className="text-sm sm:text-base font-semibold text-foreground">24/7 WhatsApp Support</p>
@@ -128,8 +126,8 @@ export function HeroSection() {
                 </div>
               </div>
               <div className="flex items-center gap-2 sm:gap-3">
-                <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-gray-500" style={{ backgroundColor: '#6B7280' }}>
-                  <Shirt className="h-4 w-4 sm:h-5 sm:w-5 text-white" style={{ color: '#FFFFFF' }} />
+                <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-secondary">
+                  <Shirt className="h-4 w-4 sm:h-5 sm:w-5 text-secondary-foreground" />
                 </div>
                 <div>
                   <p className="text-sm sm:text-base font-semibold text-foreground">Printed After Order</p>
@@ -141,7 +139,7 @@ export function HeroSection() {
 
           {/* Hero Image Carousel - Right side on large screens */}
           <div className="relative flex items-center justify-center order-1 lg:order-2 py-2 sm:py-6" style={{ animationDelay: "0.2s" }}>
-            <div className="relative w-full max-w-full sm:max-w-[70%] lg:max-w-full overflow-hidden rounded-2xl bg-secondary shadow-elevated animate-scale-in">
+            <div className="relative w-full max-w-full sm:max-w-[70%] lg:max-w-full overflow-hidden rounded-none sm:rounded-2xl bg-secondary shadow-elevated animate-scale-in">
               <div className="relative w-full" style={{ paddingBottom: 'calc(100% + 0px)' }}>
                 <div className="absolute inset-0 h-full w-full">
                   {loading ? (
