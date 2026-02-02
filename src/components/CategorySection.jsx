@@ -30,7 +30,7 @@ export function CategorySection() {
 
   return (
     <section className="bg-secondary/30 py-20">
-      <div className="container mx-auto px-4 lg:px-8">
+      <div className="container mx-auto px-4 lg:px-8 py-10">
         <div className="mb-12 text-center">
           <h2 className="font-display text-3xl font-bold text-foreground md:text-4xl">
             Shop by <span className="text-gradient">Category</span>

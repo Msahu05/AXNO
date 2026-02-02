@@ -152,12 +152,12 @@ const Category = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-200 dark:from-[#0f0a1a] dark:via-[#1a1526] dark:to-[#0f0a1a]" style={{ backgroundColor: '#E5E7EB' }}>
+    <div className="min-h-screen bg-gradient-to-b from-white via-[#f8f7ff] to-white dark:from-[#0f0a1a] dark:via-[#1a1526] dark:to-[#0f0a1a]">
       <div className="px-4 sm:px-6 py-10">
         <div className="mx-auto max-w-7xl space-y-8">
         <div className="flex items-center gap-4 flex-wrap">
           <button 
-            className="flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wider transition-all duration-200 bg-gray-200 hover:bg-gray-300 border border-gray-400 text-foreground" 
+            className="flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wider transition-all duration-200 bg-white dark:bg-[#2a2538] border border-gray-200 dark:border-white/10 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-600 text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400" 
             onClick={() => navigate(-1)}
           >
             <ArrowLeft className="h-4 w-4" />   
@@ -186,10 +186,10 @@ const Category = () => {
               <Button
                 key={filter}
                 variant={audienceFilter === filter ? "default" : "outline"}
-                className={`rounded-md font-body text-xs sm:text-sm font-medium px-3 py-1 sm:px-6 sm:py-2 transition-all tracking-normal ${
+                className={`rounded-full font-body text-xs sm:text-sm font-medium px-3 py-1 sm:px-6 sm:py-2 transition-all tracking-normal ${
                   audienceFilter === filter 
-                    ? "bg-gray-300 text-foreground border-gray-400" 
-                    : "bg-gray-200 text-foreground border-gray-400 hover:bg-gray-300"
+                    ? "bg-primary text-primary-foreground border-primary" 
+                    : "bg-background dark:bg-[#2a2538] text-foreground dark:text-gray-300 border-border dark:border-white/20 hover:border-primary dark:hover:border-purple-500"
                 }`}
                 onClick={() => {
                   setAudienceFilter(filter);
@@ -241,18 +241,18 @@ const Category = () => {
               <div className="flex items-center justify-center gap-4 rounded-[16px] border border-[rgba(47,37,64,0.08)] dark:border-white/10 bg-white dark:bg-[#2a2538] p-4 shadow-[0_4px_16px_rgba(47,37,64,0.04)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.2)]">
                 <Button
                   variant="outline"
-                  className="rounded-full border-gray-400 bg-gray-200 hover:bg-gray-300 text-foreground"
+                  className="rounded-full border-gray-300 dark:border-white/20"
                   onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                   disabled={currentPage === 1}
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <span className="text-sm font-semibold text-foreground">
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                   Page {currentPage} of {totalPages} ({filteredProducts.length} products)
                 </span>
                 <Button
                   variant="outline"
-                  className="rounded-full border-gray-400 bg-gray-200 hover:bg-gray-300 text-foreground"
+                  className="rounded-full border-gray-300 dark:border-white/20"
                   onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
                   disabled={currentPage === totalPages}
                 >

@@ -10,6 +10,8 @@ export function HeroSection() {
   const navigate = useNavigate();
   const [slideshowImages, setSlideshowImages] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [api, setApi] = useState(null);
   const [plugin] = useState(() =>
     Autoplay({ delay: 3000, stopOnInteraction: false })
   );
@@ -29,6 +31,23 @@ export function HeroSection() {
     
     loadSlideshow();
   }, []);
+
+  useEffect(() => {
+    if (!api) {
+      return;
+    }
+
+    const onSelect = () => {
+      setCurrentIndex(api.selectedScrollSnap());
+    };
+
+    api.on("select", onSelect);
+    onSelect();
+
+    return () => {
+      api.off("select", onSelect);
+    };
+  }, [api]);
 
   // Use only slideshow images for carousel
   const heroImages = (() => {
@@ -59,11 +78,12 @@ export function HeroSection() {
   })();
 
   return (
-    <section className="relative min-h-[60vh] sm:min-h-[80vh] overflow-hidden bg-transparent">
-      <div className="container relative mx-auto flex min-h-[60vh] sm:min-h-[80vh] items-center px-1 sm:px-4 lg:px-8 py-6 sm:py-12">
-        <div className="grid gap-4 sm:gap-12 lg:grid-cols-2 lg:gap-12 w-full">
+    <section className="relative min-h-[60vh] sm:min-h-[80vh] overflow-hidden bg-transparent w-full pt-28 sm:pt-[5.75rem] lg:pt-28">
+      
+      <div className="w-full relative flex min-h-[60vh] sm:min-h-[80vh] items-center px-0 sm:px-4 lg:px-6 py-0 sm:py-16">
+        <div className="grid gap-2 sm:gap-4 lg:grid-cols-2 lg:gap-6 w-full">
           {/* Content - Left side on medium+ screens, hidden on small screens */}
-          <div className="order-2 lg:order-1 hidden md:flex flex-col items-start justify-center space-y-2 sm:space-y-4 animate-fade-in py-4 sm:py-6">
+          <div className="order-2 lg:order-1 hidden md:flex flex-col items-start justify-center space-y-2 sm:space-y-3 animate-fade-in py-2 sm:py-3">
             {/* Top Banner */}
             <div className="inline-flex w-fit items-center gap-1 rounded-lg bg-secondary px-3 py-1 text-lg sm:text-xl md:text-2xl xl:text-3xl font-bold text-secondary-foreground">
               Looklyn - Own The Look
@@ -138,8 +158,8 @@ export function HeroSection() {
           </div>
 
           {/* Hero Image Carousel - Right side on large screens */}
-          <div className="relative flex items-center justify-center order-1 lg:order-2 py-2 sm:py-6" style={{ animationDelay: "0.2s" }}>
-            <div className="relative w-full max-w-full sm:max-w-[70%] lg:max-w-full overflow-hidden rounded-none sm:rounded-2xl bg-secondary shadow-elevated animate-scale-in">
+          <div className="relative flex items-center justify-center order-1 lg:order-2 py-0 sm:py-10 w-full" style={{ animationDelay: "0.2s" }}>
+            <div className="relative w-full overflow-hidden rounded-none sm:rounded-2xl bg-secondary shadow-elevated animate-scale-in">
               <div className="relative w-full" style={{ paddingBottom: 'calc(100% + 0px)' }}>
                 <div className="absolute inset-0 h-full w-full">
                   {loading ? (
@@ -147,34 +167,59 @@ export function HeroSection() {
                       <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
                     </div>
                   ) : (
-                    <Carousel
-                      plugins={[plugin]}
-                      opts={{ loop: true }}
-                      className="h-full w-full relative"
-                    >
-                      <CarouselContent className="h-full -ml-0">
-                        {heroImages.map((image, index) => (
-                          <CarouselItem key={index} className="h-full pl-0">
-                            <div 
-                              className="h-full w-full cursor-pointer relative group"
-                              onClick={image.onClick}
-                            >
-                              <img
-                                src={image.src}
-                                alt={image.alt}
-                                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                onError={(e) => {
-                                  e.target.src = "https://images.unsplash.com/photo-1581044777550-4cfa60707c03?w=600&q=80";
-                                }}
-                              />
-                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
-                            </div>
-                          </CarouselItem>
-                        ))}
-                      </CarouselContent>
-                      <CarouselPrevious className="left-2 sm:left-4 h-10 w-10 bg-background hover:bg-white border-2 border-primary/20 shadow-lg" />
-                      <CarouselNext className="right-2 sm:right-4 h-10 w-10 bg-background  hover:bg-white border-2 border-primary/20 shadow-lg" />
-                    </Carousel>
+                    <>
+                      <Carousel
+                        plugins={[plugin]}
+                        opts={{ loop: true }}
+                        className="h-full w-full relative"
+                        setApi={setApi}
+                      >
+                        <CarouselContent className="h-full -ml-0">
+                          {heroImages.map((image, index) => (
+                            <CarouselItem key={index} className="h-full pl-0">
+                              <div 
+                                className="h-full w-full cursor-pointer relative group"
+                                onClick={image.onClick}
+                              >
+                                <img
+                                  src={image.src}
+                                  alt={image.alt}
+                                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                  onError={(e) => {
+                                    e.target.src = "https://images.unsplash.com/photo-1581044777550-4cfa60707c03?w=600&q=80";
+                                  }}
+                                />
+                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
+                              </div>
+                            </CarouselItem>
+                          ))}
+                        </CarouselContent>
+                        <CarouselPrevious className="left-2 sm:left-4 h-10 w-10 bg-[#9ca3af] hover:bg-[#9ca3af]/80 border-2 border-primary/20 shadow-lg" />
+                        <CarouselNext className="right-2 sm:right-4 h-10 w-10 bg-[#9ca3af] hover:bg-[#9ca3af]/80 border-2 border-primary/20 shadow-lg" />
+                      </Carousel>
+                      
+                      {/* Pagination Dots - Outside carousel for better visibility */}
+                      {heroImages.length > 1 && (
+                        <div className="absolute bottom-8 sm:bottom-10 left-1/2 -translate-x-1/2 flex gap-3 sm:gap-4 z-[100] items-center pointer-events-auto px-4 py-2.5 sm:px-5 sm:py-3 rounded-full bg-black/70 backdrop-blur-md">
+                          {heroImages.map((_, index) => (
+                            <button
+                              key={index}
+                              onClick={() => api?.scrollTo(index)}
+                              className={`rounded-full transition-all duration-300 border-2 ${
+                                currentIndex === index
+                                  ? 'bg-white border-white h-4 w-12 sm:h-5 sm:w-16 md:h-5 md:w-20'
+                                  : 'bg-white/80 hover:bg-white border-white/50 h-4 w-4 sm:h-5 sm:w-5 md:h-5 md:w-5'
+                              }`}
+                              aria-label={`Go to slide ${index + 1}`}
+                              style={{ 
+                                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.9)',
+                                minWidth: currentIndex === index ? '3rem' : '1rem'
+                              }}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>

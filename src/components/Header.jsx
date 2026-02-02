@@ -20,8 +20,8 @@ const Header = () => {
   const { itemCount: cartCount = 0 } = useCart();
 
   return (
-        <header className="fixed top-0 left-0 right-0 z-[100] w-full border-b border-border/50 m-0 backdrop-blur-md" style={{ backgroundColor: 'rgba(55, 65, 81, 0.88)', position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100 }}>
-          <nav className="container mx-auto flex h-14 sm:h-16 lg:h-20 items-center justify-between px-2 sm:px-4 lg:px-6">
+        <header className="fixed top-0 left-0 right-0 z-[100] w-full m-0 backdrop-blur-md" style={{ backgroundColor: 'rgba(255, 255, 255, 0.8)', position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100 }}>
+          <nav className="container mx-auto flex h-20 sm:h-22 lg:h-24 items-center justify-between px-4 sm:px-6 lg:px-8 py-2 sm:py-3 lg:py-4">
             {/* Left side - Sidebar Trigger */}
             <div className="flex items-center flex-shrink-0">
               <Button
@@ -61,11 +61,6 @@ const Header = () => {
           >
             <Link to="/wishlist">
               <Heart className="h-5 w-5 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-black stroke-[2.5]" style={{ color: '#000000' }} />
-              {wishlistCount > 0 && (
-                <span className="absolute right-0 top-0 flex h-4 w-4 sm:h-4 sm:w-4 lg:h-5 lg:w-5 items-center justify-center rounded-full bg-primary text-[9px] sm:text-[10px] lg:text-[11px] font-medium text-white border border-background">
-                  {wishlistCount > 9 ? '9+' : wishlistCount}
-                </span>
-              )}
             </Link>
           </Button>
           <Button
@@ -78,7 +73,7 @@ const Header = () => {
             <Link to="/cart">
               <ShoppingCart className="h-5 w-5 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-black stroke-[2.5]" style={{ color: '#000000' }} />
               {cartCount > 0 && (
-                <span className="absolute right-0 top-0 flex h-4 w-4 sm:h-4 sm:w-4 lg:h-5 lg:w-5 items-center justify-center rounded-full bg-primary text-[9px] sm:text-[10px] lg:text-[11px] font-medium text-white border border-background">
+                <span className="absolute right-0 top-0 flex h-4 w-4 sm:h-4 sm:w-4 lg:h-5 lg:w-5 items-center justify-center rounded-full bg-background text-[9px] sm:text-[10px] lg:text-[11px] font-medium text-black border border-background">
                   {cartCount > 9 ? '9+' : cartCount}
                 </span>
               )}

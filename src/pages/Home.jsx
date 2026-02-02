@@ -1,10 +1,12 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { CheckCircle2, PhoneCall, UploadCloud, HeartHandshake, Truck, ArrowRight, Leaf, Sparkles, Zap, Award, Shield, Star, Instagram, Mail, Facebook, Headphones, Shirt } from "lucide-react";
 import { HeroSection } from "@/components/HeroSection";
 import ProductCard from "@/components/ProductCard";
 import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import { Button } from "@/components/ui/button";
+import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "@/components/ui/carousel";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useWishlist } from "@/contexts/wishlist-context";
 import { productsAPI, userAPI, getImageUrl } from "@/lib/api";
@@ -41,6 +43,13 @@ const Home = () => {
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isLargeScreen, setIsLargeScreen] = useState(false);
+  const [categoryProducts, setCategoryProducts] = useState({
+    men: null,
+    women: null,
+    unisex: null
+  });
+  const [centerCardIndex, setCenterCardIndex] = useState(1);
+  const [carouselApi, setCarouselApi] = useState(null);
 
   useEffect(() => {
     const checkScreenSize = () => {
@@ -57,7 +66,65 @@ const Home = () => {
       try {
         // Load all products without any filter
         const productsResponse = await productsAPI.getAll({});
-        setAllProducts(productsResponse.products || []);
+        const allProds = productsResponse.products || [];
+        setAllProducts(allProds);
+        
+        // Get distinct products for each category by filtering by audience
+        const getProductByAudience = (audience) => {
+          const filtered = allProds.filter((p) => {
+            const productAudience = (p.audience || p.audienceType || '').toLowerCase();
+            return productAudience === audience.toLowerCase();
+          });
+          // Get first product with a valid image
+          return filtered.find(p => {
+            const hasImage = p.image || 
+              (Array.isArray(p.gallery) && p.gallery.length > 0) || 
+              p.gallery;
+            return hasImage;
+          }) || filtered[0] || null;
+        };
+        
+        // Get different products for each category
+        const menProduct = getProductByAudience('men');
+        const womenProduct = getProductByAudience('women');
+        const unisexProduct = getProductByAudience('unisex');
+        
+        // If we don't have distinct products, use different categories
+        let finalMen = menProduct;
+        let finalWomen = womenProduct;
+        let finalUnisex = unisexProduct;
+        
+        // Ensure all three are different
+        if (!finalMen || !finalWomen || !finalUnisex || 
+            (finalMen._id === finalWomen._id) || 
+            (finalMen._id === finalUnisex._id) || 
+            (finalWomen._id === finalUnisex._id)) {
+          // Use different product categories as fallback
+          const hoodieProducts = allProds.filter(p => p.category === 'Hoodie');
+          const tshirtProducts = allProds.filter(p => p.category === 'T-Shirt');
+          const sweatshirtProducts = allProds.filter(p => p.category === 'Sweatshirt');
+          
+          if (!finalMen && hoodieProducts.length > 0) finalMen = hoodieProducts[0];
+          if (!finalWomen && tshirtProducts.length > 0) finalWomen = tshirtProducts[0];
+          if (!finalUnisex && sweatshirtProducts.length > 0) finalUnisex = sweatshirtProducts[0];
+          
+          // Ensure uniqueness
+          if (finalMen && finalWomen && finalMen._id === finalWomen._id && tshirtProducts.length > 0) {
+            finalWomen = tshirtProducts[0];
+          }
+          if (finalMen && finalUnisex && finalMen._id === finalUnisex._id && sweatshirtProducts.length > 0) {
+            finalUnisex = sweatshirtProducts[0];
+          }
+          if (finalWomen && finalUnisex && finalWomen._id === finalUnisex._id && sweatshirtProducts.length > 0) {
+            finalUnisex = sweatshirtProducts[0];
+          }
+        }
+        
+        setCategoryProducts({
+          men: finalMen,
+          women: finalWomen,
+          unisex: finalUnisex
+        });
       } catch (error) {
         console.error('Error loading products:', error);
         setAllProducts([]);
@@ -67,6 +134,29 @@ const Home = () => {
     };
     loadData();
   }, []);
+
+  // Initialize carousel to center card
+  useEffect(() => {
+    if (carouselApi && !loading) {
+      carouselApi.scrollTo(1, true); // Scroll to center card (index 1)
+    }
+  }, [carouselApi, loading]);
+
+  // Track which card is in center
+  useEffect(() => {
+    if (!carouselApi) return;
+
+    const onSelect = () => {
+      setCenterCardIndex(carouselApi.selectedScrollSnap());
+    };
+
+    carouselApi.on("select", onSelect);
+    onSelect();
+
+    return () => {
+      carouselApi.off("select", onSelect);
+    };
+  }, [carouselApi]);
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -92,11 +182,187 @@ const Home = () => {
 
   const wishlistPicks = wishlistItems.slice(0, 4);
 
-  return (
-    <div className="min-h-screen bg-muted dark:bg-background">
-      <main className="container mx-auto px-2 sm:px-4 lg:px-6 py-1 sm:py-2 lg:py-4 space-y-4 sm:space-y-6 lg:space-y-8">
-        <HeroSection />
+  const categories = [
+    {
+      name: 'Men',
+      filter: 'men',
+      product: categoryProducts.men,
+      route: '/category/hoodies?filter=men'
+    },
+    {
+      name: 'Women',
+      filter: 'women',
+      product: categoryProducts.women,
+      route: '/category/hoodies?filter=women'
+    },
+    {
+      name: 'Unisex',
+      filter: 'unisex',
+      product: categoryProducts.unisex,
+      route: '/category/hoodies?filter=unisex'
+    }
+  ];
 
+  return (
+    <div className="min-h-screen bg-[#9ca3af] dark:bg-background">
+      <br/>
+      <br/>
+      <HeroSection className="sm:mt-20"></HeroSection>
+      
+      {/* Category Card Slider */}
+      <section className="w-full py-10 sm:py-12 md:py-14 lg:py-16 relative flex justify-center">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 relative">
+          <Carousel
+            setApi={setCarouselApi}
+            opts={{
+              align: "center",
+              loop: true,
+            }}
+            className="w-full relative"
+          >
+            <CarouselContent className="-ml-4 sm:-ml-5 md:-ml-6 lg:-ml-8">
+              {categories.map((category, index) => {
+                const imageUrl = category.product 
+                  ? getImageUrl(Array.isArray(category.product.gallery) 
+                      ? category.product.gallery[0]?.url || category.product.gallery[0] 
+                      : category.product.gallery || category.product.image)
+                  : "https://images.unsplash.com/photo-1581044777550-4cfa60707c03?w=600&q=80";
+                
+                const isCenterCard = index === centerCardIndex;
+                
+                return (
+                  <CarouselItem
+                    key={index}
+                    className="pl-4 sm:pl-5 md:pl-6 lg:pl-8 basis-[95%] xs:basis-[90%] sm:basis-[80%] md:basis-[70%] lg:basis-[55%] xl:basis-[50%] 2xl:basis-[45%]"
+                  >
+                    <div
+                      className={`relative group cursor-pointer rounded-lg overflow-hidden bg-card shadow-soft transition-all duration-500 hover:shadow-elevated ${
+                        isCenterCard 
+                          ? 'scale-100 opacity-100' 
+                          : 'scale-90 opacity-60'
+                      }`}
+                      onClick={() => navigate(category.route)}
+                      style={{ 
+                        transform: isCenterCard ? 'scale(1)' : 'scale(0.85)',
+                        opacity: isCenterCard ? 1 : 0.6,
+                        zIndex: 1
+                      }}
+                    >
+                      <div className="relative w-full overflow-hidden bg-secondary" style={{ aspectRatio: '1 / 1' }}>
+                        <img
+                          src={imageUrl}
+                          alt={category.name}
+                          className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
+                          style={{ objectFit: 'cover' }}
+                        />
+                        {/* Hover Overlay */}
+                        <div className="absolute inset-0 bg-white transition-all duration-500 ease-in-out flex items-center justify-center z-10 opacity-0 group-hover:opacity-90">
+                          <h3 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-black text-gray-900 transition-all duration-500 transform translate-y-4 group-hover:translate-y-0 group-hover:opacity-100 tracking-wide">
+                            {category.name}
+                          </h3>
+                        </div>
+                      </div>
+                      {/* Category Name Below */}
+                      <div className="p-6 sm:p-7 md:p-8 lg:p-9 xl:p-10 text-center bg-card">
+                        <h3 className={`text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-semibold transition-colors duration-300 ${
+                          isCenterCard ? 'text-foreground' : 'text-muted-foreground'
+                        } group-hover:text-primary`}>
+                          {category.name}
+                        </h3>
+                      </div>
+                    </div>
+                  </CarouselItem>
+                );
+              })}
+            </CarouselContent>
+            <CarouselPrevious 
+              className="left-4 sm:left-5 md:left-6 lg:left-8 xl:left-10 h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 lg:h-18 lg:w-18 xl:h-20 xl:w-20 bg-white/90 hover:bg-white border-0 shadow-lg text-gray-900 hover:text-gray-900"
+              style={{ zIndex: 100, position: 'absolute', pointerEvents: 'auto' }}
+            />
+            <CarouselNext 
+              className="right-4 sm:right-5 md:right-6 lg:right-8 xl:right-10 h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 lg:h-18 lg:w-18 xl:h-20 xl:w-20 bg-white/90 hover:bg-white border-0 shadow-lg text-gray-900 hover:text-gray-900"
+              style={{ zIndex: 100, position: 'absolute', pointerEvents: 'auto' }}
+            />
+          </Carousel>
+          
+          {/* Pagination Dots */}
+          <div className="absolute bottom-3 sm:bottom-4 md:bottom-6 lg:bottom-8 left-1/2 -translate-x-1/2 flex gap-2 sm:gap-2.5 md:gap-3 lg:gap-4 z-20">
+            {categories.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => carouselApi?.scrollTo(index)}
+                className={`rounded-full transition-all duration-300 ${
+                  centerCardIndex === index
+                    ? 'bg-white h-2.5 w-8 sm:h-3 sm:w-10 md:h-3.5 md:w-12 lg:h-4 lg:w-14 xl:h-4.5 xl:w-16'
+                    : 'bg-white/60 hover:bg-white/80 h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-3.5 md:w-3.5 lg:h-4 lg:w-4 xl:h-4.5 xl:w-4.5'
+                }`}
+                aria-label={`Go to ${categories[index].name}`}
+                style={{ 
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)'
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Product Category Squares */}
+      <section className="w-full py-6 sm:py-8 md:py-10 lg:py-12">
+        <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-10">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
+            <div
+              onClick={() => navigate('/filter/hot')}
+              className="group relative aspect-square rounded-2xl sm:rounded-3xl overflow-hidden bg-gray-300 dark:bg-gray-600 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer hover:scale-105 flex items-center justify-center"
+            >
+              <div className="text-center p-4 sm:p-6 z-10 relative">
+                <h3 className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-black text-black dark:text-white uppercase tracking-wide">
+                  Hot Products
+                </h3>
+              </div>
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 dark:group-hover:bg-white/10 transition-colors duration-300" />
+            </div>
+
+            <div
+              onClick={() => navigate('/filter/top')}
+              className="group relative aspect-square rounded-2xl sm:rounded-3xl overflow-hidden bg-gray-300 dark:bg-gray-600 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer hover:scale-105 flex items-center justify-center"
+            >
+              <div className="text-center p-4 sm:p-6 z-10 relative">
+                <h3 className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-black text-black dark:text-white uppercase tracking-wide">
+                  Top Products
+                </h3>
+              </div>
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 dark:group-hover:bg-white/10 transition-colors duration-300" />
+            </div>
+
+            <div
+              onClick={() => navigate('/filter/new')}
+              className="group relative aspect-square rounded-2xl sm:rounded-3xl overflow-hidden bg-gray-300 dark:bg-gray-600 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer hover:scale-105 flex items-center justify-center"
+            >
+              <div className="text-center p-4 sm:p-6 z-10 relative">
+                <h3 className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-black text-black dark:text-white uppercase tracking-wide">
+                  New Products
+                </h3>
+              </div>
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 dark:group-hover:bg-white/10 transition-colors duration-300" />
+            </div>
+
+            <div
+              onClick={() => navigate('/filter/custom')}
+              className="group relative aspect-square rounded-2xl sm:rounded-3xl overflow-hidden bg-gray-300 dark:bg-gray-600 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer hover:scale-105 flex items-center justify-center"
+            >
+              <div className="text-center p-4 sm:p-6 z-10 relative">
+                <h3 className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-black text-black dark:text-white uppercase tracking-wide">
+                  Customised Products
+                </h3>
+              </div>
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 dark:group-hover:bg-white/10 transition-colors duration-300" />
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      <main className="container mx-auto px-2 sm:px-4 lg:px-6 pt-20 sm:pt-24 lg:pt-28 pb-12 sm:pb-16 lg:pb-20 space-y-4 sm:space-y-16 lg:space-y-8">
+        
         <div className="border-t border-border/50 my-4 sm:my-6"></div>
 
         <section id="catalogue" className="space-y-6 sm:space-y-8 lg:space-y-12">
@@ -113,7 +379,7 @@ const Home = () => {
                     <div className="flex flex-wrap items-center gap-1.5 sm:gap-3">
                       <Button
                         variant="outline"
-                        className="font-display rounded-md border-primary text-primary bg-background hover:bg-primary/10 px-2 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm tracking-normal"
+                        className="font-display rounded-md border-primary text-primary bg-[#9ca3af] hover:bg-primary/10 px-2 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm tracking-normal"
                         onClick={() => {
                           window.scrollTo({ top: 0, behavior: "smooth" });
                           navigate(`/category/${type.route}?filter=unisex`);
@@ -123,7 +389,7 @@ const Home = () => {
                       </Button>
                       <Button
                         variant="outline"
-                        className="font-display rounded-md border-primary text-primary bg-background hover:bg-primary/10 px-2 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm tracking-normal"
+                        className="font-display rounded-md border-primary text-primary bg-[#9ca3af] hover:bg-primary/10 px-2 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm tracking-normal"
                         onClick={() => {
                           window.scrollTo({ top: 0, behavior: "smooth" });
                           navigate(`/category/${type.route}?filter=men`);
@@ -133,7 +399,7 @@ const Home = () => {
                       </Button>
                       <Button
                         variant="outline"
-                        className="font-display rounded-md border-primary text-primary bg-background hover:bg-primary/10 px-2 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm tracking-normal"
+                        className="font-display rounded-md border-primary text-primary bg-[#9ca3af] hover:bg-primary/10 px-2 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm tracking-normal"
                         onClick={() => {
                           window.scrollTo({ top: 0, behavior: "smooth" });
                           navigate(`/category/${type.route}?filter=women`);
@@ -197,7 +463,7 @@ const Home = () => {
         <div className="border-t border-border/50 my-6 sm:my-8 lg:my-12"></div>
 
         {/* Text Section - Made For You, Designed By You - Only visible on small screens (below md) */}
-        <section className="md:hidden space-y-6 sm:space-y-8 rounded-[28px] sm:rounded-[40px] lg:rounded-[56px] border border-border dark:border-white/15 bg-white dark:bg-[var(--card)]/95 p-6 sm:p-8 lg:p-10 shadow-[var(--shadow-soft)]">
+        <section className="md:hidden space-y-6 sm:space-y-8 rounded-[28px] sm:rounded-[40px] lg:rounded-[56px] border border-border dark:border-white/15 bg-[#9ca3af] p-6 sm:p-8 lg:p-10 shadow-[var(--shadow-soft)]">
           <div className="flex flex-col items-start justify-center space-y-4 sm:space-y-6">
             {/* Top Banner */}
             <div className="inline-flex w-fit items-center gap-1 rounded-lg bg-secondary px-3 py-1.5 sm:px-4 sm:py-2 text-base sm:text-lg md:text-xl font-bold text-secondary-foreground">
@@ -275,51 +541,51 @@ const Home = () => {
 
         <div className="border-t border-border/50 my-6 sm:my-8 lg:my-12"></div>
 
-        <section id="custom" className="space-y-6 sm:space-y-8 rounded-[28px] sm:rounded-[40px] lg:rounded-[56px] border border-border dark:border-white/15 bg-card p-4 sm:p-6 lg:p-10 shadow-[var(--shadow-soft)]">
-          <div className="space-y-8">
+        <section id="custom" className="space-y-4 sm:space-y-6 rounded-[28px] sm:rounded-[40px] lg:rounded-[56px] border border-border dark:border-white/15 bg-[#9ca3af] p-4 sm:p-5 lg:p-10 shadow-[var(--shadow-soft)]">
+          <div className="space-y-5">
             <div>
-              <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground mb-4">Why Choose Us</p>
-              <h3 className="text-3xl font-black mb-8">Built for quality</h3>
+              <h4 className="text-2xl font-black mb-6 text-center">Why Choose Us</h4>
+              {/* <h3 className="text-3xl font-black mb-8">Built for quality</h3> */}
             </div>
             
-            <div className="flex flex-wrap gap-6 justify-center">
-              <div className="flex flex-col items-center text-center gap-4 rounded-[28px] border border-border dark:border-white/20 bg-muted p-6 transition-all min-w-[200px] flex-1 max-w-[250px]">
+            <div className="flex flex-wrap gap-3 justify-center">
+              <div className="flex flex-col items-center text-center gap-4 rounded-[28px] border border-border dark:border-white/20 bg-[#9ca3af] p-6 transition-all min-w-[200px] flex-1 max-w-[250px]">
                 <div className="rounded-2xl bg-secondary p-4 text-secondary-foreground">
                   <Leaf className="h-6 w-6" />
                 </div>
                 <div>
                   <h4 className="font-semibold text-lg mb-1 text-foreground">Eco-Friendly Materials</h4>
-                  <p className="text-sm text-muted-foreground">Eco pigment + puff + reflective inks for sustainable fashion.</p>
+                  {/* <p className="text-sm text-muted-foreground">Eco pigment + puff + reflective inks for sustainable fashion.</p> */}
                 </div>
               </div>
               
-              <div className="flex flex-col items-center text-center gap-4 rounded-[28px] border border-border dark:border-white/20 bg-muted p-6 transition-all min-w-[200px] flex-1 max-w-[250px]">
+              <div className="flex flex-col items-center text-center gap-4 rounded-[28px] border border-border dark:border-white/20 bg-[#9ca3af] p-6 transition-all min-w-[200px] flex-1 max-w-[250px]">
                 <div className="rounded-2xl bg-secondary p-4 text-secondary-foreground">
                   <Zap className="h-6 w-6" />
                 </div>
                 <div>
                   <h4 className="font-semibold text-lg mb-1 text-foreground">Lightning Fast</h4>
-                  <p className="text-sm text-muted-foreground">Saved addresses & reorder within 30 seconds.</p>
+                  {/* <p className="text-sm text-muted-foreground">Saved addresses & reorder within 30 seconds.</p> */}
                 </div>
               </div>
               
-              <div className="flex flex-col items-center text-center gap-4 rounded-[28px] border border-border dark:border-white/20 bg-muted p-6 transition-all min-w-[200px] flex-1 max-w-[250px]">
+              <div className="flex flex-col items-center text-center gap-4 rounded-[28px] border border-border dark:border-white/20 bg-[#9ca3af] p-6 transition-all min-w-[200px] flex-1 max-w-[250px]">
                 <div className="rounded-2xl bg-secondary p-4 text-secondary-foreground">
                   <Sparkles className="h-6 w-6" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-lg mb-1 text-foreground">Seamless Sync</h4>
-                  <p className="text-sm text-muted-foreground">Wishlist syncs everywhere after login.</p>
+                  <h4 className="font-semibold text-lg mb-1 text-foreground">High Quality DTF Stickers</h4>
+                  {/* <p className="text-sm text-muted-foreground">Wishlist syncs everywhere after login.</p> */}
                 </div>
               </div>
               
-              <div className="flex flex-col items-center text-center gap-4 rounded-[28px] border border-border dark:border-white/20 bg-muted p-6 transition-all min-w-[200px] flex-1 max-w-[250px]">
+              <div className="flex flex-col items-center text-center gap-4 rounded-[28px] border border-border dark:border-white/20 bg-[#9ca3af] p-6 transition-all min-w-[200px] flex-1 max-w-[250px]">
                 <div className="rounded-2xl bg-secondary p-4 text-secondary-foreground">
                   <Award className="h-6 w-6" />
                 </div>
                 <div>
                   <h4 className="font-semibold text-lg mb-1 text-foreground">Premium Quality</h4>
-                  <p className="text-sm text-muted-foreground">Color-calibrated proofs and stitch maps before production.</p>
+                  {/* <p className="text-sm text-muted-foreground">Color-calibrated proofs and stitch maps before production.</p> */}
                 </div>
               </div>
             </div>
@@ -327,10 +593,10 @@ const Home = () => {
         </section>
 
 
-        <section id="support" className="rounded-[40px] border border-border dark:border-white/15 bg-[var(--card)]/95 p-8 shadow-[var(--shadow-soft)]">
+        <section id="support" className="rounded-[40px] border border-border dark:border-white/15 bg-[#9ca3af] p-8 shadow-[var(--shadow-soft)]">
           <div className="flex flex-wrap items-center justify-between gap-6">
             <div>
-              <p className="text-xs uppercase tracking-[0.7em] text-muted-foreground">Support</p>
+              {/* <p className="text-xs uppercase tracking-[0.7em] text-muted-foreground">Support</p> */}
               <h3 className="text-3xl font-black">Talk to the creators</h3>
               <p className="mt-2 text-muted-foreground">
                 Get instant support via WhatsApp or call us directly for personalized assistance.
@@ -386,7 +652,7 @@ const Home = () => {
           </div>
         </section>
 
-        <footer className="py-6 sm:py-8 lg:py-10 text-center text-xs uppercase tracking-[0.5em] text-muted-foreground">
+        <footer className="py-6 sm:py-8 lg:py-10 text-center text-xs uppercase  text-muted-foreground">
           © {new Date().getFullYear()} Looklyn — Own The Look
         </footer>
       </main>
