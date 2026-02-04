@@ -134,8 +134,8 @@ export function NavigationSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { theme, toggleTheme } = useThemeMode();
-  const { isAuthenticated, user } = useAuth();
-  const { isMobile, setOpenMobile, setOpen } = useSidebar();
+  const { isAuthenticated, user, logout } = useAuth();
+  const { isMobile, setOpenMobile, setOpen, open, openMobile, toggleSidebar } = useSidebar();
 
   const handleNavClick = (e, item) => {
     // Close sidebar when clicking on navigation items (especially on mobile)
@@ -212,7 +212,7 @@ export function NavigationSidebar() {
     <Sidebar variant="inset" collapsible="offcanvas" className="border-r border-sidebar-border">
       <SidebarHeader className="p-4">
         <div className="flex items-center justify-between gap-2">
-          <Link to="/" className="flex items-center justify-center flex-1">
+          <Link to="/" className="flex items-center justify-center flex-1" onClick={(e) => e.stopPropagation()}>
             <img
               src={theme === "light" ? looklynLogoLight : looklynLogoDark}
               alt="LOOKLYN"
@@ -220,10 +220,14 @@ export function NavigationSidebar() {
             />
           </Link>
           <Button
+            type="button"
             variant="ghost"
             size="icon"
-            className="h-8 w-8 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-            onClick={() => {
+            className="h-8 w-8 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground relative z-10"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              // Close the sidebar
               if (isMobile) {
                 setOpenMobile(false);
               } else {

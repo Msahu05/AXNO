@@ -312,15 +312,15 @@ const Product = () => {
             const sameCategoryAudienceData = await productsAPI.getAll({ 
               category: productData.category,
               audience: currentAudience,
-              limit: 20 // Fetch more to have options for randomization
+              limit: 30 // Fetch more to have options for randomization (increased for 10 products)
             });
             relatedProducts = sameCategoryAudienceData.products.filter(
               item => (item.id || item._id?.toString()) !== currentProductId
             );
           }
           
-          // Step 2: If we have less than 3 products, fetch more from same category
-          if (relatedProducts.length < 3) {
+          // Step 2: If we have less than 10 products, fetch more from same category
+          if (relatedProducts.length < 10) {
             // Fetch all products from same category (without audience filter)
             const allCategoryData = await productsAPI.getAll({ 
               category: productData.category,
@@ -340,12 +340,12 @@ const Product = () => {
             // Shuffle available products randomly instead of sorting by price
             const shuffledProducts = shuffleArray(availableProducts);
             
-            // Add products until we have 3 total
-            relatedProducts = [...relatedProducts, ...shuffledProducts].slice(0, 3);
+            // Add products until we have 10 total
+            relatedProducts = [...relatedProducts, ...shuffledProducts].slice(0, 10);
           } else {
-            // If we have 3 or more, shuffle and take first 3 randomly
+            // If we have 10 or more, shuffle and take first 10 randomly
             const shuffled = shuffleArray(relatedProducts);
-            relatedProducts = shuffled.slice(0, 3);
+            relatedProducts = shuffled.slice(0, 10);
           }
           
           setRelated(relatedProducts);
@@ -1658,28 +1658,58 @@ const Product = () => {
                   View All
                 </Button>
               </div>
-              {/* Mobile: Carousel (one at a time) */}
+              {/* Mobile: Carousel (4 products at a time, horizontally scrollable) */}
               <div className="block md:hidden relative">
+                <style>{`
+                  .related-products-carousel .carousel-content {
+                    display: flex;
+                    align-items: stretch;
+                    gap: 0.5rem;
+                  }
+                  .related-products-carousel .carousel-item {
+                    display: flex;
+                    align-items: stretch;
+                    height: 100%;
+                    flex: 0 0 calc(25% - 0.375rem);
+                    min-width: calc(25% - 0.375rem);
+                    max-width: calc(25% - 0.375rem);
+                  }
+                  .related-products-carousel .carousel-item > div {
+                    width: 100%;
+                    display: flex;
+                    align-items: stretch;
+                  }
+                `}</style>
                 <Carousel
                   opts={{
                     align: "start",
                     loop: false,
+                    slidesToScroll: 1,
                   }}
-                  className="w-full relative"
+                  className="w-full relative related-products-carousel"
                 >
-                  <CarouselContent>
+                  <CarouselContent className="-ml-1">
                     {related.map((item, index) => (
-                      <CarouselItem key={item.id} className="basis-full">
-                        <div className="animate-fade-in flex justify-center" style={{ animationDelay: `${index * 0.1}s`, maxWidth: '85%', margin: '0 auto' }}>
-                          <ProductCard
-                            id={item.id}
-                            name={item.name}
-                            category={item.category}
-                            price={item.price}
-                            originalPrice={item.original || item.originalPrice}
-                            image={getImageUrl(Array.isArray(item.gallery) ? item.gallery[0] : item.gallery || item.image)}
-                            rating={4.8}
-                          />
+                      <CarouselItem key={item.id} className="pl-1 flex-shrink-0">
+                        <div 
+                          className="animate-fade-in h-full w-full" 
+                          style={{ 
+                            animationDelay: `${index * 0.1}s`,
+                            display: 'flex',
+                            alignItems: 'stretch'
+                          }}
+                        >
+                          <div className="w-full h-full">
+                            <ProductCard
+                              id={item.id}
+                              name={item.name}
+                              category={item.category}
+                              price={item.price}
+                              originalPrice={item.original || item.originalPrice}
+                              image={getImageUrl(Array.isArray(item.gallery) ? item.gallery[0] : item.gallery || item.image)}
+                              rating={4.8}
+                            />
+                          </div>
                         </div>
                       </CarouselItem>
                     ))}
@@ -1706,27 +1736,29 @@ const Product = () => {
                   />
                 </Carousel>
               </div>
-              {/* Desktop: Grid (3 items side by side) */}
-              <div className="hidden md:grid md:grid-cols-3 gap-4 lg:gap-5 xl:gap-6">
+              {/* Desktop: Grid (show all 10 products, 3-4 columns) */}
+              <div className="hidden md:grid md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-5 xl:gap-6">
                 {related.map((item, index) => (
                   <div
                     key={item.id}
-                    className="animate-fade-in flex justify-center"
+                    className="animate-fade-in w-full h-full"
                     style={{ 
                       animationDelay: `${index * 0.1}s`,
-                      maxWidth: '85%',
-                      margin: '0 auto'
+                      display: 'flex',
+                      alignItems: 'stretch'
                     }}
                   >
-                    <ProductCard
-                      id={item.id}
-                      name={item.name}
-                      category={item.category}
-                      price={item.price}
-                      originalPrice={item.original || item.originalPrice}
-                      image={getImageUrl(Array.isArray(item.gallery) ? item.gallery[0] : item.gallery || item.image)}
-                      rating={4.8}
-                    />
+                    <div className="w-full h-full flex">
+                      <ProductCard
+                        id={item.id}
+                        name={item.name}
+                        category={item.category}
+                        price={item.price}
+                        originalPrice={item.original || item.originalPrice}
+                        image={getImageUrl(Array.isArray(item.gallery) ? item.gallery[0] : item.gallery || item.image)}
+                        rating={4.8}
+                      />
+                    </div>
                   </div>
                 ))}
               </div>

@@ -136,7 +136,7 @@ const Sidebar = React.forwardRef<
     collapsible?: "offcanvas" | "icon" | "none";
   }
 >(({ side = "left", variant = "sidebar", collapsible = "offcanvas", className, children, ...props }, ref) => {
-  const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
+  const { isMobile, state, open, openMobile, setOpenMobile, setOpen } = useSidebar();
 
   if (collapsible === "none") {
     return (
@@ -172,49 +172,82 @@ const Sidebar = React.forwardRef<
     );
   }
 
+  // For offcanvas mode, show overlay when sidebar is open
+  const showOverlay = collapsible === "offcanvas" && open && !isMobile;
+
   return (
-    <div
-      ref={ref}
-      className="group peer hidden text-sidebar-foreground md:block"
-      data-state={state}
-      data-collapsible={state === "collapsed" ? collapsible : ""}
-      data-variant={variant}
-      data-side={side}
-    >
-      {/* This is what handles the sidebar gap on desktop */}
-      <div
-        className={cn(
-          "relative h-svh w-[--sidebar-width] bg-transparent transition-[width] duration-200 ease-linear",
-          "group-data-[collapsible=offcanvas]:w-0",
-          "group-data-[side=right]:rotate-180",
-          variant === "floating" || variant === "inset"
-            ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))]"
-            : "group-data-[collapsible=icon]:w-[--sidebar-width-icon]",
-        )}
-      />
-      <div
-        className={cn(
-          // Keep sidebar above fixed header on desktop too (Header uses z-[100])
-          "fixed inset-y-0 z-[200] hidden h-svh w-[--sidebar-width] transition-[left,right,width] duration-200 ease-linear md:flex",
-          side === "left"
-            ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
-            : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
-          // Adjust the padding for floating and inset variants.
-          variant === "floating" || variant === "inset"
-            ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4)_+2px)]"
-            : "group-data-[collapsible=icon]:w-[--sidebar-width-icon] group-data-[side=left]:border-r group-data-[side=right]:border-l",
-          className,
-        )}
-        {...props}
-      >
+    <>
+      {/* Overlay backdrop for offcanvas mode */}
+      {showOverlay && (
         <div
-          data-sidebar="sidebar"
-          className="flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow"
+          className="fixed inset-0 z-[199] bg-black/40 transition-opacity duration-200 ease-linear md:block"
+          onClick={() => setOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+      <div
+        ref={ref}
+        className="group peer hidden text-sidebar-foreground md:block"
+        data-state={state}
+        data-collapsible={state === "collapsed" ? collapsible : ""}
+        data-variant={variant}
+        data-side={side}
+      >
+        {/* This spacer div handles the sidebar gap on desktop - always 0 for offcanvas to prevent layout shift */}
+        <div
+          className={cn(
+            "relative h-svh bg-transparent transition-[width] duration-200 ease-linear",
+            // For offcanvas mode, always keep width 0 so sidebar overlays content without shifting layout
+            "group-data-[collapsible=offcanvas]:w-0",
+            // For icon mode, use appropriate width based on state
+            variant === "floating" || variant === "inset"
+              ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))]"
+              : "group-data-[collapsible=icon]:w-[--sidebar-width-icon]",
+            "group-data-[side=right]:rotate-180",
+          )}
+        />
+        <div
+          className={cn(
+            // Keep sidebar above fixed header on desktop too (Header uses z-[100])
+            "fixed inset-y-0 z-[200] hidden h-svh w-[--sidebar-width] transition-[left,right,width] duration-200 ease-linear md:flex",
+            side === "left"
+              ? collapsible === "offcanvas" && !open
+                ? "!left-[calc(var(--sidebar-width)*-1)]"
+                : "!left-0"
+              : collapsible === "offcanvas" && !open
+              ? "!right-[calc(var(--sidebar-width)*-1)]"
+              : "!right-0",
+            // Adjust the padding for floating and inset variants.
+            variant === "floating"
+              ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4)_+2px)]"
+              : variant === "inset"
+              ? "p-0 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4)_+2px)]"
+              : "group-data-[collapsible=icon]:w-[--sidebar-width-icon] group-data-[side=left]:border-r group-data-[side=right]:border-l",
+            // Ensure no margin or padding that could create gap
+            "!m-0 !ml-0 !mr-0 !mt-0 !mb-0",
+            className,
+          )}
+          style={
+            side === "left"
+              ? { marginLeft: 0, paddingLeft: 0, ...(props.style as React.CSSProperties) }
+              : { marginRight: 0, paddingRight: 0, ...(props.style as React.CSSProperties) }
+          }
+          {...props}
         >
-          {children}
+          <div
+            data-sidebar="sidebar"
+            className="flex h-full w-full flex-col backdrop-blur-sm group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow"
+            style={{ 
+              marginLeft: 0, 
+              paddingLeft: 0,
+              backgroundColor: `hsl(var(--sidebar-background) / 0.4)`
+            }}
+          >
+            {children}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 });
 Sidebar.displayName = "Sidebar";
@@ -278,7 +311,11 @@ const SidebarInset = React.forwardRef<HTMLDivElement, React.ComponentProps<"main
       ref={ref}
       className={cn(
         "relative flex min-h-svh flex-1 flex-col bg-background",
-        "peer-data-[variant=inset]:min-h-[calc(100svh-theme(spacing.4))] md:peer-data-[variant=inset]:m-2 md:peer-data-[state=collapsed]:peer-data-[variant=inset]:ml-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow",
+        // For icon mode with inset variant, apply margins and rounded corners
+        "peer-data-[variant=inset]:min-h-[calc(100svh-theme(spacing.4))] md:peer-data-[variant=inset]:peer-data-[collapsible=icon]:m-2 md:peer-data-[state=collapsed]:peer-data-[variant=inset]:peer-data-[collapsible=icon]:ml-2 md:peer-data-[variant=inset]:peer-data-[collapsible=icon]:ml-0 md:peer-data-[variant=inset]:peer-data-[collapsible=icon]:rounded-xl md:peer-data-[variant=inset]:peer-data-[collapsible=icon]:shadow",
+        // For offcanvas mode, force remove ALL margins, padding, and styling to prevent any layout shift or gap
+        // Using !important equivalents to ensure these override any other margin classes
+        "md:peer-data-[collapsible=offcanvas]:!m-0 md:peer-data-[collapsible=offcanvas]:!ml-0 md:peer-data-[collapsible=offcanvas]:!mr-0 md:peer-data-[collapsible=offcanvas]:!mt-0 md:peer-data-[collapsible=offcanvas]:!mb-0 md:peer-data-[collapsible=offcanvas]:!p-0 md:peer-data-[collapsible=offcanvas]:!pl-0 md:peer-data-[collapsible=offcanvas]:!pr-0",
         className,
       )}
       {...props}

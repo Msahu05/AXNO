@@ -21,7 +21,7 @@ const Header = () => {
 
   return (
         <header className="fixed top-0 left-0 right-0 z-[100] w-full m-0 backdrop-blur-md" style={{ backgroundColor: 'rgba(255, 255, 255, 0.8)', position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100 }}>
-          <nav className="container mx-auto flex h-20 sm:h-22 lg:h-24 items-center justify-between px-4 sm:px-6 lg:px-8 py-2 sm:py-3 lg:py-4">
+          <nav className="w-full flex h-20 sm:h-22 lg:h-24 items-center justify-between pl-2 sm:pl-3 lg:pl-4 pr-4 sm:pr-6 lg:pr-8 py-2 sm:py-3 lg:py-4">
             {/* Left side - Sidebar Trigger */}
             <div className="flex items-center flex-shrink-0">
               <Button

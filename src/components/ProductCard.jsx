@@ -86,10 +86,16 @@ export function ProductCard({
   return (
     <Link
       to={productUrl}
-      className="group block h-full w-full max-w-full overflow-hidden rounded-lg bg-card shadow-soft transition-all duration-300 hover:shadow-elevated flex flex-col"
-      style={{ maxWidth: '100%' }}
+      className="group block h-full w-full overflow-hidden rounded-lg bg-card shadow-soft transition-all duration-300 hover:shadow-elevated flex flex-col"
+      style={{ 
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        flex: '1 1 auto'
+      }}
     >
-      <div className="relative w-full max-w-full overflow-hidden bg-secondary" style={{ aspectRatio: '1 / 1', position: 'relative', maxWidth: '100%' }}>
+      <div className="relative w-full overflow-hidden bg-secondary flex-shrink-0" style={{ aspectRatio: '1 / 1', position: 'relative', width: '100%' }}>
         <img
           src={image}
           alt={name}
@@ -132,7 +138,7 @@ export function ProductCard({
         )}
       </div>
 
-      <div className="p-3 sm:p-4 flex flex-col flex-grow w-full max-w-full overflow-hidden" style={{ minHeight: '180px', maxWidth: '100%' }}>
+      <div className="p-3 sm:p-4 flex flex-col flex-grow w-full overflow-hidden" style={{ minHeight: '180px', width: '100%', flex: '1 1 auto' }}>
         <p className="text-[10px] sm:text-xs font-medium uppercase tracking-wider text-muted-foreground">
           {category}
         </p>
