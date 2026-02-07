@@ -422,6 +422,7 @@ export const adminAPI = {
       isNewArrival: productData.isNewArrival || false,
       isTopProduct: productData.isTopProduct || false,
       isCustomisedProduct: productData.isCustomisedProduct || false,
+      isSpecialProduct: productData.isSpecialProduct || false,
       galleryImages: galleryImages
     };
     
@@ -488,6 +489,7 @@ export const adminAPI = {
       isNewArrival: productData.isNewArrival !== undefined ? productData.isNewArrival : false,
       isTopProduct: productData.isTopProduct !== undefined ? productData.isTopProduct : false,
       isCustomisedProduct: productData.isCustomisedProduct !== undefined ? productData.isCustomisedProduct : false,
+      isSpecialProduct: productData.isSpecialProduct !== undefined ? productData.isSpecialProduct : false,
     };
     
     // Always include galleryImages if we have any (existing or new)

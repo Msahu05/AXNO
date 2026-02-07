@@ -126,6 +126,12 @@ const navItems = [
         icon: Sparkles,
         scrollTo: null,
       },
+      {
+        title: "Looklyn Special",
+        url: "/category/special",
+        icon: Crown,
+        scrollTo: null,
+      },
     ],
   },
 ];
@@ -212,7 +218,7 @@ export function NavigationSidebar() {
     <Sidebar variant="inset" collapsible="offcanvas" className="border-r border-sidebar-border">
       <SidebarHeader className="p-4">
         <div className="flex items-center justify-between gap-2">
-          <Link to="/" className="flex items-center justify-center flex-1" onClick={(e) => e.stopPropagation()}>
+          <Link to="/" className="flex items-center justify-start flex-1" onClick={(e) => e.stopPropagation()}>
             <img
               src={theme === "light" ? looklynLogoLight : looklynLogoDark}
               alt="LOOKLYN"

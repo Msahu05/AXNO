@@ -31,7 +31,8 @@ const NewProductForm = ({ navigate }) => {
     isHotProduct: false,
     isNewArrival: false,
     isTopProduct: false,
-    isCustomisedProduct: false
+    isCustomisedProduct: false,
+    isSpecialProduct: false
   });
   
   const [galleryFiles, setGalleryFiles] = useState([]);
@@ -619,6 +620,15 @@ const NewProductForm = ({ navigate }) => {
                         />
                         <span>Customised Product</span>
                       </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.isSpecialProduct || false}
+                          onChange={(e) => setFormData({ ...formData, isSpecialProduct: e.target.checked })}
+                          className="w-4 h-4 rounded border-gray-300"
+                        />
+                        <span>Looklyn Special</span>
+                      </label>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">You can select multiple categories</p>
                   </div>
@@ -682,7 +692,8 @@ const ProductManagement = () => {
     isHotProduct: false,
     isNewArrival: false,
     isTopProduct: false,
-    isCustomisedProduct: false
+    isCustomisedProduct: false,
+    isSpecialProduct: false
   });
   
   const [galleryFiles, setGalleryFiles] = useState([]);
@@ -742,7 +753,8 @@ const ProductManagement = () => {
         isHotProduct: productData.isHotProduct || false,
         isNewArrival: productData.isNewArrival || false,
         isTopProduct: productData.isTopProduct || false,
-        isCustomisedProduct: productData.isCustomisedProduct || false
+        isCustomisedProduct: productData.isCustomisedProduct || false,
+        isSpecialProduct: productData.isSpecialProduct || false
       });
       if (productData.gallery && productData.gallery.length > 0) {
         // Store original gallery data URLs (they contain base64 data)
@@ -1346,6 +1358,15 @@ const ProductManagement = () => {
                           className="w-4 h-4 rounded border-gray-300"
                         />
                         <span>Customised Product</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.isSpecialProduct || false}
+                          onChange={(e) => setFormData({ ...formData, isSpecialProduct: e.target.checked })}
+                          className="w-4 h-4 rounded border-gray-300"
+                        />
+                        <span>Looklyn Special</span>
                       </label>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">You can select multiple categories</p>

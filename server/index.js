@@ -446,6 +446,7 @@ const productSchema = new mongoose.Schema({
   isNewArrival: { type: Boolean, default: false }, // New Arrivals category
   isTopProduct: { type: Boolean, default: false }, // Top Products category
   isCustomisedProduct: { type: Boolean, default: false }, // Customised Products category
+  isSpecialProduct: { type: Boolean, default: false }, // Looklyn Special category
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });
@@ -3633,7 +3634,7 @@ app.get('/api/products', async (req, res) => {
     if (search) {
       query.$text = { $search: search };
     }
-    // Filter by product categories (new, hot, top, custom)
+    // Filter by product categories (new, hot, top, custom, special)
     if (filter === 'new') {
       query.isNewArrival = true;
     } else if (filter === 'hot') {
@@ -3643,6 +3644,8 @@ app.get('/api/products', async (req, res) => {
     } else if (filter === 'custom') {
       // Filter products where category contains "custom" (case-insensitive)
       query.category = { $regex: /custom/i };
+    } else if (filter === 'special') {
+      query.isSpecialProduct = true;
     }
     
     const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -3799,7 +3802,7 @@ app.get('/api/admin/products', authenticateAdmin, async (req, res) => {
 // Admin: Create product
 app.post('/api/admin/products', authenticateAdmin, async (req, res) => {
   try {
-    const { name, description, category, audience, price, originalPrice, sizes, stock, colorOptions, tags, galleryImages, isHotProduct, isNewArrival, isTopProduct, isCustomisedProduct } = req.body;
+    const { name, description, category, audience, price, originalPrice, sizes, stock, colorOptions, tags, galleryImages, isHotProduct, isNewArrival, isTopProduct, isCustomisedProduct, isSpecialProduct } = req.body;
     
     if (!name || !category || !audience || !price || !originalPrice) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -3964,7 +3967,8 @@ app.post('/api/admin/products', authenticateAdmin, async (req, res) => {
       isHotProduct: isHotProduct === true || isHotProduct === 'true',
       isNewArrival: isNewArrival === true || isNewArrival === 'true',
       isTopProduct: isTopProduct === true || isTopProduct === 'true',
-      isCustomisedProduct: isCustomisedProduct === true || isCustomisedProduct === 'true'
+      isCustomisedProduct: isCustomisedProduct === true || isCustomisedProduct === 'true',
+      isSpecialProduct: isSpecialProduct === true || isSpecialProduct === 'true'
     });
     
     await product.save();
@@ -4070,7 +4074,7 @@ app.put('/api/admin/products/order', authenticateAdmin, async (req, res) => {
 app.put('/api/admin/products/:id', authenticateAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, category, audience, price, originalPrice, sizes, stock, colorOptions, tags, galleryImages, isHotProduct, isNewArrival, isTopProduct, isCustomisedProduct } = req.body;
+    const { name, description, category, audience, price, originalPrice, sizes, stock, colorOptions, tags, galleryImages, isHotProduct, isNewArrival, isTopProduct, isCustomisedProduct, isSpecialProduct } = req.body;
     
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ error: 'Invalid product ID' });
@@ -4110,6 +4114,9 @@ app.put('/api/admin/products/:id', authenticateAdmin, async (req, res) => {
     }
     if (req.body.isCustomisedProduct !== undefined) {
       product.isCustomisedProduct = req.body.isCustomisedProduct === true || req.body.isCustomisedProduct === 'true';
+    }
+    if (req.body.isSpecialProduct !== undefined) {
+      product.isSpecialProduct = req.body.isSpecialProduct === true || req.body.isSpecialProduct === 'true';
     }
     if (colorOptions) {
       try {

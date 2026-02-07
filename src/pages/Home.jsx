@@ -48,9 +48,13 @@ const Home = () => {
     women: null,
     unisex: null
   });
-  const [centerCardIndex, setCenterCardIndex] = useState(1);
-  const [carouselApi, setCarouselApi] = useState(null);
-
+  const [filterCategoryProducts, setFilterCategoryProducts] = useState({
+    hot: null,
+    top: null,
+    new: null,
+    custom: null,
+    special: null
+  });
   useEffect(() => {
     const checkScreenSize = () => {
       setIsLargeScreen(window.innerWidth >= 1024); // lg breakpoint
@@ -125,6 +129,35 @@ const Home = () => {
           women: finalWomen,
           unisex: finalUnisex
         });
+
+        // Fetch top products for each filter category
+        const fetchFilterCategoryProducts = async () => {
+          const filters = ['hot', 'top', 'new', 'custom', 'special'];
+          const filterProducts = {};
+          
+          for (const filter of filters) {
+            try {
+              const response = await productsAPI.getAll({ filter, limit: 1 });
+              const products = response.products || [];
+              if (products.length > 0) {
+                const product = products[0];
+                // Get product image
+                const hasImage = product.image || 
+                  (Array.isArray(product.gallery) && product.gallery.length > 0) || 
+                  product.gallery;
+                if (hasImage) {
+                  filterProducts[filter] = product;
+                }
+              }
+            } catch (error) {
+              console.error(`Error loading ${filter} products:`, error);
+            }
+          }
+          
+          setFilterCategoryProducts(filterProducts);
+        };
+        
+        fetchFilterCategoryProducts();
       } catch (error) {
         console.error('Error loading products:', error);
         setAllProducts([]);
@@ -134,29 +167,6 @@ const Home = () => {
     };
     loadData();
   }, []);
-
-  // Initialize carousel to center card
-  useEffect(() => {
-    if (carouselApi && !loading) {
-      carouselApi.scrollTo(1, true); // Scroll to center card (index 1)
-    }
-  }, [carouselApi, loading]);
-
-  // Track which card is in center
-  useEffect(() => {
-    if (!carouselApi) return;
-
-    const onSelect = () => {
-      setCenterCardIndex(carouselApi.selectedScrollSnap());
-    };
-
-    carouselApi.on("select", onSelect);
-    onSelect();
-
-    return () => {
-      carouselApi.off("select", onSelect);
-    };
-  }, [carouselApi]);
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -204,158 +214,300 @@ const Home = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#9ca3af] dark:bg-background">
+    <div className="min-h-screen bg-background dark:bg-background">
       <br/>
       <br/>
       <HeroSection className="sm:mt-20"></HeroSection>
       
-      {/* Category Card Slider */}
-      <section className="w-full py-10 sm:py-12 md:py-14 lg:py-16 relative flex justify-center">
-        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 relative">
-          <Carousel
-            setApi={setCarouselApi}
-            opts={{
-              align: "center",
-              loop: true,
-            }}
-            className="w-full relative"
-          >
-            <CarouselContent className="-ml-4 sm:-ml-5 md:-ml-6 lg:-ml-8">
-              {categories.map((category, index) => {
-                const imageUrl = category.product 
-                  ? getImageUrl(Array.isArray(category.product.gallery) 
-                      ? category.product.gallery[0]?.url || category.product.gallery[0] 
-                      : category.product.gallery || category.product.image)
+      {/* Category Boxes */}
+      <section className="w-full py-6 sm:py-10 md:py-12 lg:py-16 relative flex justify-center">
+        <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 xl:px-12">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 lg:gap-6 xl:gap-8">
+            {/* Left Column: Men and Women (stacked vertically) */}
+            <div className="flex flex-col gap-2 sm:gap-3 md:gap-4 lg:gap-6 xl:gap-8">
+              {/* Men Box - Horizontal */}
+              {(() => {
+                const menCategory = categories.find(c => c.name === 'Men');
+                const menImageUrl = menCategory?.product 
+                  ? getImageUrl(Array.isArray(menCategory.product.gallery) 
+                      ? menCategory.product.gallery[0]?.url || menCategory.product.gallery[0] 
+                      : menCategory.product.gallery || menCategory.product.image)
                   : "https://images.unsplash.com/photo-1581044777550-4cfa60707c03?w=600&q=80";
                 
-                const isCenterCard = index === centerCardIndex;
+                return (
+                  <div
+                    className="relative group cursor-pointer rounded-lg sm:rounded-xl md:rounded-2xl overflow-hidden bg-card shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] border-2 border-gray-200 dark:border-gray-700"
+                    onClick={() => navigate(menCategory?.route || '/category/hoodies?filter=men')}
+                    style={{
+                      height: '120px',
+                      minHeight: '120px',
+                      backgroundImage: `url(${menImageUrl})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      backgroundRepeat: 'no-repeat'
+                    }}
+                  >
+                    <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors duration-300" />
+                    <div className="absolute inset-0 flex items-center justify-center z-10">
+                      <h3 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-black text-white uppercase tracking-wide drop-shadow-lg">
+                        {menCategory?.name || 'Men'}
+                      </h3>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Women Box - Horizontal */}
+              {(() => {
+                const womenCategory = categories.find(c => c.name === 'Women');
+                const womenImageUrl = womenCategory?.product 
+                  ? getImageUrl(Array.isArray(womenCategory.product.gallery) 
+                      ? womenCategory.product.gallery[0]?.url || womenCategory.product.gallery[0] 
+                      : womenCategory.product.gallery || womenCategory.product.image)
+                  : "https://images.unsplash.com/photo-1581044777550-4cfa60707c03?w=600&q=80";
                 
                 return (
-                  <CarouselItem
-                    key={index}
-                    className="pl-4 sm:pl-5 md:pl-6 lg:pl-8 basis-[95%] xs:basis-[90%] sm:basis-[80%] md:basis-[70%] lg:basis-[55%] xl:basis-[50%] 2xl:basis-[45%]"
+                  <div
+                    className="relative group cursor-pointer rounded-lg sm:rounded-xl md:rounded-2xl overflow-hidden bg-card shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] border-2 border-gray-200 dark:border-gray-700"
+                    onClick={() => navigate(womenCategory?.route || '/category/hoodies?filter=women')}
+                    style={{
+                      height: '120px',
+                      minHeight: '120px',
+                      backgroundImage: `url(${womenImageUrl})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      backgroundRepeat: 'no-repeat'
+                    }}
                   >
-                    <div
-                      className={`relative group cursor-pointer rounded-lg overflow-hidden bg-card shadow-soft transition-all duration-500 hover:shadow-elevated ${
-                        isCenterCard 
-                          ? 'scale-100 opacity-100' 
-                          : 'scale-90 opacity-60'
-                      }`}
-                      onClick={() => navigate(category.route)}
-                      style={{ 
-                        transform: isCenterCard ? 'scale(1)' : 'scale(0.85)',
-                        opacity: isCenterCard ? 1 : 0.6,
-                        zIndex: 1
-                      }}
-                    >
-                      <div className="relative w-full overflow-hidden bg-secondary" style={{ aspectRatio: '1 / 1' }}>
-                        <img
-                          src={imageUrl}
-                          alt={category.name}
-                          className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
-                          style={{ objectFit: 'cover' }}
-                        />
-                        {/* Hover Overlay */}
-                        <div className="absolute inset-0 bg-white transition-all duration-500 ease-in-out flex items-center justify-center z-10 opacity-0 group-hover:opacity-90">
-                          <h3 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-black text-gray-900 transition-all duration-500 transform translate-y-4 group-hover:translate-y-0 group-hover:opacity-100 tracking-wide">
-                            {category.name}
-                          </h3>
-                        </div>
-                      </div>
-                      {/* Category Name Below */}
-                      <div className="p-6 sm:p-7 md:p-8 lg:p-9 xl:p-10 text-center bg-card">
-                        <h3 className={`text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-semibold transition-colors duration-300 ${
-                          isCenterCard ? 'text-foreground' : 'text-muted-foreground'
-                        } group-hover:text-primary`}>
-                          {category.name}
-                        </h3>
-                      </div>
+                    <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors duration-300" />
+                    <div className="absolute inset-0 flex items-center justify-center z-10">
+                      <h3 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-black text-white uppercase tracking-wide drop-shadow-lg">
+                        {womenCategory?.name || 'Women'}
+                      </h3>
                     </div>
-                  </CarouselItem>
+                  </div>
                 );
-              })}
-            </CarouselContent>
-            <CarouselPrevious 
-              className="left-4 sm:left-5 md:left-6 lg:left-8 xl:left-10 h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 lg:h-18 lg:w-18 xl:h-20 xl:w-20 bg-white/90 hover:bg-white border-0 shadow-lg text-gray-900 hover:text-gray-900"
-              style={{ zIndex: 100, position: 'absolute', pointerEvents: 'auto' }}
-            />
-            <CarouselNext 
-              className="right-4 sm:right-5 md:right-6 lg:right-8 xl:right-10 h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 lg:h-18 lg:w-18 xl:h-20 xl:w-20 bg-white/90 hover:bg-white border-0 shadow-lg text-gray-900 hover:text-gray-900"
-              style={{ zIndex: 100, position: 'absolute', pointerEvents: 'auto' }}
-            />
-          </Carousel>
-          
-          {/* Pagination Dots */}
-          <div className="absolute bottom-3 sm:bottom-4 md:bottom-6 lg:bottom-8 left-1/2 -translate-x-1/2 flex gap-2 sm:gap-2.5 md:gap-3 lg:gap-4 z-20">
-            {categories.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => carouselApi?.scrollTo(index)}
-                className={`rounded-full transition-all duration-300 ${
-                  centerCardIndex === index
-                    ? 'bg-white h-2.5 w-8 sm:h-3 sm:w-10 md:h-3.5 md:w-12 lg:h-4 lg:w-14 xl:h-4.5 xl:w-16'
-                    : 'bg-white/60 hover:bg-white/80 h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-3.5 md:w-3.5 lg:h-4 lg:w-4 xl:h-4.5 xl:w-4.5'
-                }`}
-                aria-label={`Go to ${categories[index].name}`}
-                style={{ 
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)'
-                }}
-              />
-            ))}
+              })()}
+            </div>
+
+            {/* Right Column: Unisex (vertical, full height) */}
+            {(() => {
+              const unisexCategory = categories.find(c => c.name === 'Unisex');
+              const unisexImageUrl = unisexCategory?.product 
+                ? getImageUrl(Array.isArray(unisexCategory.product.gallery) 
+                    ? unisexCategory.product.gallery[0]?.url || unisexCategory.product.gallery[0] 
+                    : unisexCategory.product.gallery || unisexCategory.product.image)
+                : "https://images.unsplash.com/photo-1581044777550-4cfa60707c03?w=600&q=80";
+              
+              return (
+                <div
+                  className="relative group cursor-pointer rounded-lg sm:rounded-xl md:rounded-2xl overflow-hidden bg-card shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] border-2 border-gray-200 dark:border-gray-700"
+                  onClick={() => navigate(unisexCategory?.route || '/category/hoodies?filter=unisex')}
+                  style={{
+                    height: '100%',
+                    minHeight: '250px',
+                    backgroundImage: `url(${unisexImageUrl})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat'
+                  }}
+                >
+                  <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors duration-300" />
+                  <div className="absolute inset-0 flex items-center justify-center z-10">
+                    <h3 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-black text-white uppercase tracking-wide drop-shadow-lg" style={{ writingMode: 'vertical-rl', textOrientation: 'upright' }}>
+                      {unisexCategory?.name || 'Unisex'}
+                    </h3>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
       </section>
 
-      {/* Product Category Squares */}
+      {/* Partition Line */}
+      <div className="w-full border-t border-gray-300 dark:border-gray-700 my-6 sm:my-8 md:my-10 lg:my-12"></div>
+
+      {/* Product Category Boxes - New Layout */}
       <section className="w-full py-6 sm:py-8 md:py-10 lg:py-12">
         <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-10">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
-            <div
-              onClick={() => navigate('/filter/hot')}
-              className="group relative aspect-square rounded-2xl sm:rounded-3xl overflow-hidden bg-gray-300 dark:bg-gray-600 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer hover:scale-105 flex items-center justify-center"
-            >
-              <div className="text-center p-4 sm:p-6 z-10 relative">
-                <h3 className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-black text-black dark:text-white uppercase tracking-wide">
-                  Hot Products
-                </h3>
-              </div>
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 dark:group-hover:bg-white/10 transition-colors duration-300" />
-            </div>
+          <div className="flex flex-col gap-3 sm:gap-4 md:gap-6 lg:gap-8">
+            {/* Top Row: Large Horizontal Box - Top Products */}
+            {(() => {
+              const topProduct = filterCategoryProducts.top;
+              const topImageUrl = topProduct 
+                ? getImageUrl(Array.isArray(topProduct.gallery) 
+                    ? topProduct.gallery[0]?.url || topProduct.gallery[0] 
+                    : topProduct.gallery || topProduct.image)
+                : null;
+              
+              return (
+                <div
+                  onClick={() => navigate('/filter/top')}
+                  className="group relative w-full rounded-2xl sm:rounded-3xl md:rounded-[2rem] overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer hover:scale-[1.01] border-2 border-gray-200 dark:border-gray-700"
+                  style={{
+                    height: '120px',
+                    minHeight: '120px',
+                    backgroundColor: topImageUrl ? 'transparent' : '#d1d5db',
+                    backgroundImage: topImageUrl ? `url(${topImageUrl})` : 'none',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat'
+                  }}
+                >
+                  {topImageUrl && (
+                    <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors duration-300" />
+                  )}
+                  <div className="absolute inset-0 flex items-center justify-center z-10">
+                    <h3 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-black text-white uppercase tracking-wide drop-shadow-lg">
+                      Top Products
+                    </h3>
+                  </div>
+                </div>
+              );
+            })()}
 
-            <div
-              onClick={() => navigate('/filter/top')}
-              className="group relative aspect-square rounded-2xl sm:rounded-3xl overflow-hidden bg-gray-300 dark:bg-gray-600 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer hover:scale-105 flex items-center justify-center"
-            >
-              <div className="text-center p-4 sm:p-6 z-10 relative">
-                <h3 className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-black text-black dark:text-white uppercase tracking-wide">
-                  Top Products
-                </h3>
-              </div>
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 dark:group-hover:bg-white/10 transition-colors duration-300" />
-            </div>
+            {/* Bottom Row: 2x2 Grid */}
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8">
+              {/* Hot Products */}
+              {(() => {
+                const hotProduct = filterCategoryProducts.hot;
+                const hotImageUrl = hotProduct 
+                  ? getImageUrl(Array.isArray(hotProduct.gallery) 
+                      ? hotProduct.gallery[0]?.url || hotProduct.gallery[0] 
+                      : hotProduct.gallery || hotProduct.image)
+                  : null;
+                
+                return (
+                  <div
+                    onClick={() => navigate('/filter/hot')}
+                    className="group relative rounded-2xl sm:rounded-3xl md:rounded-[2rem] overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer hover:scale-105 flex items-center justify-center border-2 border-gray-200 dark:border-gray-700"
+                    style={{
+                      height: '140px',
+                      minHeight: '140px',
+                      backgroundColor: hotImageUrl ? 'transparent' : '#d1d5db',
+                      backgroundImage: hotImageUrl ? `url(${hotImageUrl})` : 'none',
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      backgroundRepeat: 'no-repeat'
+                    }}
+                  >
+                    {hotImageUrl && (
+                      <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors duration-300" />
+                    )}
+                    <div className="text-center p-4 sm:p-6 z-10 relative">
+                      <h3 className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-black text-white uppercase tracking-wide drop-shadow-lg">
+                        Hot Products
+                      </h3>
+                    </div>
+                  </div>
+                );
+              })()}
 
-            <div
-              onClick={() => navigate('/filter/new')}
-              className="group relative aspect-square rounded-2xl sm:rounded-3xl overflow-hidden bg-gray-300 dark:bg-gray-600 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer hover:scale-105 flex items-center justify-center"
-            >
-              <div className="text-center p-4 sm:p-6 z-10 relative">
-                <h3 className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-black text-black dark:text-white uppercase tracking-wide">
-                  New Products
-                </h3>
-              </div>
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 dark:group-hover:bg-white/10 transition-colors duration-300" />
-            </div>
+              {/* New Products */}
+              {(() => {
+                const newProduct = filterCategoryProducts.new;
+                const newImageUrl = newProduct 
+                  ? getImageUrl(Array.isArray(newProduct.gallery) 
+                      ? newProduct.gallery[0]?.url || newProduct.gallery[0] 
+                      : newProduct.gallery || newProduct.image)
+                  : null;
+                
+                return (
+                  <div
+                    onClick={() => navigate('/filter/new')}
+                    className="group relative rounded-2xl sm:rounded-3xl md:rounded-[2rem] overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer hover:scale-105 flex items-center justify-center border-2 border-gray-200 dark:border-gray-700"
+                    style={{
+                      height: '140px',
+                      minHeight: '140px',
+                      backgroundColor: newImageUrl ? 'transparent' : '#d1d5db',
+                      backgroundImage: newImageUrl ? `url(${newImageUrl})` : 'none',
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      backgroundRepeat: 'no-repeat'
+                    }}
+                  >
+                    {newImageUrl && (
+                      <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors duration-300" />
+                    )}
+                    <div className="text-center p-4 sm:p-6 z-10 relative">
+                      <h3 className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-black text-white uppercase tracking-wide drop-shadow-lg">
+                        New Products
+                      </h3>
+                    </div>
+                  </div>
+                );
+              })()}
 
-            <div
-              onClick={() => navigate('/filter/custom')}
-              className="group relative aspect-square rounded-2xl sm:rounded-3xl overflow-hidden bg-gray-300 dark:bg-gray-600 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer hover:scale-105 flex items-center justify-center"
-            >
-              <div className="text-center p-4 sm:p-6 z-10 relative">
-                <h3 className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-black text-black dark:text-white uppercase tracking-wide">
-                  Customised Products
-                </h3>
-              </div>
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 dark:group-hover:bg-white/10 transition-colors duration-300" />
+              {/* Customised Products */}
+              {(() => {
+                const customProduct = filterCategoryProducts.custom;
+                const customImageUrl = customProduct 
+                  ? getImageUrl(Array.isArray(customProduct.gallery) 
+                      ? customProduct.gallery[0]?.url || customProduct.gallery[0] 
+                      : customProduct.gallery || customProduct.image)
+                  : null;
+                
+                return (
+                  <div
+                    onClick={() => navigate('/filter/custom')}
+                    className="group relative rounded-2xl sm:rounded-3xl md:rounded-[2rem] overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer hover:scale-105 flex items-center justify-center border-2 border-gray-200 dark:border-gray-700"
+                    style={{
+                      height: '140px',
+                      minHeight: '140px',
+                      backgroundColor: customImageUrl ? 'transparent' : '#d1d5db',
+                      backgroundImage: customImageUrl ? `url(${customImageUrl})` : 'none',
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      backgroundRepeat: 'no-repeat'
+                    }}
+                  >
+                    {customImageUrl && (
+                      <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors duration-300" />
+                    )}
+                    <div className="text-center p-4 sm:p-6 z-10 relative">
+                      <h3 className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-black text-white uppercase tracking-wide drop-shadow-lg">
+                        Customised Products
+                      </h3>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Looklyn Special */}
+              {(() => {
+                const specialProduct = filterCategoryProducts.special;
+                const specialImageUrl = specialProduct 
+                  ? getImageUrl(Array.isArray(specialProduct.gallery) 
+                      ? specialProduct.gallery[0]?.url || specialProduct.gallery[0] 
+                      : specialProduct.gallery || specialProduct.image)
+                  : null;
+                
+                return (
+                  <div
+                    onClick={() => navigate('/category/special')}
+                    className="group relative rounded-2xl sm:rounded-3xl md:rounded-[2rem] overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer hover:scale-105 flex items-center justify-center border-2 border-gray-200 dark:border-gray-700"
+                    style={{
+                      height: '140px',
+                      minHeight: '140px',
+                      backgroundColor: specialImageUrl ? 'transparent' : '#d1d5db',
+                      backgroundImage: specialImageUrl ? `url(${specialImageUrl})` : 'none',
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      backgroundRepeat: 'no-repeat'
+                    }}
+                  >
+                    {specialImageUrl && (
+                      <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors duration-300" />
+                    )}
+                    <div className="text-center p-4 sm:p-6 z-10 relative">
+                      <h3 className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-black text-white uppercase tracking-wide drop-shadow-lg">
+                        Looklyn Special
+                      </h3>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>

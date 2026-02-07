@@ -33,6 +33,7 @@ const Category = () => {
     hoodies: "Hoodie",
     "t-shirts": "T-Shirt",
     sweatshirts: "Sweatshirt",
+    special: null, // Special category shows all products
   };
 
   const reverseCategoryMap = {
@@ -47,8 +48,11 @@ const Category = () => {
     { value: "sweatshirts", label: "Sweatshirts" },
   ];
 
-  const categoryName = categoryMap[category || ''] || 'Hoodie';
-  const displayName = category?.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || 'Hoodies';
+  const isSpecial = category === 'special';
+  const categoryName = isSpecial ? null : (categoryMap[category || ''] || 'Hoodie');
+  const displayName = isSpecial 
+    ? 'Looklyn Special' 
+    : (category?.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || 'Hoodies');
 
   const handleCategoryChange = (newCategory) => {
     // Preserve the current filter if any
@@ -62,9 +66,12 @@ const Category = () => {
     const loadProducts = async () => {
       try {
         setLoading(true);
-        const response = await productsAPI.getAll({ category: categoryName });
+        // For special category, use filter='special' to get only special products
+        const response = isSpecial 
+          ? await productsAPI.getAll({ filter: 'special' })
+          : await productsAPI.getAll({ category: categoryName });
         const products = response.products || [];
-        console.log('Loaded products:', products.length, 'for category:', categoryName);
+        console.log('Loaded products:', products.length, 'for category:', isSpecial ? 'special' : categoryName);
         setAllProducts(products);
       } catch (error) {
         console.error('Error loading products:', error);
@@ -79,7 +86,7 @@ const Category = () => {
       }
     };
     loadProducts();
-  }, [categoryName]);
+  }, [categoryName, isSpecial]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -163,20 +170,22 @@ const Category = () => {
             <ArrowLeft className="h-4 w-4" />   
           </button>
           <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-heading font-bold text-gray-900 dark:text-white">{displayName}</h1>
-          <div className="ml-auto">
-            <Select value={category || 'hoodies'} onValueChange={handleCategoryChange}>
-              <SelectTrigger className="w-[180px] bg-white dark:bg-[#2a2538] border border-gray-200 dark:border-white/10">
-                <SelectValue placeholder="Select Category" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((cat) => (
-                  <SelectItem key={cat.value} value={cat.value}>
-                    {cat.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {!isSpecial && (
+            <div className="ml-auto">
+              <Select value={category || 'hoodies'} onValueChange={handleCategoryChange}>
+                <SelectTrigger className="w-[180px] bg-white dark:bg-[#2a2538] border border-gray-200 dark:border-white/10">
+                  <SelectValue placeholder="Select Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.value} value={cat.value}>
+                      {cat.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-2 sm:gap-4 rounded-[16px] border border-[rgba(47,37,64,0.08)] dark:border-white/10 bg-white dark:bg-[#2a2538] p-3 sm:p-4 lg:p-6 shadow-[0_4px_16px_rgba(47,37,64,0.04)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.2)]">
