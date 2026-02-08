@@ -200,8 +200,8 @@ const FilteredProducts = () => {
           </div>
 
           {loading ? (
-            // Show skeleton placeholders
-            <div className="grid gap-6 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            // Show skeleton placeholders (mobile: 2 cols, desktop: 4 cols)
+            <div className="catalogue-product-grid w-full grid gap-3 sm:gap-4 md:gap-4 lg:gap-5 grid-cols-2 md:grid-cols-4">
               {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                 <ProductCardSkeleton key={i} />
               ))}
@@ -212,7 +212,7 @@ const FilteredProducts = () => {
             </div>
           ) : (
             <>
-              <div className="grid gap-6 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="catalogue-product-grid w-full grid gap-3 sm:gap-4 md:gap-4 lg:gap-5 grid-cols-2 md:grid-cols-4">
                 {paginatedProducts.map((product) => {
                   const productUrl = product.slug ? `/product/${product.slug}` : `/product/${product.id}`;
                   return (
@@ -225,6 +225,7 @@ const FilteredProducts = () => {
                       price={product.price}
                       originalPrice={product.original || product.originalPrice}
                       image={getImageUrl(Array.isArray(product.gallery) ? product.gallery[0] : product.gallery)}
+                      gallery={Array.isArray(product.gallery) && product.gallery.length > 0 ? product.gallery.map((g) => getImageUrl(g?.url ?? g)) : undefined}
                       accent={product.accent}
                       onView={() => navigate(productUrl)}
                       onAdd={() => {}}

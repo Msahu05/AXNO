@@ -152,6 +152,15 @@
     display: none;
   }
 
+  /* Product card gallery: single image visible on mobile, rest hidden; slide to change */
+  .product-card-gallery {
+    overflow: hidden !important;
+    max-width: 100% !important;
+  }
+  .product-card-gallery > div {
+    flex-shrink: 0 !important;
+  }
+
   .shadow-soft {
     box-shadow: var(--shadow-soft);
   }
@@ -165,6 +174,13 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+  }
+}
+
+/* Desktop: 4 columns for product grids (768px+) - outside layer so it wins */
+@media (min-width: 768px) {
+  .catalogue-product-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
   }
 }
 

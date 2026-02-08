@@ -221,7 +221,7 @@ const Home = () => {
       
       {/* Category Boxes */}
       <section className="w-full py-6 sm:py-10 md:py-12 lg:py-16 relative flex justify-center">
-        <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 xl:px-12">
+        <div className="w-full px-2 sm:px-3 md:px-4">
           <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 lg:gap-6 xl:gap-8">
             {/* Left Column: Men and Women (stacked vertically) */}
             <div className="flex flex-col gap-2 sm:gap-3 md:gap-4 lg:gap-6 xl:gap-8">
@@ -330,7 +330,7 @@ const Home = () => {
 
       {/* Product Category Boxes - New Layout */}
       <section className="w-full py-6 sm:py-8 md:py-10 lg:py-12">
-        <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-10">
+        <div className="w-full px-2 sm:px-3 md:px-4">
           <div className="flex flex-col gap-3 sm:gap-4 md:gap-6 lg:gap-8">
             {/* Top Row: Large Horizontal Box - Top Products */}
             {(() => {
@@ -513,7 +513,7 @@ const Home = () => {
         </div>
       </section>
       
-      <main className="container mx-auto px-2 sm:px-4 lg:px-6 pt-20 sm:pt-24 lg:pt-28 pb-12 sm:pb-16 lg:pb-20 space-y-4 sm:space-y-16 lg:space-y-8">
+      <main className="w-full px-2 sm:px-3 md:px-4 pt-20 sm:pt-24 lg:pt-28 pb-12 sm:pb-16 lg:pb-20 space-y-4 sm:space-y-16 lg:space-y-8">
         
         <div className="border-t border-border/50 my-4 sm:my-6"></div>
 
@@ -562,15 +562,15 @@ const Home = () => {
                     </div>
                   </div>
                   {loading ? (
-                    // Show skeleton placeholders
-                    <div className="grid gap-6 grid-cols-2 lg:grid-cols-3">
-                      {[1, 2, 3, 4].slice(0, isLargeScreen ? 3 : 4).map((i) => (
+                    // Mobile: 2 cols. Desktop (md+): 4 cols per row, 12 products
+                    <div className="catalogue-product-grid w-full grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-4 lg:gap-5" style={{ maxWidth: '100%' }}>
+                      {Array.from({ length: isLargeScreen ? 12 : 4 }, (_, i) => i).map((i) => (
                         <ProductCardSkeleton key={i} />
                       ))}
                     </div>
                   ) : (
-                    <div className="grid gap-6 grid-cols-2 lg:grid-cols-3">
-                      {typeProducts.slice(0, isLargeScreen ? 3 : 4).map((product) => (
+                    <div className="catalogue-product-grid w-full grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-4 lg:gap-5" style={{ maxWidth: '100%' }}>
+                      {typeProducts.slice(0, isLargeScreen ? 12 : 4).map((product) => (
                         <ProductCard
                           key={product._id || product.id}
                           id={product._id || product.id}
@@ -580,6 +580,7 @@ const Home = () => {
                           price={product.price}
                           originalPrice={product.originalPrice}
                           image={getImageUrl(Array.isArray(product.gallery) ? product.gallery[0]?.url || product.gallery[0] : product.gallery || product.image)}
+                          gallery={Array.isArray(product.gallery) && product.gallery.length > 0 ? product.gallery.map((g) => getImageUrl(g?.url ?? g)) : undefined}
                           accent={product.accent}
                           onView={() => {
                             const url = product.slug ? `/product/${product.slug}` : `/product/${product._id || product.id}`;
@@ -597,7 +598,7 @@ const Home = () => {
                   <div className="flex justify-center">
                     <Button
                       variant="outline"
-                      className="font-display rounded-full bg-primary text-primary-foreground hover:bg-primary/90 border border-primary px-8 py-3 tracking-[0.12em]"
+                      className="font-display rounded-full bg-black text-white hover:bg-black/90 border border-black px-8 py-3 tracking-[0.12em]"
                       onClick={() => {
                         window.scrollTo({ top: 0, behavior: "smooth" });
                         navigate(`/category/${type.route}`);

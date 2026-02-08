@@ -21,7 +21,7 @@ const Header = () => {
 
   return (
         <header className="fixed top-0 left-0 right-0 z-[100] w-full m-0 backdrop-blur-md" style={{ backgroundColor: theme === 'dark' ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)', position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100 }}>
-          <nav className="w-full flex h-20 sm:h-22 lg:h-24 items-center justify-between pl-2 sm:pl-3 lg:pl-4 pr-4 sm:pr-6 lg:pr-8 py-2 sm:py-3 lg:py-4">
+          <nav className="w-full flex h-20 sm:h-22 lg:h-24 items-center justify-between pl-3 sm:pl-4 lg:pl-5 pr-5 sm:pr-7 lg:pr-9 py-2 sm:py-3 lg:py-4">
             {/* Left side - Sidebar Trigger */}
             <div className="flex items-center flex-shrink-0">
               <Button
@@ -66,12 +66,12 @@ const Header = () => {
           <Button
             variant="ghost"
             size="icon"
-            className={`relative hover:bg-muted h-8 w-8 sm:h-9 sm:w-9 lg:h-10 lg:w-10 ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+            className={`group relative hover:bg-muted h-8 w-8 sm:h-9 sm:w-9 lg:h-10 lg:w-10 ${theme === 'dark' ? 'text-white' : 'text-black'} hover:!text-black`}
             aria-label="Cart"
             asChild
           >
-            <Link to="/cart">
-              <ShoppingCart className="h-5 w-5 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-black stroke-[2.5]" style={{ color: theme === 'dark' ? '#ffffff' : '#000000' }} />
+            <Link to="/cart" className="inline-flex">
+              <ShoppingCart className="h-5 w-5 sm:h-5 sm:w-5 lg:h-6 lg:w-6 stroke-[2.5] [color:inherit]" />
               {cartCount > 0 && (
                 <span className={`absolute right-0 top-0 flex h-4 w-4 sm:h-4 sm:w-4 lg:h-5 lg:w-5 items-center justify-center rounded-full bg-background text-[9px] sm:text-[10px] lg:text-[11px] font-medium border border-background ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
                   {cartCount > 9 ? '9+' : cartCount}

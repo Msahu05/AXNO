@@ -160,8 +160,8 @@ const Category = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white via-[#f8f7ff] to-white dark:from-[#0f0a1a] dark:via-[#1a1526] dark:to-[#0f0a1a]">
-      <div className="px-4 sm:px-6 py-10">
-        <div className="mx-auto max-w-7xl space-y-8">
+      <div className="px-2 sm:px-3 md:px-4 py-10">
+        <div className="w-full space-y-8">
         <div className="flex items-center gap-4 flex-wrap">
           <button 
             className="flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wider transition-all duration-200 bg-white dark:bg-[#2a2538] border border-gray-200 dark:border-white/10 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-600 text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400" 
@@ -217,8 +217,8 @@ const Category = () => {
         </div>
 
         {loading ? (
-          // Show skeleton placeholders
-          <div className="grid gap-6 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          // Show skeleton placeholders (mobile: 2 cols, desktop: 4 cols)
+          <div className="catalogue-product-grid w-full grid gap-3 sm:gap-4 md:gap-4 lg:gap-5 grid-cols-2 md:grid-cols-4">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
               <ProductCardSkeleton key={i} />
             ))}
@@ -229,7 +229,7 @@ const Category = () => {
           </div>
         ) : (
           <>
-            <div className="grid gap-6 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="catalogue-product-grid w-full grid gap-3 sm:gap-4 md:gap-4 lg:gap-5 grid-cols-2 md:grid-cols-4">
               {paginatedProducts.map((product) => (
                 <ProductCard
                   key={product.id}
@@ -239,6 +239,7 @@ const Category = () => {
                   price={product.price}
                   originalPrice={product.original}
                   image={getImageUrl(Array.isArray(product.gallery) ? product.gallery[0] : product.gallery)}
+                  gallery={Array.isArray(product.gallery) && product.gallery.length > 0 ? product.gallery.map((g) => getImageUrl(g?.url ?? g)) : undefined}
                   accent={product.accent}
                   onView={() => navigate(`/product/${product.id}`)}
                   onAdd={() => {}}

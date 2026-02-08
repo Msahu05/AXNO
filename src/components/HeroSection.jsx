@@ -79,7 +79,7 @@ export function HeroSection() {
 
   return (
     <section className="relative w-full py-8 sm:py-12 md:py-16 lg:py-20 overflow-visible bg-transparent">
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+      <div className="w-full px-2 sm:px-3 md:px-4">
         {loading ? (
           <div className="flex h-[50vh] min-h-[400px] items-center justify-center">
             <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -89,7 +89,8 @@ export function HeroSection() {
             <p className="text-muted-foreground">No slideshow images available</p>
           </div>
         ) : (
-          <div className="relative w-full min-h-[400px] sm:min-h-[500px] md:min-h-[600px] overflow-visible" style={{ position: 'relative', zIndex: 1 }}>
+          <div className="relative w-full min-h-[400px] sm:min-h-[500px] md:min-h-[600px] overflow-visible flex flex-col items-center" style={{ position: 'relative', zIndex: 1 }}>
+            <div className="w-full max-w-[1600px] mx-auto relative">
             <Carousel
               plugins={[plugin]}
               opts={{ 
@@ -103,10 +104,12 @@ export function HeroSection() {
               className="w-full relative overflow-visible"
               setApi={setApi}
             >
-              <CarouselContent className="-ml-2 sm:-ml-4 md:-ml-6 lg:-ml-8 overflow-visible">
+              <CarouselContent className="overflow-visible !ml-0 gap-3 sm:gap-4" style={{ marginLeft: 0 }}>
                 {heroImages.map((image, index) => {
                   const isActive = currentIndex === index;
                   const distance = Math.abs(index - currentIndex);
+                  const isFirst = index === 0;
+                  const isLast = index === heroImages.length - 1;
                   
                   // Calculate scale and opacity based on distance from center
                   const getScale = () => {
@@ -133,7 +136,7 @@ export function HeroSection() {
                   return (
                     <CarouselItem
                       key={index}
-                      className={`pl-2 sm:pl-4 md:pl-6 lg:pl-8 basis-[35%] sm:basis-[35%] md:basis-[60%] lg:basis-[50%] xl:basis-[45%]`}
+                      className={`basis-[82%] sm:basis-[35%] md:basis-[60%] lg:basis-[50%] xl:basis-[45%] flex-shrink-0 !pl-0 !pr-0 ${isFirst ? 'ml-2 sm:ml-4' : ''} ${isLast ? 'mr-2 sm:mr-4' : ''}`}
                     >
                       <div
                         className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 cursor-pointer group"
@@ -199,6 +202,7 @@ export function HeroSection() {
                 <ArrowRight className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 lg:h-8 lg:w-8" />
               </button>
             </Carousel>
+            </div>
             
             {/* Pagination Dots */}
             {heroImages.length > 1 && (

@@ -375,7 +375,7 @@ const Product = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-4">
+        <div className="w-full px-2 sm:px-3 md:px-4 py-4">
           <div className="grid gap-8 lg:grid-cols-2">
             <div className="space-y-4">
               <Skeleton className="aspect-square w-full rounded-lg" />
@@ -401,7 +401,7 @@ const Product = () => {
   if (!product) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="container mx-auto flex min-h-[60vh] items-center justify-center px-4">
+        <div className="w-full px-2 sm:px-3 md:px-4 flex min-h-[60vh] items-center justify-center">
           <p className="text-muted-foreground">Product not found</p>
         </div>
       </div>
@@ -1201,7 +1201,7 @@ const Product = () => {
 
         {/* Ratings and Reviews */}
         <section className="mt-8 sm:mt-12 md:mt-16 lg:mt-20 w-full max-w-full overflow-hidden">
-          <div className="mx-auto w-full max-w-full px-4 sm:px-0 sm:max-w-[90%] md:max-w-6xl" style={{ boxSizing: 'border-box' }}>
+          <div className="w-full px-2 sm:px-3 md:px-4" style={{ boxSizing: 'border-box' }}>
           <div className="mb-4 sm:mb-6 lg:mb-8">
             <div className="flex flex-col xs:flex-row items-start xs:items-center justify-between gap-3 xs:gap-4 mb-4 sm:mb-6">
               <h2 className="font-display text-lg sm:text-xl lg:text-2xl font-black text-foreground">
@@ -1637,7 +1637,7 @@ const Product = () => {
         {/* Related Products */}
         {related.length > 0 && (
           <section className="mt-8 sm:mt-12 md:mt-16 lg:mt-20 w-full max-w-full overflow-hidden">
-            <div className="mx-auto w-full max-w-full px-4 sm:px-0 sm:max-w-[85%] md:max-w-[75%]" style={{ boxSizing: 'border-box' }}>
+            <div className="w-full px-2 sm:px-3 md:px-4" style={{ boxSizing: 'border-box' }}>
               <div className="flex flex-row items-center justify-between gap-3 sm:gap-6 mb-4 sm:mb-6 md:mb-8 max-w-full">
                 <h2 className="font-display text-lg sm:text-xl md:text-2xl lg:text-3xl font-black text-foreground">
                   Related <span className="text-gradient">Products</span>

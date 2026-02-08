@@ -24,7 +24,7 @@ export function FeaturedProducts() {
 
   return (
     <section className="py-20">
-      <div className="container mx-auto px-4 lg:px-8">
+      <div className="w-full px-2 sm:px-3 md:px-4">
         <div className="mb-12 text-center">
           <h2 className="font-display text-3xl font-bold text-foreground md:text-4xl">
             Featured <span className="text-gradient">Collection</span>
@@ -55,7 +55,8 @@ export function FeaturedProducts() {
                   category={product.category}
                   price={product.price}
                   originalPrice={product.original || product.originalPrice}
-                  image={getImageUrl(Array.isArray(product.gallery) ? product.gallery[0] : product.gallery || product.image)}
+                  image={getImageUrl(Array.isArray(product.gallery) ? product.gallery[0]?.url ?? product.gallery[0] : product.gallery || product.image)}
+                  gallery={Array.isArray(product.gallery) && product.gallery.length > 0 ? product.gallery.map((g) => getImageUrl(g?.url ?? g)) : undefined}
                   rating={4.8}
                 />
               </div>
