@@ -1,42 +1,88 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Package, CheckCircle2, Clock, Truck, MapPin } from "lucide-react";
+import { ArrowLeft, Package, CheckCircle2, Clock, Truck, MapPin, Search, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/auth-context";
 import { ordersAPI } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
 const Tracking = () => {
-  const { orderId } = useParams();
+  const { orderId: urlOrderId } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [guestOrderId, setGuestOrderId] = useState(urlOrderId || '');
+  const [guestPhone, setGuestPhone] = useState('');
+  const [trackingGuest, setTrackingGuest] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate(`/auth?redirect=${encodeURIComponent(`/tracking/${orderId}`)}`);
-      return;
+    // If authenticated and orderId in URL, load order
+    if (isAuthenticated && urlOrderId) {
+      loadOrder(urlOrderId);
+      // Poll for updates every 30 seconds
+      const interval = setInterval(() => loadOrder(urlOrderId), 30000);
+      return () => clearInterval(interval);
+    } else if (!isAuthenticated && urlOrderId) {
+      // Guest user with orderId in URL - show form to enter phone
+      setTrackingGuest(true);
+      setLoading(false);
+    } else if (!isAuthenticated) {
+      // Guest user without orderId - show form
+      setTrackingGuest(true);
+      setLoading(false);
     }
+  }, [urlOrderId, isAuthenticated]);
 
-    loadOrder();
-    // Poll for updates every 30 seconds
-    const interval = setInterval(loadOrder, 30000);
-    return () => clearInterval(interval);
-  }, [orderId, isAuthenticated, navigate]);
-
-  const loadOrder = async () => {
+  const loadOrder = async (id) => {
     try {
       setLoading(true);
-      const data = await ordersAPI.getOrder(orderId);
+      const data = await ordersAPI.getOrder(id);
       setOrder(data.order || data);
     } catch (error) {
       console.error("Failed to load order:", error);
       toast({
         title: "Error",
         description: "Failed to load order details. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const trackGuestOrder = async () => {
+    if (!guestOrderId || !guestPhone) {
+      toast({
+        title: "Required fields",
+        description: "Please enter both Order ID and phone number.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const data = await ordersAPI.trackOrder(guestOrderId, guestPhone);
+      setOrder(data.order || data);
+      setTrackingGuest(false);
+      // Update URL without navigation
+      window.history.replaceState({}, '', `/tracking/${guestOrderId}`);
+      // Poll for updates every 30 seconds
+      const interval = setInterval(() => {
+        ordersAPI.trackOrder(guestOrderId, guestPhone)
+          .then(data => setOrder(data.order || data))
+          .catch(err => console.error('Failed to update order:', err));
+      }, 30000);
+      return () => clearInterval(interval);
+    } catch (error) {
+      console.error("Failed to track order:", error);
+      toast({
+        title: "Order not found",
+        description: error.message || "Please check your Order ID and phone number.",
         variant: "destructive",
       });
     } finally {
@@ -83,15 +129,93 @@ const Tracking = () => {
     });
   };
 
+  // Show guest order tracking form
+  if (trackingGuest || (!order && !isAuthenticated && !loading)) {
+    // Check if orderId is in URL (from successful payment)
+    const isFromCheckout = urlOrderId && urlOrderId.length > 0;
+    
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="px-4 sm:px-6 lg:px-16 max-w-2xl mx-auto py-8">
+          <div className="rounded-[32px] border border-border bg-card p-6 sm:p-8 shadow-sm space-y-6">
+            {isFromCheckout ? (
+              <>
+                <div className="text-center space-y-4 mb-6">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 mb-4">
+                    <CheckCircle2 className="h-8 w-8 text-green-600 dark:text-green-400" />
+                  </div>
+                  <h1 className="text-2xl sm:text-3xl font-black mb-2">Order Placed Successfully!</h1>
+                  <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
+                    <p className="text-sm text-muted-foreground mb-2">Your Order ID</p>
+                    <p className="text-2xl font-bold text-primary">{urlOrderId}</p>
+                  </div>
+                  <p className="text-muted-foreground">
+                    We've sent your Order ID to your email. Enter your phone number below to track your order.
+                  </p>
+                </div>
+              </>
+            ) : (
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-black mb-2">Track Your Order</h1>
+                <p className="text-muted-foreground">Enter your Order ID and phone number to track your order</p>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold mb-2">Order ID</label>
+                <Input
+                  type="text"
+                  placeholder="e.g., ODR-001"
+                  value={guestOrderId}
+                  onChange={(e) => setGuestOrderId(e.target.value)}
+                  className="w-full"
+                  disabled={isFromCheckout}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-2">Phone Number</label>
+                <Input
+                  type="tel"
+                  placeholder="+91 1234567890"
+                  value={guestPhone}
+                  onChange={(e) => setGuestPhone(e.target.value)}
+                  className="w-full"
+                />
+                <p className="text-xs text-muted-foreground mt-1">Enter the phone number used during checkout</p>
+              </div>
+              <Button
+                onClick={trackGuestOrder}
+                disabled={loading || !guestOrderId || !guestPhone}
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                {loading ? "Tracking..." : "Track Order"}
+              </Button>
+            </div>
+
+            {isAuthenticated && (
+              <div className="pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/orders")}
+                  className="w-full"
+                >
+                  View My Orders
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(124,90,255,0.12),_transparent_60%)]">
-        <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-6">
-          <Header />
-        </div>
-        <div className="px-4 sm:px-6 lg:px-16 max-w-4xl mx-auto">
+      <div className="min-h-screen bg-background">
+        <div className="px-4 sm:px-6 lg:px-16 max-w-4xl mx-auto py-8">
           <Skeleton className="h-10 w-32 mb-6" />
-          <div className="rounded-[24px] sm:rounded-[32px] border border-white/15 bg-[var(--card)]/95 p-6 sm:p-8 space-y-6">
+          <div className="rounded-[24px] sm:rounded-[32px] border border-border bg-card p-6 sm:p-8 space-y-6">
             <Skeleton className="h-8 w-48 mb-4" />
             <Skeleton className="h-4 w-64 mb-6" />
             <div className="space-y-4">
@@ -113,15 +237,12 @@ const Tracking = () => {
 
   if (!order) {
     return (
-      <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(124,90,255,0.12),_transparent_60%)]">
-        <div className="px-4 sm:px-6 pb-8 sm:pb-12 pt-6">
-          <Header />
-        </div>
+      <div className="min-h-screen bg-background">
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <p className="text-lg font-semibold mb-2">Order not found</p>
-            <Button onClick={() => navigate("/orders")} className="mt-4">
-              View All Orders
+            <Button onClick={() => navigate("/")} className="mt-4">
+              Go to Home
             </Button>
           </div>
         </div>

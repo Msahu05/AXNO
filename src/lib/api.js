@@ -300,6 +300,13 @@ export const ordersAPI = {
   getOrder: async (orderId) => {
     return apiCall(`/orders/${orderId}`);
   },
+
+  trackOrder: async (orderId, phone) => {
+    return apiCall('/orders/track', {
+      method: 'POST',
+      body: JSON.stringify({ orderId, phone }),
+    });
+  },
 };
 
 export const adminAPI = {

@@ -346,7 +346,7 @@ const Review = mongoose.model('Review', reviewSchema);
 // Order Schema
 const orderSchema = new mongoose.Schema({
   orderId: { type: String, required: true, unique: true, index: true },
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false }, // Allow null for guest orders
   items: [{
     productId: { type: String, default: null }, // Optional - for custom products
     name: { type: String, required: true },
@@ -363,7 +363,8 @@ const orderSchema = new mongoose.Schema({
     city: { type: String, required: true },
     state: { type: String, required: true },
     pincode: { type: String, required: true },
-    phone: { type: String, required: true }
+    phone: { type: String, required: true },
+    email: { type: String, required: false } // Optional email for guest users
   },
   customDesign: {
     files: [{ type: String }], // File URLs
@@ -692,6 +693,28 @@ const authenticateToken = (req, res, next) => {
   jwt.verify(token, JWT_SECRET, (err, user) => {
     if (err) {
       return res.status(403).json({ error: 'Invalid or expired token' });
+    }
+    req.user = user;
+    next();
+  });
+};
+
+// Optional authentication - allows requests with or without token
+const optionalAuthenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    // No token provided - allow request to proceed without user
+    req.user = null;
+    return next();
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      // Invalid token - allow request to proceed without user
+      req.user = null;
+      return next();
     }
     req.user = user;
     next();
@@ -1924,7 +1947,7 @@ app.post('/api/reviews/:productId', authenticateToken, upload.array('files', 5),
 });
 
 // Create Razorpay Order - Create payment order for Razorpay
-app.post('/api/payments/create-order', authenticateToken, async (req, res) => {
+app.post('/api/payments/create-order', optionalAuthenticateToken, async (req, res) => {
   try {
     const { amount, currency = 'INR', receipt } = req.body;
 
@@ -1954,7 +1977,7 @@ app.post('/api/payments/create-order', authenticateToken, async (req, res) => {
       currency: currency,
       receipt: receipt || `receipt_${Date.now()}`,
       notes: {
-        userId: req.user.userId,
+        userId: req.user?.userId || null,
         createdAt: new Date().toISOString()
       }
     };
@@ -2015,7 +2038,7 @@ app.post('/api/payments/test-payment', authenticateToken, async (req, res) => {
 });
 
 // Payment Verification - Verify payment (works for both test and production)
-app.post('/api/payments/verify', authenticateToken, async (req, res) => {
+app.post('/api/payments/verify', optionalAuthenticateToken, async (req, res) => {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
@@ -2091,7 +2114,7 @@ app.post('/api/payments/verify', authenticateToken, async (req, res) => {
 });
 
 // Payment Confirmation - Create order after payment
-app.post('/api/payments/confirm', authenticateToken, upload.array('designFiles', 10), async (req, res) => {
+app.post('/api/payments/confirm', optionalAuthenticateToken, upload.array('designFiles', 10), async (req, res) => {
   try {
     console.log('Payment confirmation request received');
     console.log('Files received:', req.files ? req.files.length : 0);
@@ -2139,9 +2162,13 @@ app.post('/api/payments/confirm', authenticateToken, upload.array('designFiles',
       return res.status(400).json({ error: 'Order totals are required' });
     }
 
-    const user = await User.findById(req.user.userId);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+    // Handle both authenticated and unauthenticated users
+    let user = null;
+    if (req.user && req.user.userId) {
+      user = await User.findById(req.user.userId);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
     }
 
     // Validate coupon if provided (especially for firstOrderOnly coupons)
@@ -2155,10 +2182,10 @@ app.post('/api/payments/confirm', authenticateToken, upload.array('designFiles',
         return res.status(400).json({ error: 'Invalid coupon code' });
       }
 
-      // Validate first order only coupon
-      if (coupon.firstOrderOnly) {
+      // Validate first order only coupon (only for authenticated users)
+      if (coupon.firstOrderOnly && user) {
         const paidOrdersCount = await Order.countDocuments({
-          userId: req.user.userId,
+          userId: user._id,
           'payment.status': 'paid'
         });
 
@@ -2228,7 +2255,7 @@ app.post('/api/payments/confirm', authenticateToken, upload.array('designFiles',
     const newOrderId = await generateOrderId();
     const order = new Order({
       orderId: newOrderId,
-      userId: user._id,
+      userId: user ? user._id : null, // Allow null for guest orders
       items: parsedItems,
       shippingAddress: parsedShippingAddress,
       customDesign: {
@@ -2265,46 +2292,47 @@ app.post('/api/payments/confirm', authenticateToken, upload.array('designFiles',
 
     await order.save();
 
-    // Send order confirmation email and WhatsApp
-    const populatedOrder = await Order.findOne({ orderId: order.orderId })
-      .populate('userId', 'name email phone');
-    
-    if (populatedOrder && populatedOrder.userId) {
-      // Send email
-      sendEmail(populatedOrder.userId.email,
-        emailTemplates.orderConfirmation({
-          orderId: order.orderId,
-          userName: populatedOrder.userId.name,
-          total: order.total,
-          status: order.status
-        }).subject,
-        emailTemplates.orderConfirmation({
-          orderId: order.orderId,
-          userName: populatedOrder.userId.name,
-          total: order.total,
-          status: order.status
-        }).html
-      ).catch(err => console.error('Failed to send order confirmation email:', err));
+    // Send order confirmation email and WhatsApp (only for authenticated users)
+    if (user) {
+      const populatedOrder = await Order.findOne({ orderId: order.orderId })
+        .populate('userId', 'name email phone');
+      
+      if (populatedOrder && populatedOrder.userId) {
+        // Send email
+        sendEmail(populatedOrder.userId.email,
+          emailTemplates.orderConfirmation({
+            orderId: order.orderId,
+            userName: populatedOrder.userId.name,
+            total: order.total,
+            status: order.status
+          }).subject,
+          emailTemplates.orderConfirmation({
+            orderId: order.orderId,
+            userName: populatedOrder.userId.name,
+            total: order.total,
+            status: order.status
+          }).html
+        ).catch(err => console.error('Failed to send order confirmation email:', err));
 
-      // Send WhatsApp notification if phone number exists
-      if (populatedOrder.userId.phone) {
-        console.log('📱 Attempting to send order confirmation via WhatsApp to:', populatedOrder.userId.phone);
-        if (isWhatsAppConfigured()) {
-          sendOrderConfirmation(populatedOrder.userId.phone, populatedOrder)
-            .then(result => {
-              if (result.success) {
-                console.log('✅ Order confirmation sent via WhatsApp to:', populatedOrder.userId.phone);
-              } else {
-                console.error('❌ Failed to send WhatsApp order confirmation:', result.error);
-                if (result.details) {
-                  console.error('   Error details:', JSON.stringify(result.details, null, 2));
+        // Send WhatsApp notification if phone number exists
+        if (populatedOrder.userId.phone) {
+          console.log('📱 Attempting to send order confirmation via WhatsApp to:', populatedOrder.userId.phone);
+          if (isWhatsAppConfigured()) {
+            sendOrderConfirmation(populatedOrder.userId.phone, populatedOrder)
+              .then(result => {
+                if (result.success) {
+                  console.log('✅ Order confirmation sent via WhatsApp to:', populatedOrder.userId.phone);
+                } else {
+                  console.error('❌ Failed to send WhatsApp order confirmation:', result.error);
+                  if (result.details) {
+                    console.error('   Error details:', JSON.stringify(result.details, null, 2));
+                  }
                 }
-              }
-            })
-            .catch(err => {
-              console.error('❌ WhatsApp order confirmation error:', err);
-              console.error('   Error stack:', err.stack);
-            });
+              })
+              .catch(err => {
+                console.error('❌ WhatsApp order confirmation error:', err);
+                console.error('   Error stack:', err.stack);
+              });
         } else {
           console.warn('⚠️  WhatsApp not configured. Skipping WhatsApp notification.');
         }
@@ -2312,11 +2340,38 @@ app.post('/api/payments/confirm', authenticateToken, upload.array('designFiles',
         console.log('⚠️  No phone number found for user. Skipping WhatsApp notification.');
       }
 
-      // Notify all admins about the new order
+        // Notify all admins about the new order
+        notifyAdminsOfNewOrder(order, {
+          name: populatedOrder.userId.name,
+          email: populatedOrder.userId.email,
+          phone: populatedOrder.userId.phone
+        }).catch(err => console.error('Failed to notify admins:', err));
+      }
+    } else {
+      // For guest orders, send email to the email address from shipping address
+      if (parsedShippingAddress.email) {
+        sendEmail(
+          parsedShippingAddress.email,
+          emailTemplates.orderConfirmation({
+            orderId: order.orderId,
+            userName: parsedShippingAddress.name,
+            total: order.total,
+            status: order.status
+          }).subject,
+          emailTemplates.orderConfirmation({
+            orderId: order.orderId,
+            userName: parsedShippingAddress.name,
+            total: order.total,
+            status: order.status
+          }).html
+        ).catch(err => console.error('Failed to send order confirmation email to guest:', err));
+      }
+
+      // Notify admins with shipping address info
       notifyAdminsOfNewOrder(order, {
-        name: populatedOrder.userId.name,
-        email: populatedOrder.userId.email,
-        phone: populatedOrder.userId.phone
+        name: parsedShippingAddress.name,
+        email: parsedShippingAddress.email || '',
+        phone: parsedShippingAddress.phone
       }).catch(err => console.error('Failed to notify admins:', err));
     }
 
@@ -2648,7 +2703,7 @@ app.get('/api/orders', authenticateToken, async (req, res) => {
   }
 });
 
-// Get order details
+// Get order details (authenticated users - by userId)
 app.get('/api/orders/:orderId', authenticateToken, async (req, res) => {
   try {
     const { orderId } = req.params;
@@ -2670,6 +2725,47 @@ app.get('/api/orders/:orderId', authenticateToken, async (req, res) => {
     res.json({ order: enrichedOrder });
   } catch (error) {
     console.error('Get order error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get order by orderId and phone number (for guest users)
+app.post('/api/orders/track', async (req, res) => {
+  try {
+    const { orderId, phone } = req.body;
+
+    if (!orderId || !phone) {
+      return res.status(400).json({ error: 'Order ID and phone number are required' });
+    }
+
+    // Normalize phone number (remove spaces, +91 prefix if present)
+    const normalizedPhone = phone.replace(/\s+/g, '').replace(/^\+91/, '').replace(/^91/, '');
+    
+    // Find order by orderId and phone number (check both userId and shippingAddress.phone)
+    const order = await Order.findOne({
+      orderId: orderId,
+      $or: [
+        { 'shippingAddress.phone': { $regex: normalizedPhone, $options: 'i' } },
+        { 'shippingAddress.phone': { $regex: phone.replace(/\s+/g, ''), $options: 'i' } }
+      ]
+    })
+      .populate('userId', 'name email phone')
+      .select('-__v');
+    
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found. Please check your Order ID and phone number.' });
+    }
+
+    // Enrich order items with product images
+    const enrichedItems = await enrichOrderItemsWithProductImages(order.items);
+    const enrichedOrder = {
+      ...order.toObject(),
+      items: enrichedItems
+    };
+
+    res.json({ order: enrichedOrder });
+  } catch (error) {
+    console.error('Track order error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });

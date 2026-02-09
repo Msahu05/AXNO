@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/auth-context";
 import { ordersAPI, reviewsAPI, getImageUrl } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import Header from "@/components/Header";
 
 const Orders = () => {
   const navigate = useNavigate();
@@ -24,19 +25,30 @@ const Orders = () => {
       return;
     }
 
-    if (!isAuthenticated) {
-      navigate(`/auth?redirect=${encodeURIComponent("/orders")}`);
+    // If guest user and no orderId, redirect to tracking page
+    if (!isAuthenticated && !orderId) {
+      navigate("/tracking");
       return;
     }
 
-    loadOrders();
-  }, [isAuthenticated, authLoading, navigate]);
+    // If authenticated, load orders list
+    if (isAuthenticated && !orderId) {
+      loadOrders();
+    }
+  }, [isAuthenticated, authLoading, navigate, orderId]);
 
   useEffect(() => {
     if (orderId) {
-      loadSingleOrder(orderId);
+      // If authenticated, use regular getOrder
+      if (isAuthenticated) {
+        loadSingleOrder(orderId);
+      }
+      // If guest user with orderId, redirect to tracking page
+      else {
+        navigate(`/tracking/${orderId}`);
+      }
     }
-  }, [orderId]);
+  }, [orderId, isAuthenticated, navigate]);
 
   const loadSingleOrder = async (id) => {
     try {
@@ -415,7 +427,7 @@ const Orders = () => {
               className="flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.4em] transition-all duration-200 bg-transparent hover:bg-purple-200 hover:shadow-sm active:bg-purple-300"
               onClick={() => navigate("/orders")}
             >
-              <ArrowLeft className="h-4 w-4" /> Back to Orders
+              <ArrowLeft className="h-4 w-4" /> 
             </button>
 
             <div className="rounded-[48px] border border-white/15 bg-[var(--card)]/95 p-6 sm:p-8 shadow-[var(--shadow-soft)] space-y-6">
@@ -626,12 +638,13 @@ const Orders = () => {
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(124,90,255,0.12),_transparent_70%)]">
       <div className="px-2 sm:px-4 lg:px-6 py-6 sm:py-10">
         <div className="mx-auto max-w-6xl space-y-6">
+          <br/>
           <div className="flex items-center gap-4">
             <button
               className="flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.4em] transition-all duration-200 bg-transparent hover:bg-purple-200 hover:shadow-sm active:bg-purple-300"
               onClick={() => navigate("/")}
             >
-              <ArrowLeft className="h-4 w-4" /> Back
+              <ArrowLeft className="h-4 w-4" /> 
             </button>
             <h1 className="text-2xl sm:text-3xl font-black">My Orders</h1>
           </div>
