@@ -160,7 +160,9 @@ const Category = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white via-[#f8f7ff] to-white dark:from-[#0f0a1a] dark:via-[#1a1526] dark:to-[#0f0a1a]">
-      <div className="px-2 sm:px-3 md:px-4 py-10">
+      <div className="px-2 sm:px-3 md:px-4 py-12">
+        <br/>
+        <br/>
         <div className="w-full space-y-8">
         <div className="flex items-center gap-4 flex-wrap">
           <button 
@@ -217,8 +219,8 @@ const Category = () => {
         </div>
 
         {loading ? (
-          // Show skeleton placeholders (mobile: 2 cols, desktop: 4 cols)
-          <div className="catalogue-product-grid w-full grid gap-3 sm:gap-4 md:gap-4 lg:gap-5 grid-cols-2 md:grid-cols-4">
+          // Show skeleton placeholders (mobile: 2 cols, medium: 3 cols, large: 4 cols)
+          <div className="catalogue-product-grid w-full grid gap-3 sm:gap-4 md:gap-4 lg:gap-8 xl:gap-10 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 lg:max-w-[1400px] lg:mx-auto">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
               <ProductCardSkeleton key={i} />
             ))}
@@ -227,9 +229,9 @@ const Category = () => {
           <div className="rounded-[16px] border border-[rgba(47,37,64,0.08)] dark:border-white/10 bg-white dark:bg-[#2a2538] p-12 text-center shadow-[0_4px_16px_rgba(47,37,64,0.04)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.2)]">
             <p className="text-gray-600 dark:text-gray-400">No products found in this category.</p>
           </div>
-        ) : (
-          <>
-            <div className="catalogue-product-grid w-full grid gap-3 sm:gap-4 md:gap-4 lg:gap-5 grid-cols-2 md:grid-cols-4">
+          ) : (
+            <>
+              <div className="catalogue-product-grid w-full grid gap-3 sm:gap-4 md:gap-4 lg:gap-8 xl:gap-10 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 lg:max-w-[1400px] lg:mx-auto">
               {paginatedProducts.map((product) => (
                 <ProductCard
                   key={product.id}

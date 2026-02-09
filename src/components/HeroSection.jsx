@@ -12,9 +12,24 @@ export function HeroSection() {
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [api, setApi] = useState(null);
+  const [isSmallScreen, setIsSmallScreen] = useState(false);
   const [plugin] = useState(() =>
-    Autoplay({ delay: 5000, stopOnInteraction: false })
+    Autoplay({ 
+      delay: 5000, 
+      stopOnInteraction: false,
+      stopOnMouseEnter: false,
+      stopOnFocusIn: false
+    })
   );
+
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsSmallScreen(window.innerWidth < 640);
+    };
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
 
   useEffect(() => {
     const loadSlideshow = async () => {
@@ -49,6 +64,53 @@ export function HeroSection() {
     };
   }, [api]);
 
+  // Reinitialize carousel when images are loaded
+  useEffect(() => {
+    if (api && slideshowImages.length > 0 && !loading) {
+      // Use requestAnimationFrame to ensure DOM is ready
+      requestAnimationFrame(() => {
+        if (api) {
+          api.reInit();
+        }
+      });
+    }
+  }, [api, slideshowImages.length, loading]);
+
+  // Handle window resize for large screens
+  useEffect(() => {
+    if (!api) return;
+
+    let resizeTimeout;
+    const handleResize = () => {
+      // Debounce resize handler
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        if (api) {
+          api.reInit();
+        }
+      }, 200);
+    };
+
+    window.addEventListener('resize', handleResize);
+    
+    // Reinit on mount for large screens to ensure proper initialization
+    const isLargeScreen = window.innerWidth >= 1024;
+    if (isLargeScreen && slideshowImages.length > 0 && !loading) {
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          if (api) {
+            api.reInit();
+          }
+        }, 300);
+      });
+    }
+
+    return () => {
+      clearTimeout(resizeTimeout);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [api, slideshowImages.length, loading]);
+
   // Use only slideshow images for carousel
   const heroImages = (() => {
     const images = [];
@@ -78,8 +140,8 @@ export function HeroSection() {
   })();
 
   return (
-    <section className="relative w-full py-8 sm:py-12 md:py-16 lg:py-20 overflow-visible bg-transparent">
-      <div className="w-full px-2 sm:px-3 md:px-4">
+    <section className="relative w-full py-8 sm:py-12 md:py-16 lg:py-20 px-0 sm:px-4 md:px-6 lg:px-8 overflow-hidden bg-transparent">
+      <div className="w-full px-0 sm:px-3 md:px-4">
         {loading ? (
           <div className="flex h-[50vh] min-h-[400px] items-center justify-center">
             <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -89,8 +151,8 @@ export function HeroSection() {
             <p className="text-muted-foreground">No slideshow images available</p>
           </div>
         ) : (
-          <div className="relative w-full min-h-[400px] sm:min-h-[500px] md:min-h-[600px] overflow-visible flex flex-col items-center" style={{ position: 'relative', zIndex: 1 }}>
-            <div className="w-full max-w-[1600px] mx-auto relative">
+          <div className="relative w-full min-h-[400px] sm:min-h-[500px] md:min-h-[600px] flex flex-col items-center overflow-hidden" style={{ position: 'relative', zIndex: 1 }}>
+            <div className="w-full max-w-[1600px] mx-auto relative overflow-hidden">
             <Carousel
               plugins={[plugin]}
               opts={{ 
@@ -100,19 +162,24 @@ export function HeroSection() {
                 dragFree: false,
                 skipSnaps: false,
                 duration: 25,
+                watchDrag: true,
               }}
-              className="w-full relative overflow-visible"
+              className="w-full relative overflow-hidden"
               setApi={setApi}
             >
-              <CarouselContent className="overflow-visible !ml-0 gap-3 sm:gap-4" style={{ marginLeft: 0 }}>
+              <CarouselContent className="ml-0 sm:-ml-4 md:-ml-6 lg:-ml-8 gap-0 sm:gap-0">
                 {heroImages.map((image, index) => {
                   const isActive = currentIndex === index;
                   const distance = Math.abs(index - currentIndex);
-                  const isFirst = index === 0;
-                  const isLast = index === heroImages.length - 1;
                   
                   // Calculate scale and opacity based on distance from center
                   const getScale = () => {
+                    if (isSmallScreen) {
+                      // On small screens, reduce scale to prevent overflow
+                      if (isActive) return 0.85;
+                      if (distance === 1) return 0.7;
+                      return 0.55;
+                    }
                     if (isActive) return 1;
                     if (distance === 1) return 0.85;
                     if (distance === 2) return 0.7;
@@ -136,7 +203,7 @@ export function HeroSection() {
                   return (
                     <CarouselItem
                       key={index}
-                      className={`basis-[82%] sm:basis-[35%] md:basis-[60%] lg:basis-[50%] xl:basis-[45%] flex-shrink-0 !pl-0 !pr-0 ${isFirst ? 'ml-2 sm:ml-4' : ''} ${isLast ? 'mr-2 sm:mr-4' : ''}`}
+                      className={`pl-0 pr-0 sm:pl-4 sm:pr-0 md:pl-6 lg:pl-8 basis-[75%] sm:basis-[35%] md:basis-[60%] lg:basis-[50%] xl:basis-[45%] flex-shrink-0`}
                     >
                       <div
                         className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 cursor-pointer group"
@@ -150,12 +217,21 @@ export function HeroSection() {
                           height: '400px',
                           minHeight: '400px',
                           pointerEvents: 'auto',
+                          willChange: 'transform',
+                          maxWidth: '100%',
                         }}
                       >
                         <img
                           src={image.src}
                           alt={image.alt}
                           className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-110"
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            objectPosition: 'center',
+                            display: 'block'
+                          }}
                           onError={(e) => {
                             e.target.src = "https://images.unsplash.com/photo-1581044777550-4cfa60707c03?w=600&q=80";
                           }}
@@ -170,33 +246,37 @@ export function HeroSection() {
                 })}
               </CarouselContent>
               <button
-                onClick={() => {
-                  if (api) {
-                    api.scrollPrev();
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (api && typeof api.scrollPrev === 'function') {
+                    try {
+                      api.scrollPrev();
+                    } catch (error) {
+                      console.error('Error scrolling previous:', error);
+                    }
                   }
                 }}
-                className="!left-0 !-translate-y-1/2 h-10 w-10 sm:h-12 w-12 md:h-14 md:w-14 lg:h-16 lg:w-16 bg-white/90 hover:bg-white border-2 border-gray-300 shadow-lg text-gray-900 !z-[100] absolute top-1/2 rounded-full flex items-center justify-center transition-all hover:scale-110"
-                style={{ 
-                  position: 'absolute',
-                  pointerEvents: 'auto',
-                  left: '0',
-                }}
+                className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 h-10 w-10 sm:h-12 w-12 md:h-14 md:w-14 lg:h-16 lg:w-16 bg-white/90 hover:bg-white border-2 border-gray-300 shadow-lg text-gray-900 z-50 rounded-full flex items-center justify-center transition-all hover:scale-110 cursor-pointer"
                 aria-label="Previous slide"
               >
                 <ArrowLeft className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 lg:h-8 lg:w-8" />
               </button>
               <button
-                onClick={() => {
-                  if (api) {
-                    api.scrollNext();
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (api && typeof api.scrollNext === 'function') {
+                    try {
+                      api.scrollNext();
+                    } catch (error) {
+                      console.error('Error scrolling next:', error);
+                    }
                   }
                 }}
-                className="!right-0 !-translate-y-1/2 h-10 w-10 sm:h-12 w-12 md:h-14 md:w-14 lg:h-16 lg:w-16 bg-white/90 hover:bg-white border-2 border-gray-300 shadow-lg text-gray-900 !z-[100] absolute top-1/2 rounded-full flex items-center justify-center transition-all hover:scale-110"
-                style={{ 
-                  position: 'absolute',
-                  pointerEvents: 'auto',
-                  right: '0',
-                }}
+                className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 h-10 w-10 sm:h-12 w-12 md:h-14 md:w-14 lg:h-16 lg:w-16 bg-white/90 hover:bg-white border-2 border-gray-300 shadow-lg text-gray-900 z-50 rounded-full flex items-center justify-center transition-all hover:scale-110 cursor-pointer"
                 aria-label="Next slide"
               >
                 <ArrowRight className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 lg:h-8 lg:w-8" />
@@ -204,21 +284,32 @@ export function HeroSection() {
             </Carousel>
             </div>
             
-            {/* Pagination Dots */}
+            {/* Pagination Dots - Below slideshow */}
             {heroImages.length > 1 && (
-              <div className="absolute bottom-4 sm:bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 flex gap-2 sm:gap-3 z-20 items-center pointer-events-auto mt-4 sm:mt-6">
+              <div className="relative w-full flex justify-center items-center gap-2 sm:gap-3 mt-4 sm:mt-6 md:mt-8">
                 {heroImages.map((_, index) => (
                   <button
                     key={index}
-                    onClick={() => api?.scrollTo(index)}
-                    className={`rounded-full transition-all duration-300 ${
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (api && typeof api.scrollTo === 'function') {
+                        try {
+                          api.scrollTo(index);
+                        } catch (error) {
+                          console.error('Error scrolling to slide:', error);
+                        }
+                      }
+                    }}
+                    className={`rounded-full transition-all duration-300 cursor-pointer ${
                       currentIndex === index
-                        ? 'bg-white h-2.5 w-8 sm:h-3 sm:w-10 md:h-3.5 md:w-12 lg:h-4 lg:w-14'
-                        : 'bg-white/60 hover:bg-white/80 h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-3.5 md:w-3.5 lg:h-4 lg:w-4'
+                        ? 'bg-gray-900 dark:bg-white h-2.5 w-8 sm:h-3 sm:w-10 md:h-3.5 md:w-12 lg:h-4 lg:w-14'
+                        : 'bg-gray-400 dark:bg-white/60 hover:bg-gray-500 dark:hover:bg-white/80 h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-3.5 md:w-3.5 lg:h-4 lg:w-4'
                     }`}
                     aria-label={`Go to slide ${index + 1}`}
                     style={{ 
-                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)'
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
                     }}
                   />
                 ))}

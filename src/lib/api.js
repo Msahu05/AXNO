@@ -527,12 +527,31 @@ export const adminAPI = {
       body: JSON.stringify(slideshowData),
     });
   },
+
+  // Category Background Images Management
+  getCategoryImages: async () => {
+    return apiCall('/admin/category-images');
+  },
+
+  updateCategoryImages: async (categoryImages) => {
+    return apiCall('/admin/category-images', {
+      method: 'PUT',
+      body: JSON.stringify(categoryImages),
+    });
+  },
 };
 
 // Slideshow API (Public)
 export const slideshowAPI = {
   getSlideshow: async () => {
     return apiCall('/slideshow');
+  },
+};
+
+// Category Images API (Public)
+export const categoryImagesAPI = {
+  getCategoryImages: async () => {
+    return apiCall('/category-images');
   },
 };
 

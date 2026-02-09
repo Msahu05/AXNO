@@ -52,6 +52,14 @@ const Admin = () => {
   const [sizeCharts, setSizeCharts] = useState([]);
   const [coupons, setCoupons] = useState([]);
   const [slideshow, setSlideshow] = useState([]);
+  const [categoryImages, setCategoryImages] = useState({
+    men: '',
+    women: '',
+    unisex: '',
+    new: '',
+    top: '',
+    special: ''
+  });
   const [isSequenceEditing, setIsSequenceEditing] = useState(false);
   const [sequencePositions, setSequencePositions] = useState({}); // { category: { productId: position } }
   const [selectedUser, setSelectedUser] = useState(null);
@@ -271,6 +279,8 @@ const Admin = () => {
       fetchCoupons();
     } else if (activeTab === 'slideshow') {
       fetchSlideshow();
+    } else if (activeTab === 'category-images') {
+      fetchCategoryImages();
     }
   }, [isAuthenticated, user, statusFilter, page, userPage, activeTab, checkingAdmin, authLoading]);
 
@@ -444,6 +454,179 @@ const Admin = () => {
         variant: 'destructive',
       });
       setSlideshow([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCategoryImages = async () => {
+    try {
+      setLoading(true);
+      try {
+        const response = await adminAPI.getCategoryImages();
+        if (response && response.categoryImages) {
+          setCategoryImages(response.categoryImages);
+          // Also save to localStorage as backup
+          localStorage.setItem('categoryImages', JSON.stringify(response.categoryImages));
+          return;
+        }
+      } catch (apiError) {
+        console.warn('Backend API not available, loading from localStorage:', apiError);
+      }
+      
+      // Fallback to localStorage if API fails
+      const stored = localStorage.getItem('categoryImages');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          setCategoryImages(parsed);
+          return;
+        } catch (e) {
+          console.error('Error parsing stored category images:', e);
+        }
+      }
+      
+      // Default empty state
+      setCategoryImages({
+        men: '',
+        women: '',
+        unisex: '',
+        new: '',
+        top: '',
+        special: ''
+      });
+    } catch (error) {
+      console.error('Error fetching category images:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load category images',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCategoryImageUpload = async (category, file) => {
+    if (!file) {
+      toast({
+        title: 'Error',
+        description: 'No file selected',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Error',
+        description: 'Please select an image file',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: 'Error',
+        description: 'Image size should be less than 5MB',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const reader = new FileReader();
+      
+      reader.onerror = () => {
+        console.error('Error reading file');
+        toast({
+          title: 'Error',
+          description: 'Failed to read image file',
+          variant: 'destructive',
+        });
+        setLoading(false);
+      };
+
+      reader.onloadend = async () => {
+        try {
+          const base64Image = reader.result;
+          if (!base64Image) {
+            throw new Error('Failed to convert image to base64');
+          }
+          
+          const updatedImages = {
+            ...categoryImages,
+            [category]: base64Image
+          };
+          
+          console.log('Uploading category image for:', category);
+          
+          // Try to save to backend, but also save to localStorage as fallback
+          try {
+            const response = await adminAPI.updateCategoryImages({ categoryImages: updatedImages });
+            console.log('Upload response:', response);
+          } catch (apiError) {
+            console.warn('Backend API not available, saving to localStorage:', apiError);
+            // Save to localStorage as fallback
+            localStorage.setItem('categoryImages', JSON.stringify(updatedImages));
+          }
+          
+          setCategoryImages(updatedImages);
+          toast({
+            title: 'Success',
+            description: `${category.charAt(0).toUpperCase() + category.slice(1)} category image updated`,
+          });
+        } catch (error) {
+          console.error('Error uploading category image:', error);
+          toast({
+            title: 'Error',
+            description: error.message || 'Failed to upload image. Please check if backend API is configured.',
+            variant: 'destructive',
+          });
+        } finally {
+          setLoading(false);
+        }
+      };
+      
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Error in handleCategoryImageUpload:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to upload image',
+        variant: 'destructive',
+      });
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveCategoryImage = async (category) => {
+    if (!window.confirm(`Are you sure you want to remove the ${category} category image?`)) {
+      return;
+    }
+    try {
+      setLoading(true);
+      const updatedImages = {
+        ...categoryImages,
+        [category]: ''
+      };
+      await adminAPI.updateCategoryImages({ categoryImages: updatedImages });
+      setCategoryImages(updatedImages);
+      toast({
+        title: 'Success',
+        description: `${category.charAt(0).toUpperCase() + category.slice(1)} category image removed`,
+      });
+    } catch (error) {
+      console.error('Error removing category image:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to remove image',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
@@ -1360,6 +1543,10 @@ const Admin = () => {
               <ImageIcon className="h-4 w-4" />
               Slideshow
             </TabsTrigger>
+            <TabsTrigger value="category-images" className="flex items-center gap-2">
+              <ImageIcon className="h-4 w-4" />
+              Category Images
+            </TabsTrigger>
           </TabsList>
 
           {/* Orders Tab */}
@@ -2156,6 +2343,116 @@ const Admin = () => {
                             </div>
                           </div>
                         </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Category Images Tab */}
+          <TabsContent value="category-images" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Category Background Images</CardTitle>
+                <p className="text-sm text-gray-600 mt-2">
+                  Upload background images for category cards on the home page
+                </p>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="text-center py-8">Loading category images...</div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {[
+                      { key: 'men', label: 'Men' },
+                      { key: 'women', label: 'Women' },
+                      { key: 'unisex', label: 'Unisex' },
+                      { key: 'new', label: 'New Products' },
+                      { key: 'top', label: 'Top Products' },
+                      { key: 'special', label: 'Looklyn Special' }
+                    ].map(({ key, label }) => (
+                      <div key={key} className="border rounded-lg p-4 space-y-3">
+                        <h3 className="font-semibold text-lg">{label}</h3>
+                        {categoryImages[key] ? (
+                          <div className="space-y-2">
+                            <img
+                              src={categoryImages[key].startsWith('data:') ? categoryImages[key] : getImageUrl(categoryImages[key])}
+                              alt={`${label} category`}
+                              className="w-full h-32 object-cover rounded border border-gray-200"
+                              onError={(e) => {
+                                e.target.src = 'https://via.placeholder.com/400x200';
+                              }}
+                            />
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  const fileInput = document.createElement('input');
+                                  fileInput.type = 'file';
+                                  fileInput.accept = 'image/*';
+                                  fileInput.onchange = async (event) => {
+                                    const file = event.target.files?.[0];
+                                    if (file) {
+                                      await handleCategoryImageUpload(key, file);
+                                    }
+                                  };
+                                  fileInput.onerror = (error) => {
+                                    console.error('File input error:', error);
+                                    toast({
+                                      title: 'Error',
+                                      description: 'Failed to open file picker',
+                                      variant: 'destructive',
+                                    });
+                                  };
+                                  fileInput.click();
+                                }}
+                                className="flex-1"
+                                disabled={loading}
+                              >
+                                <Upload className="h-4 w-4 mr-2" />
+                                Change Image
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleRemoveCategoryImage(key)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <div className="w-full h-32 bg-gray-100 rounded border border-gray-200 flex items-center justify-center">
+                              <p className="text-gray-400 text-sm">No image</p>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const fileInput = document.createElement('input');
+                                fileInput.type = 'file';
+                                fileInput.accept = 'image/*';
+                                fileInput.onchange = async (e) => {
+                                  const file = e.target.files[0];
+                                  if (file) {
+                                    await handleCategoryImageUpload(key, file);
+                                  }
+                                };
+                                fileInput.click();
+                              }}
+                              className="w-full"
+                            >
+                              <Upload className="h-4 w-4 mr-2" />
+                              Upload Image
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

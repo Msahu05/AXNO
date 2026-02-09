@@ -163,7 +163,7 @@ const FilteredProducts = () => {
               className="flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wider transition-all duration-200 bg-white dark:bg-[#2a2538] border border-gray-200 dark:border-white/10 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-600 text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400" 
               onClick={() => navigate(-1)}
             >
-              <ArrowLeft className="h-4 w-4" /> Back
+              <ArrowLeft className="h-4 w-4" />
             </button>
             <div>
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-heading font-bold text-gray-900 dark:text-white">{displayTitle}</h1>
@@ -173,13 +173,13 @@ const FilteredProducts = () => {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-4 rounded-[16px] border border-[rgba(47,37,64,0.08)] dark:border-white/10 bg-white dark:bg-[#2a2538] p-4 sm:p-6 shadow-[0_4px_16px_rgba(47,37,64,0.04)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.2)]">
-            <span className="font-body text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Filter by:</span>
+          <div className="flex flex-nowrap items-center gap-2 sm:gap-4 rounded-[16px] border border-[rgba(47,37,64,0.08)] dark:border-white/10 bg-white dark:bg-[#2a2538] p-2 sm:p-4 shadow-[0_4px_16px_rgba(47,37,64,0.04)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.2)] overflow-x-auto w-full max-w-full">
+            <span className="font-body text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap flex-shrink-0">Filter</span>
             {['all', 'unisex', 'men', 'women'].map((filter) => (
               <Button
                 key={filter}
                 variant={audienceFilter === filter ? "default" : "outline"}
-                className={`rounded-full font-body text-sm font-medium px-6 py-2 transition-all ${
+                className={`rounded-full font-body text-xs font-small px-2 sm:px-4 py-1.5 sm:py-2 transition-all flex-shrink-0 ${
                   audienceFilter === filter 
                     ? "bg-primary text-primary-foreground border-primary" 
                     : "bg-background dark:bg-[#2a2538] text-foreground dark:text-gray-300 border-border dark:border-white/20 hover:border-primary dark:hover:border-purple-500"
@@ -212,7 +212,7 @@ const FilteredProducts = () => {
             </div>
           ) : (
             <>
-              <div className="catalogue-product-grid w-full grid gap-3 sm:gap-4 md:gap-4 lg:gap-5 grid-cols-2 md:grid-cols-4">
+              <div className="catalogue-product-grid w-full grid gap-3 sm:gap-4 md:gap-4 lg:gap-8 xl:gap-10 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 lg:max-w-[1400px] lg:mx-auto">
                 {paginatedProducts.map((product) => {
                   const productUrl = product.slug ? `/product/${product.slug}` : `/product/${product.id}`;
                   return (

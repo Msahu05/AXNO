@@ -11,7 +11,10 @@ const Wishlist = () => {
 
   return (
     <div className="min-h-screen bg-muted">
-      <div className="mx-auto max-w-5xl px-4 py-8 sm:py-10 space-y-6">
+      <div className="mx-auto max-w-5xl px-4 py-12 sm:py-14 space-y-6">
+        <br/>
+        
+
         <div className="flex items-center justify-between gap-3">
           <Button
             variant="ghost"

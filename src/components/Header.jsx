@@ -55,12 +55,17 @@ const Header = () => {
           <Button
             variant="ghost"
             size="icon"
-            className="relative h-8 w-8 sm:h-9 sm:w-9 lg:h-10 lg:w-10 text-secondary-foreground hover:bg-secondary/40"
+            className={`group relative hover:bg-muted h-8 w-8 sm:h-9 sm:w-9 lg:h-10 lg:w-10 ${theme === 'dark' ? 'text-white' : 'text-black'} hover:!text-black`}
             aria-label="Wishlist"
             asChild
           >
-            <Link to="/wishlist">
+            <Link to="/wishlist" className="inline-flex">
               <Heart className="h-5 w-5 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-black stroke-[2.5]" style={{ color: theme === 'dark' ? '#ffffff' : '#000000' }} />
+              {wishlistCount > 0 && (
+                <span className={`absolute right-0 top-0 flex h-4 w-4 sm:h-4 sm:w-4 lg:h-5 lg:w-5 items-center justify-center rounded-full bg-background text-[9px] sm:text-[10px] lg:text-[11px] font-medium border border-background ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
+                  {wishlistCount > 9 ? '9+' : wishlistCount}
+                </span>
+              )}
             </Link>
           </Button>
           <Button

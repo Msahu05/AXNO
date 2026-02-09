@@ -177,8 +177,15 @@
   }
 }
 
-/* Desktop: 4 columns for product grids (768px+) - outside layer so it wins */
-@media (min-width: 768px) {
+/* Medium screens: 3 columns (768px-1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .catalogue-product-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Large screens: 4 columns (1024px+) - outside layer so it wins */
+@media (min-width: 1024px) {
   .catalogue-product-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
   }

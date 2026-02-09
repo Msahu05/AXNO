@@ -67,6 +67,7 @@ export function ProductCard({
 
   const handleWishlistClick = (e) => {
     e.preventDefault();
+    e.stopPropagation();
     if (inWishlist) {
       removeItem(id);
     } else {
@@ -283,7 +284,7 @@ export function ProductCard({
           onClick={handleWishlistClick}
           style={{ 
             pointerEvents: 'auto',
-            backgroundColor: inWishlist ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255, 255, 255, 0.3)',
+            backgroundColor: inWishlist ? 'rgba(220, 38, 38, 0.7)' : 'rgba(255, 255, 255, 0.3)', // brighter red with higher opacity
             backdropFilter: 'blur(4px)'
           }}
         >
@@ -291,7 +292,7 @@ export function ProductCard({
             className={cn(
               "h-6 w-6 transition-all duration-300",
               inWishlist 
-                ? "fill-red-600 text-red-600 stroke-red-600" 
+                ? "fill-red-500 text-red-500 stroke-red-500" // bright red
                 : "fill-white text-white stroke-gray-900"
             )}
             strokeWidth={2.5}
@@ -302,12 +303,6 @@ export function ProductCard({
           />
         </button>
 
-        {/* Discount badge */}
-        {originalPrice && (
-          <span className="absolute left-2 top-2 sm:left-2.5 sm:top-2.5 rounded-sm bg-primary px-1.5 py-0.5 sm:px-2 sm:py-0.5 text-[8px] sm:text-[9px] lg:text-[10px] font-semibold text-primary-foreground leading-none">
-            -{Math.round(((originalPrice - price) / originalPrice) * 100)}%
-          </span>
-        )}
       </div>
 
       <div className="p-2 sm:p-3 lg:p-2 flex flex-col flex-grow w-full overflow-hidden min-h-[120px] lg:min-h-[100px]" style={{ width: '100%', flex: '1 1 auto' }}>
