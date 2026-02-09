@@ -1165,20 +1165,20 @@ const Product = () => {
                 Why You Will Love This Product:
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 md:gap-5">
-                <div className="flex items-start gap-1 sm:gap-3">
-                  <CheckCircle2 className="h-2 w-2 sm:h-4 sm:w-4 md:h-5 md:w-5 text-gray-600 flex-shrink-0 mt-0.5" style={{ color: '#4B5563' }} />
+                <div className="flex items-center gap-1 sm:gap-3">
+                  <CheckCircle2 className="h-2 w-2 sm:h-4 sm:w-4 md:h-5 md:w-5 text-gray-600 flex-shrink-0" style={{ color: '#4B5563' }} />
                   <p className="text-[7px] sm:text-xs md:text-sm text-muted-foreground" style={{ fontSize: '0.7rem' }}>Thick Long Lasting Fabric</p>
                 </div>
-                <div className="flex items-start gap-1 sm:gap-3">
-                  <CheckCircle2 className="h-2 w-2 sm:h-4 sm:w-4 md:h-5 md:w-5 text-gray-600 flex-shrink-0 mt-0.5" style={{ color: '#4B5563' }} />
+                <div className="flex items-center gap-1 sm:gap-3">
+                  <CheckCircle2 className="h-2 w-2 sm:h-4 sm:w-4 md:h-5 md:w-5 text-gray-600 flex-shrink-0" style={{ color: '#4B5563' }} />
                   <p className="text-[7px] sm:text-xs md:text-sm text-muted-foreground" style={{ fontSize: '0.7rem' }}>Long Lasting Print</p>
                 </div>
-                <div className="flex items-start gap-1 sm:gap-3">
-                  <CheckCircle2 className="h-2 w-2 sm:h-4 sm:w-4 md:h-5 md:w-5 text-gray-600 flex-shrink-0 mt-0.5" style={{ color: '#4B5563' }} />
+                <div className="flex items-center gap-1 sm:gap-3">
+                  <CheckCircle2 className="h-2 w-2 sm:h-4 sm:w-4 md:h-5 md:w-5 text-gray-600 flex-shrink-0" style={{ color: '#4B5563' }} />
                   <p className="text-[7px] sm:text-xs md:text-sm text-muted-foreground" style={{ fontSize: '0.7rem' }}>Oversized Street Fit</p>
                 </div>
-                <div className="flex items-start gap-1 sm:gap-3">
-                  <CheckCircle2 className="h-2 w-2 sm:h-4 sm:w-4 md:h-5 md:w-5 text-gray-600 flex-shrink-0 mt-0.5" style={{ color: '#4B5563' }} />
+                <div className="flex items-center gap-1 sm:gap-3">
+                  <CheckCircle2 className="h-2 w-2 sm:h-4 sm:w-4 md:h-5 md:w-5 text-gray-600 flex-shrink-0" style={{ color: '#4B5563' }} />
                   <p className="text-[7px] sm:text-xs md:text-sm text-muted-foreground" style={{ fontSize: '0.7rem' }}>Printed Only After You Order</p>
                 </div>
               </div>
