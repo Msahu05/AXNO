@@ -191,6 +191,55 @@
   }
 }
 
+/* Related Products - Force equal card and image sizes */
+.related-product-card-wrapper {
+  height: auto !important;
+  min-height: 340px !important;
+  overflow: visible !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.related-product-container {
+  width: 100%;
+  flex: 1;
+  min-height: 180px;
+}
+
+.related-product-wrapper {
+  height: 100% !important;
+}
+
+.related-product-wrapper > div:first-child {
+  height: 100% !important;
+  min-height: 180px !important;
+}
+
+.related-product-wrapper > div:first-child > div:first-child {
+  aspect-ratio: 1 / 1 !important;
+  height: 100% !important;
+  min-height: 180px !important;
+  width: 100% !important;
+}
+
+/* Override ProductCard aspect ratio for related products - square images */
+.related-product-wrapper [class*="aspect-square"],
+.related-product-wrapper [class*="aspect-"],
+.related-product-wrapper div[class*="aspect-square"],
+.related-product-wrapper div[class*="aspect-"] {
+  aspect-ratio: 1 / 1 !important;
+  height: 100% !important;
+  min-height: 180px !important;
+}
+
+/* Force the image container div to be square */
+.related-product-wrapper > div:first-child > div:first-child > div:first-child {
+  aspect-ratio: 1 / 1 !important;
+  height: 100% !important;
+  min-height: 180px !important;
+  width: 100% !important;
+}
+
 /* Smooth transitions for theme changes */
 * {
   transition: background-color 0.3s ease, border-color 0.3s ease, color 0.2s ease;

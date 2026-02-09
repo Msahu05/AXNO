@@ -16,7 +16,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useWishlist } from "@/contexts/wishlist-context";
 import { toast } from "@/hooks/use-toast";
 
-const ITEMS_PER_PAGE = 12;
+const ITEMS_PER_PAGE = 16;
 
 const Category = () => {
   const { category } = useParams();
@@ -66,6 +66,8 @@ const Category = () => {
     const loadProducts = async () => {
       try {
         setLoading(true);
+        // Reset filter to 'all' when category changes
+        setAudienceFilter('all');
         // For special category, use filter='special' to get only special products
         const response = isSpecial 
           ? await productsAPI.getAll({ filter: 'special' })
@@ -90,13 +92,18 @@ const Category = () => {
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
+    // Always reset to 'all' when page/route changes, don't cache filter state
     const filter = searchParams.get("filter");
     if (filter && ["men", "women", "unisex"].includes(filter)) {
       setAudienceFilter(filter);
     } else {
       setAudienceFilter('all');
+      // Remove filter from URL if it's not valid
+      if (searchParams.get("filter")) {
+        navigate(`/category/${category}`, { replace: true });
+      }
     }
-  }, [searchParams]);
+  }, [searchParams, category, navigate]);
 
   const filteredProducts = useMemo(() => {
     // API already filters by category, so allProducts contains only this category's products
@@ -124,7 +131,9 @@ const Category = () => {
 
   useEffect(() => {
     setCurrentPage(1); // Reset to page 1 when filter changes
-  }, [audienceFilter, categoryName]);
+    // Reset filter to 'all' when category changes (new page)
+    setAudienceFilter('all');
+  }, [audienceFilter, categoryName, category]);
 
   // Scroll to top when page changes
   useEffect(() => {
@@ -190,14 +199,14 @@ const Category = () => {
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 sm:gap-4 rounded-[16px] border border-[rgba(47,37,64,0.08)] dark:border-white/10 bg-white dark:bg-[#2a2538] p-3 sm:p-4 lg:p-6 shadow-[0_4px_16px_rgba(47,37,64,0.04)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.2)]">
-          <span className="font-body text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-normal whitespace-nowrap">Filter by:</span>
-          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 lg:gap-3">
+        <div className="flex flex-nowrap items-center gap-2 sm:gap-4 rounded-[16px] border border-[rgba(47,37,64,0.08)] dark:border-white/10 bg-white dark:bg-[#2a2538] p-2 sm:p-4 shadow-[0_4px_16px_rgba(47,37,64,0.04)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.2)] overflow-x-auto w-full max-w-full">
+          <span className="font-body text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap flex-shrink-0">Filter</span>
+          <div className="flex flex-nowrap items-center gap-2 sm:gap-4 flex-1">
             {['all', 'unisex', 'men', 'women'].map((filter) => (
               <Button
                 key={filter}
                 variant={audienceFilter === filter ? "default" : "outline"}
-                className={`rounded-full font-body text-xs sm:text-sm font-medium px-3 py-1 sm:px-6 sm:py-2 transition-all tracking-normal ${
+                className={`rounded-full font-body text-xs font-small px-2 sm:px-4 py-1.5 sm:py-2 transition-all flex-shrink-0 flex-1 min-w-0 ${
                   audienceFilter === filter 
                     ? "bg-primary text-primary-foreground border-primary" 
                     : "bg-background dark:bg-[#2a2538] text-foreground dark:text-gray-300 border-border dark:border-white/20 hover:border-primary dark:hover:border-purple-500"

@@ -890,86 +890,6 @@ const Home = () => {
           </div>
         </section>
 
-        <div className="border-t border-border/50 my-6 sm:my-8 lg:my-12"></div>
-
-        {/* Text Section - Made For You, Designed By You - Only visible on small screens (below md) */}
-        <section className="md:hidden space-y-6 sm:space-y-8 rounded-[28px] sm:rounded-[40px] lg:rounded-[56px] border border-border dark:border-white/15 bg-[#9ca3af] p-6 sm:p-8 lg:p-10 shadow-[var(--shadow-soft)]">
-          <div className="flex flex-col items-start justify-center space-y-4 sm:space-y-6">
-            {/* Top Banner */}
-            <div className="inline-flex w-fit items-center gap-1 rounded-lg bg-secondary px-3 py-1.5 sm:px-4 sm:py-2 text-base sm:text-lg md:text-xl font-bold text-secondary-foreground">
-              Looklyn - Own The Look
-            </div>
-
-            {/* Headline */}
-            <h2 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight tracking-tight">
-              <span className="text-foreground">Made For You,</span>
-              <br />
-              <span className="text-foreground">Designed By You!!</span>
-            </h2>
-
-            {/* Description */}
-            <p className="max-w-2xl text-sm sm:text-base text-muted-foreground leading-relaxed">
-              Built by a young mind, driven by bold ideas.
-              <br />
-              Made for people who don't follow trends — they create them.
-              <br />
-              Your design. Your vibe. Your look.
-            </p>
-
-            {/* CTA Buttons */}
-            <div className="flex flex-wrap gap-3 sm:gap-4 pt-2">
-              <Button 
-                size="lg" 
-                className="gap-2 bg-secondary hover:bg-secondary/90 text-secondary-foreground shadow-soft hover:shadow-elevated rounded-lg px-4 sm:px-6 py-3 sm:py-6 text-sm sm:text-base"
-                onClick={() => navigate('/category/hoodies')}
-              >
-                Shop Now
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant="outline" 
-                size="lg"
-                className="border-2 border-secondary bg-transparent hover:bg-accent hover:text-accent-foreground text-foreground rounded-lg px-4 sm:px-6 py-3 sm:py-6 text-sm sm:text-base"
-                onClick={() => document.getElementById('custom')?.scrollIntoView({ behavior: 'smooth' })}
-              >
-                Learn More
-              </Button>
-            </div>
-
-            {/* Features */}
-            <div className="flex flex-wrap gap-4 sm:gap-6 pt-4 sm:pt-6 w-full">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-secondary flex-shrink-0">
-                  <Truck className="h-4 w-4 sm:h-5 sm:w-5 text-secondary-foreground" />
-                </div>
-                <div>
-                  <p className="text-sm sm:text-base font-semibold text-foreground">Free Shipping</p>
-                  <p className="text-xs text-muted-foreground">All Over India</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-secondary flex-shrink-0">
-                  <Headphones className="h-4 w-4 sm:h-5 sm:w-5 text-secondary-foreground" />
-                </div>
-                <div>
-                  <p className="text-sm sm:text-base font-semibold text-foreground">24/7 WhatsApp Support</p>
-                  <p className="text-xs text-muted-foreground">Always here to help</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-secondary flex-shrink-0">
-                  <Shirt className="h-4 w-4 sm:h-5 sm:w-5 text-secondary-foreground" />
-                </div>
-                <div>
-                  <p className="text-sm sm:text-base font-semibold text-foreground">Printed After Order</p>
-                  <p className="text-xs text-muted-foreground">Made just for you</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <div className="border-t border-border/50 my-6 sm:my-8 lg:my-12"></div>
 
         <section id="custom" className="space-y-4 sm:space-y-6 rounded-[28px] sm:rounded-[40px] lg:rounded-[56px] border border-border dark:border-white/15 bg-[#9ca3af] p-4 sm:p-5 lg:p-10 shadow-[var(--shadow-soft)]">
           <div className="space-y-5">
@@ -978,43 +898,43 @@ const Home = () => {
               {/* <h3 className="text-3xl font-black mb-8">Built for quality</h3> */}
             </div>
             
-            <div className="flex flex-wrap gap-3 justify-center">
-              <div className="flex flex-col items-center text-center gap-4 rounded-[28px] border border-border dark:border-white/20 bg-[#9ca3af] p-6 transition-all min-w-[200px] flex-1 max-w-[250px]">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              <div className="flex flex-col items-center text-center gap-4 rounded-[28px] border border-border dark:border-white/20 bg-[#9ca3af] p-4 sm:p-6 transition-all">
                 <div className="rounded-2xl bg-secondary p-4 text-secondary-foreground">
                   <Leaf className="h-6 w-6" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-lg mb-1 text-foreground">Eco-Friendly Materials</h4>
+                  <h4 className="font-semibold text-sm sm:text-lg mb-1 text-foreground">Eco-Friendly Materials</h4>
                   {/* <p className="text-sm text-muted-foreground">Eco pigment + puff + reflective inks for sustainable fashion.</p> */}
                 </div>
               </div>
               
-              <div className="flex flex-col items-center text-center gap-4 rounded-[28px] border border-border dark:border-white/20 bg-[#9ca3af] p-6 transition-all min-w-[200px] flex-1 max-w-[250px]">
+              <div className="flex flex-col items-center text-center gap-4 rounded-[28px] border border-border dark:border-white/20 bg-[#9ca3af] p-4 sm:p-6 transition-all">
                 <div className="rounded-2xl bg-secondary p-4 text-secondary-foreground">
                   <Zap className="h-6 w-6" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-lg mb-1 text-foreground">Lightning Fast</h4>
+                  <h4 className="font-semibold text-sm sm:text-lg mb-1 text-foreground">Lightning Fast</h4>
                   {/* <p className="text-sm text-muted-foreground">Saved addresses & reorder within 30 seconds.</p> */}
                 </div>
               </div>
               
-              <div className="flex flex-col items-center text-center gap-4 rounded-[28px] border border-border dark:border-white/20 bg-[#9ca3af] p-6 transition-all min-w-[200px] flex-1 max-w-[250px]">
+              <div className="flex flex-col items-center text-center gap-4 rounded-[28px] border border-border dark:border-white/20 bg-[#9ca3af] p-4 sm:p-6 transition-all">
                 <div className="rounded-2xl bg-secondary p-4 text-secondary-foreground">
                   <Sparkles className="h-6 w-6" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-lg mb-1 text-foreground">High Quality DTF Stickers</h4>
+                  <h4 className="font-semibold text-sm sm:text-lg mb-1 text-foreground">High Quality DTF Stickers</h4>
                   {/* <p className="text-sm text-muted-foreground">Wishlist syncs everywhere after login.</p> */}
                 </div>
               </div>
               
-              <div className="flex flex-col items-center text-center gap-4 rounded-[28px] border border-border dark:border-white/20 bg-[#9ca3af] p-6 transition-all min-w-[200px] flex-1 max-w-[250px]">
+              <div className="flex flex-col items-center text-center gap-4 rounded-[28px] border border-border dark:border-white/20 bg-[#9ca3af] p-4 sm:p-6 transition-all">
                 <div className="rounded-2xl bg-secondary p-4 text-secondary-foreground">
                   <Award className="h-6 w-6" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-lg mb-1 text-foreground">Premium Quality</h4>
+                  <h4 className="font-semibold text-sm sm:text-lg mb-1 text-foreground">Premium Quality</h4>
                   {/* <p className="text-sm text-muted-foreground">Color-calibrated proofs and stitch maps before production.</p> */}
                 </div>
               </div>

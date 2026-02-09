@@ -1656,34 +1656,42 @@ const Product = () => {
                   }}
                   className="w-full relative"
                 >
-                  <CarouselContent className="-ml-4 sm:-ml-5 md:-ml-7 lg:-ml-10">
+                  <CarouselContent className="-ml-4 sm:-ml-5 md:-ml-7 lg:-ml-10 flex items-stretch">
                     {related.slice(0, 10).map((item, index) => (
                       <CarouselItem
                         key={item.id}
-                        className="pl-4 sm:pl-5 md:pl-7 lg:pl-10 basis-[45%] sm:basis-[40%] md:basis-[38%] lg:basis-[35%] flex-shrink-0"
+                        className="pl-4 sm:pl-5 md:pl-7 lg:pl-10 basis-[45%] sm:basis-[40%] md:basis-[38%] lg:basis-[35%] flex-shrink-0 flex items-stretch"
                       >
                         <div
-                          className="animate-fade-in h-full w-full max-w-[200px] sm:max-w-[220px] md:max-w-[240px] lg:max-w-[260px] mx-auto"
+                          className="animate-fade-in w-full related-product-card-wrapper"
                           style={{
                             animationDelay: `${index * 0.1}s`,
                             display: "flex",
-                            alignItems: "stretch",
+                            flexDirection: "column",
+                            height: 'auto',
+                            minHeight: '340px',
+                            width: '100%',
+                            maxWidth: '100%',
                           }}
                         >
-                          <div className="w-full h-full">
-                            <ProductCard
-                              id={item.id}
-                              name={item.name}
-                              category={item.category}
-                              price={item.price}
-                              originalPrice={item.original || item.originalPrice}
-                              image={getImageUrl(
-                                Array.isArray(item.gallery)
-                                  ? item.gallery[0]
-                                  : item.gallery || item.image
-                              )}
-                              rating={4.8}
-                            />
+                          <div className="w-full related-product-container flex-1" style={{ aspectRatio: '1 / 1', minHeight: '180px' }}>
+                            <div className="w-full h-full related-product-wrapper" style={{ height: '100%' }}>
+                              <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                                <ProductCard
+                                  id={item.id}
+                                  name={item.name}
+                                  category={item.category}
+                                  price={item.price}
+                                  originalPrice={item.original || item.originalPrice}
+                                  image={getImageUrl(
+                                    Array.isArray(item.gallery)
+                                      ? item.gallery[0]
+                                      : item.gallery || item.image
+                                  )}
+                                  rating={4.8}
+                                />
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </CarouselItem>

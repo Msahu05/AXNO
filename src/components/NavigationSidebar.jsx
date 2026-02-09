@@ -68,19 +68,19 @@ const navItems = [
     items: [
       {
         title: "Men",
-        url: "/category/hoodies?filter=men",
+        url: "/filter/all?filter=men",
         icon: User,
         scrollTo: null,
       },
       {
         title: "Women",
-        url: "/category/hoodies?filter=women",
+        url: "/filter/all?filter=women",
         icon: User,
         scrollTo: null,
       },
       {
         title: "Unisex",
-        url: "/category/hoodies?filter=unisex",
+        url: "/filter/all?filter=unisex",
         icon: User,
         scrollTo: null,
       },
@@ -263,8 +263,8 @@ export function NavigationSidebar() {
                     <Select
                       value={currentGenderFilter}
                       onValueChange={(value) => {
-                        const base = getBaseCategoryPath();
-                        navigate(`${base}?filter=${value}`);
+                        // Navigate to all products page with gender filter
+                        navigate(`/filter/all?filter=${value}`);
                         if (isMobile) setOpenMobile(false);
                         else setOpen(false);
                       }}

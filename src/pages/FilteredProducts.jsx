@@ -9,9 +9,13 @@ import { useAuth } from "@/contexts/auth-context";
 import { useWishlist } from "@/contexts/wishlist-context";
 import { toast } from "@/hooks/use-toast";
 
-const ITEMS_PER_PAGE = 12;
+const ITEMS_PER_PAGE = 16;
 
 const filterConfig = {
+  all: {
+    title: "All Products",
+    description: "Browse all our products",
+  },
   new: {
     title: "New Arrivals",
     description: "Check out our latest products",
@@ -50,7 +54,10 @@ const FilteredProducts = () => {
     const loadProducts = async () => {
       try {
         setLoading(true);
-        const params = { filter: filterType };
+        // Reset filter to 'all' when filterType changes (new page) - don't cache
+        setAudienceFilter('all');
+        // For "all" filter type, don't pass any filter to get all products
+        const params = filterType === 'all' ? {} : { filter: filterType };
         const response = await productsAPI.getAll(params);
         const products = response.products || [];
         console.log('Loaded products:', products.length, 'for filter:', filterType);
@@ -75,13 +82,18 @@ const FilteredProducts = () => {
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
+    // Always reset to 'all' when page/route changes, don't cache filter state
     const filter = searchParams.get("filter");
     if (filter && ["men", "women", "unisex"].includes(filter)) {
       setAudienceFilter(filter);
     } else {
       setAudienceFilter('all');
+      // Remove filter from URL if it's not valid
+      if (searchParams.get("filter")) {
+        navigate(`/filter/${filterType}`, { replace: true });
+      }
     }
-  }, [searchParams]);
+  }, [searchParams, filterType, navigate]);
 
   const filteredProducts = useMemo(() => {
     let products = [...allProducts];
@@ -179,7 +191,7 @@ const FilteredProducts = () => {
               <Button
                 key={filter}
                 variant={audienceFilter === filter ? "default" : "outline"}
-                className={`rounded-full font-body text-xs font-small px-2 sm:px-4 py-1.5 sm:py-2 transition-all flex-shrink-0 ${
+                className={`rounded-full font-body text-xs font-small px-2 sm:px-4 py-1.5 sm:py-2 transition-all flex-shrink-0 flex-1 min-w-0 ${
                   audienceFilter === filter 
                     ? "bg-primary text-primary-foreground border-primary" 
                     : "bg-background dark:bg-[#2a2538] text-foreground dark:text-gray-300 border-border dark:border-white/20 hover:border-primary dark:hover:border-purple-500"
