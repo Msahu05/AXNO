@@ -40,8 +40,8 @@ const looklynLogoLight = "/looklyn-logo-white.jpg";
 const looklynLogoDark = "/looklyn-logo-dark.jpg";
 
 const categories = [
-  { title: "Hoodies", url: "/category/hoodies", icon: Layers },
   { title: "T-Shirts", url: "/category/t-shirts", icon: Layers },
+  { title: "Hoodies", url: "/category/hoodies", icon: Layers },
   { title: "Sweatshirts", url: "/category/sweatshirts", icon: Layers },
 ];
 
@@ -96,22 +96,34 @@ const navItems = [
         scrollTo: "catalogue",
         queryParams: null, // Explicitly clear filter
       },
-      ...categories.map(cat => ({
-        title: cat.title,
-        url: cat.url,
-        icon: cat.icon,
+      {
+        title: "The Looklyn Special",
+        url: "/category/special",
+        icon: Crown,
         scrollTo: null,
-      })),
+      },
+      {
+        title: "T-Shirts",
+        url: "/category/t-shirts",
+        icon: Layers,
+        scrollTo: null,
+      },
+      {
+        title: "Hoodies",
+        url: "/category/hoodies",
+        icon: Layers,
+        scrollTo: null,
+      },
+      {
+        title: "Sweatshirts",
+        url: "/category/sweatshirts",
+        icon: Layers,
+        scrollTo: null,
+      },
       {
         title: "New Arrivals",
         url: "/filter/new",
         icon: Star,
-        scrollTo: null,
-      },
-      {
-        title: "Hot Products",
-        url: "/filter/hot",
-        icon: Flame,
         scrollTo: null,
       },
       {
@@ -127,9 +139,9 @@ const navItems = [
         scrollTo: null,
       },
       {
-        title: "Looklyn Special",
-        url: "/category/special",
-        icon: Crown,
+        title: "Hot Products",
+        url: "/filter/hot",
+        icon: Flame,
         scrollTo: null,
       },
     ],
