@@ -10,6 +10,8 @@ const Cart = () => {
   if (items.length === 0) {
     return (
       <div className="min-h-screen bg-muted">
+        <br/>
+        <br/>
         <div className="mx-auto max-w-4xl px-4 py-6 sm:py-10">
           <div className="rounded-2xl border border-border bg-card p-6 sm:p-12 shadow-soft text-center">
             <h2 className="text-2xl sm:text-3xl font-black mb-3 sm:mb-4">Your cart is empty</h2>
@@ -27,6 +29,8 @@ const Cart = () => {
 
   return (
     <div className="min-h-screen bg-muted">
+      <br/>
+      <br/>
       <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
         <div className="mx-auto max-w-6xl space-y-6 sm:space-y-8">
         <div className="flex items-center gap-2 sm:gap-4">

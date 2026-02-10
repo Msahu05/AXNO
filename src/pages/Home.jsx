@@ -518,7 +518,7 @@ const Home = () => {
                         <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors duration-300" />
                       )}
                       <div className="text-center p-4 sm:p-6 z-10 relative">
-                        <h3 className="text-xl xl:text-2xl font-black text-white uppercase tracking-wide drop-shadow-lg">
+                        <h3 className="text-xl xl:text-2xl font-black text-white group-hover:text-black uppercase tracking-wide drop-shadow-lg">
                           New Products
                         </h3>
                       </div>
@@ -555,7 +555,7 @@ const Home = () => {
                         <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors duration-300" />
                       )}
                       <div className="text-center p-4 sm:p-6 z-10 relative">
-                        <h3 className="text-xl xl:text-2xl font-black text-white uppercase tracking-wide drop-shadow-lg">
+                        <h3 className="text-xl xl:text-2xl font-black text-white group-hover:text-black uppercase tracking-wide drop-shadow-lg">
                           Top Products
                         </h3>
                       </div>
@@ -669,7 +669,7 @@ const Home = () => {
                       <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors duration-300" />
                     )}
                     <div className="text-center p-4 sm:p-6 z-10 relative">
-                      <h3 className="text-base sm:text-lg md:text-xl font-black text-white uppercase tracking-wide drop-shadow-lg">
+                      <h3 className="text-base sm:text-lg md:text-xl font-black text-white group-hover:text-black uppercase tracking-wide drop-shadow-lg">
                         New Products
                       </h3>
                     </div>
@@ -706,7 +706,7 @@ const Home = () => {
                       <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors duration-300" />
                     )}
                     <div className="text-center p-4 sm:p-6 z-10 relative">
-                      <h3 className="text-base sm:text-lg md:text-xl font-black text-white uppercase tracking-wide drop-shadow-lg">
+                      <h3 className="text-base sm:text-lg md:text-xl font-black text-white group-hover:text-black uppercase tracking-wide drop-shadow-lg">
                         Top Products
                       </h3>
                     </div>
@@ -741,7 +741,7 @@ const Home = () => {
                       <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors duration-300" />
                     )}
                     <div className="text-center p-4 sm:p-6 z-10 relative">
-                      <h3 className="text-base sm:text-lg md:text-xl font-black text-white uppercase tracking-wide drop-shadow-lg">
+                      <h3 className="text-base sm:text-lg md:text-xl font-black text-white group-hover:text-black uppercase tracking-wide drop-shadow-lg">
                         Customised Products
                       </h3>
                     </div>
@@ -779,7 +779,7 @@ const Home = () => {
                     )}
                     <div className="text-center p-4 sm:p-6 z-10 relative">
                       <h3 className="text-base sm:text-lg md:text-xl font-black text-white uppercase tracking-wide drop-shadow-lg">
-                        Looklyn Special
+                        The Looklyn Special
                       </h3>
                     </div>
                   </div>

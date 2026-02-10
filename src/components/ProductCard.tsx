@@ -30,14 +30,14 @@ const ProductCard = memo(({ id, name, category, price, originalPrice, image, acc
           style={{ objectFit: "cover", width: "100%", height: "100%" }}
         />
         <button
-          className="absolute right-4 top-4 rounded-full bg-background/70 p-2 text-foreground backdrop-blur hover:text-primary"
+          className="absolute right-4 top-4 p-2 text-white hover:text-red-500 transition-colors"
           aria-label="Add to wishlist"
           onClick={(event) => {
             event.stopPropagation();
             onWishlist?.(id);
           }}
         >
-          <Heart className="h-5 w-5" />
+          <Heart className="h-5 w-5 stroke-[2.3] [color:inherit]" />
         </button>
       </div>
 

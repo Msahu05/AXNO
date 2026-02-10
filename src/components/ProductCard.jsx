@@ -277,28 +277,27 @@ export function ProductCard({
         </div>
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 pointer-events-none" />
         
-        {/* Wishlist icon - Always visible */}
+        {/* Wishlist icon - Always visible (no circular background, only heart color) */}
         <button
           type="button"
-          className="absolute right-2 top-2 z-10 cursor-pointer p-1 rounded-full hover:bg-white/20 transition-colors"
+          className="absolute right-2 top-2 z-10 cursor-pointer p-1 transition-colors"
           onClick={handleWishlistClick}
           style={{ 
-            pointerEvents: 'auto',
-            backgroundColor: inWishlist ? 'rgba(220, 38, 38, 0.7)' : 'rgba(255, 255, 255, 0.3)', // brighter red with higher opacity
-            backdropFilter: 'blur(4px)'
+            pointerEvents: 'auto'
           }}
         >
           <Heart
             className={cn(
               "h-6 w-6 transition-all duration-300",
               inWishlist 
-                ? "fill-red-500 text-red-500 stroke-red-500" // bright red
-                : "fill-white text-white stroke-gray-900"
+                ? "fill-red-500 text-red-500 stroke-red-500"
+                : "fill-transparent text-white stroke-white"
             )}
             strokeWidth={2.5}
             style={{ 
               display: 'block',
-              filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8))'
+              filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8))',
+              fill: inWishlist ? "#ef4444" : "transparent"
             }}
           />
         </button>

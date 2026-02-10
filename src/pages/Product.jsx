@@ -704,6 +704,7 @@ const Product = () => {
       <main className="w-full overflow-x-hidden pt-16 sm:pt-20 md:pt-24 lg:pt-28 pb-2 sm:pb-0 md:pb-6 lg:pb-8" style={{ maxWidth: '100vw', boxSizing: 'border-box' }}>
         <br/>
         <br/>
+        <p/>
         <div className="grid gap-2 sm:gap-6 md:gap-8 lg:gap-12 xl:gap-16 lg:grid-cols-2 w-full mx-auto" style={{ maxWidth: '100%', boxSizing: 'border-box' }}>
           {/* Product Images */}
           <div className="space-y-1 sm:space-y-4 md:space-y-6 w-full max-w-full overflow-hidden" style={{ maxWidth: '100%', boxSizing: 'border-box' }}>
@@ -875,13 +876,25 @@ const Product = () => {
                 </h1>
                 <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0">
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="icon"
-                    className={cn("flex-shrink-0 h-6 w-6 sm:h-10 sm:w-10 md:h-12 md:w-12", inWishlist && "border-gray-500 text-gray-500")}
+                    className="flex-shrink-0 h-6 w-6 sm:h-8 sm:w-8 md:h-9 md:w-9 bg-transparent hover:bg-transparent p-0"
                     onClick={handleWishlist}
                   >
                     <Heart
-                      className={cn("h-3 w-3 sm:h-6 sm:w-6 md:h-7 md:w-7", inWishlist && "fill-gray-500")}
+                      className={cn(
+                        "h-4 w-4 sm:h-7 sm:w-7 md:h-8 md:w-8 transition-all duration-300",
+                        inWishlist
+                          ? "fill-red-500 text-red-500 stroke-red-500"
+                          : ""
+                      )}
+                      strokeWidth={2.3}
+                      style={{
+                        display: "block",
+                        fill: inWishlist ? "#ef4444" : "transparent",
+                        stroke: inWishlist ? "#ef4444" : "#000000",
+                        color: inWishlist ? "#ef4444" : "#000000",
+                      }}
                     />
                   </Button>
                 </div>
@@ -1161,10 +1174,10 @@ const Product = () => {
 
             {/* Why You Will Love This Product */}
             <div className="mt-4 sm:mt-6 md:mt-8 rounded-lg sm:rounded-xl border border-border dark:border-white/15 bg-muted/30 dark:bg-card/50 p-2 sm:p-5 md:p-6 lg:p-8 mx-auto w-[calc(100%-1.5rem)] sm:w-full max-w-none sm:max-w-[75%]">
-              <h3 className="text-[8px] sm:text-sm md:text-base lg:text-lg font-semibold text-foreground mb-2 sm:mb-4 md:mb-6" style={{ fontSize: '0.75rem' }}>
+              <h2 className="text-[14px] sm:text-lg md:text-base lg:text-lg font-semibold text-foreground mb-2 sm:mb-4 md:mb-6" style={{ fontSize: '1rem' }}>
                 Why You Will Love This Product:
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 md:gap-5">
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 md:gap-5 pl-4 sm:pl-6 md:pl-8">
                 <div className="flex items-center gap-1 sm:gap-3">
                   <CheckCircle2 className="h-2 w-2 sm:h-4 sm:w-4 md:h-5 md:w-5 text-gray-600 flex-shrink-0" style={{ color: '#4B5563' }} />
                   <p className="text-[7px] sm:text-xs md:text-sm text-muted-foreground" style={{ fontSize: '0.7rem' }}>Thick Long Lasting Fabric</p>

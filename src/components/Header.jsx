@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { User, Menu, Heart, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/components/ui/sidebar";
@@ -18,6 +18,12 @@ const Header = () => {
   const { toggleSidebar } = useSidebar();
   const { itemCount: wishlistCount = 0 } = useWishlist();
   const { itemCount: cartCount = 0 } = useCart();
+  const location = useLocation();
+
+  const pathname = location.pathname || "/";
+  const isWishlistActive = pathname.startsWith("/wishlist");
+  const isCartActive = pathname.startsWith("/cart");
+  const isAuthActive = pathname.startsWith("/auth");
 
   return (
         <header className="fixed top-0 left-0 right-0 z-[100] w-full m-0 backdrop-blur-md" style={{ backgroundColor: theme === 'dark' ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)', position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100 }}>
@@ -55,14 +61,27 @@ const Header = () => {
           <Button
             variant="ghost"
             size="icon"
-            className={`group relative hover:bg-muted h-8 w-8 sm:h-9 sm:w-9 lg:h-10 lg:w-10 ${theme === 'dark' ? 'text-white' : 'text-black'} hover:!text-black`}
+            className={`group relative h-8 w-8 sm:h-9 sm:w-9 lg:h-10 lg:w-10 rounded-xl border border-transparent transition-colors ${
+              isWishlistActive
+                ? 'bg-gray-700 text-white'
+                : theme === 'dark'
+                  ? 'text-white hover:bg-gray-700/70'
+                  : 'text-black hover:bg-gray-100'
+            }`}
             aria-label="Wishlist"
             asChild
           >
             <Link to="/wishlist" className="inline-flex">
-              <Heart className="h-5 w-5 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-black stroke-[2.5]" style={{ color: theme === 'dark' ? '#ffffff' : '#000000' }} />
+              <Heart className="h-5 w-5 sm:h-5 sm:w-5 lg:h-6 lg:w-6 stroke-[2.5] [color:inherit]" />
               {wishlistCount > 0 && (
-                <span className={`absolute right-0 top-0 flex h-4 w-4 sm:h-4 sm:w-4 lg:h-5 lg:w-5 items-center justify-center rounded-full bg-background text-[9px] sm:text-[10px] lg:text-[11px] font-medium border border-background ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
+                <span
+                  className="absolute right-0 top-0 flex h-4 w-4 sm:h-4 sm:w-4 lg:h-5 lg:w-5 items-center justify-center rounded-full text-[9px] sm:text-[10px] lg:text-[11px] font-semibold"
+                  style={{
+                    backgroundColor: "#ef4444", // Tailwind red-500
+                    color: "#ffffff",
+                    border: "1px solid #ef4444",
+                  }}
+                >
                   {wishlistCount > 9 ? '9+' : wishlistCount}
                 </span>
               )}
@@ -71,14 +90,27 @@ const Header = () => {
           <Button
             variant="ghost"
             size="icon"
-            className={`group relative hover:bg-muted h-8 w-8 sm:h-9 sm:w-9 lg:h-10 lg:w-10 ${theme === 'dark' ? 'text-white' : 'text-black'} hover:!text-black`}
+            className={`group relative h-8 w-8 sm:h-9 sm:w-9 lg:h-10 lg:w-10 rounded-xl border border-transparent transition-colors ${
+              isCartActive
+                ? 'bg-gray-700 text-white'
+                : theme === 'dark'
+                  ? 'text-white hover:bg-gray-700/70'
+                  : 'text-black hover:bg-gray-100'
+            }`}
             aria-label="Cart"
             asChild
           >
             <Link to="/cart" className="inline-flex">
               <ShoppingCart className="h-5 w-5 sm:h-5 sm:w-5 lg:h-6 lg:w-6 stroke-[2.5] [color:inherit]" />
               {cartCount > 0 && (
-                <span className={`absolute right-0 top-0 flex h-4 w-4 sm:h-4 sm:w-4 lg:h-5 lg:w-5 items-center justify-center rounded-full bg-background text-[9px] sm:text-[10px] lg:text-[11px] font-medium border border-background ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
+                <span
+                  className="absolute right-0 top-0 flex h-4 w-4 sm:h-4 sm:w-4 lg:h-5 lg:w-5 items-center justify-center rounded-full text-[9px] sm:text-[10px] lg:text-[11px] font-semibold"
+                  style={{
+                    backgroundColor: "#ef4444", // Tailwind red-500
+                    color: "#ffffff",
+                    border: "1px solid #ef4444",
+                  }}
+                >
                   {cartCount > 9 ? '9+' : cartCount}
                 </span>
               )}
@@ -89,13 +121,19 @@ const Header = () => {
           ) : (
             <Button 
               variant="ghost" 
-              size="icon" 
-              className="h-8 w-8 sm:h-9 sm:w-9 lg:h-10 lg:w-10 text-secondary-foreground hover:bg-secondary/40" 
+              size="icon"
+              className={`h-8 w-8 sm:h-9 sm:w-9 lg:h-10 lg:w-10 rounded-xl border border-transparent transition-colors ${
+                isAuthActive
+                  ? 'bg-gray-700 text-white'
+                  : theme === 'dark'
+                    ? 'text-white hover:bg-gray-700/70'
+                    : 'text-black hover:bg-gray-100'
+              }`} 
               aria-label="Login" 
               asChild
             >
               <Link to="/auth">
-                <User className="h-5 w-5 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-black stroke-[2.5]" style={{ color: theme === 'dark' ? '#ffffff' : '#000000' }} />
+                <User className="h-5 w-5 sm:h-5 sm:w-5 lg:h-6 lg:w-6 stroke-[2.5] [color:inherit]" />
               </Link>
             </Button>
           )}

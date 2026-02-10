@@ -1741,7 +1741,7 @@ const Checkout = () => {
       <div className="px-2 sm:px-4 lg:px-6 py-6 sm:py-10">
         <div className="mx-auto max-w-7xl">
           {/* Breadcrumb */}
-          <div className="mb-4 flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
+          {/* <div className="mb-4 flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
             <button className="hover:text-foreground cursor-pointer" onClick={() => {
               // Clear buy now product when navigating away
               sessionStorage.removeItem('buyNowProduct');
@@ -1757,8 +1757,9 @@ const Checkout = () => {
             }}>Cart</button>
           <span>/</span>
             <span className="text-foreground font-semibold">Checkout</span>
-        </div>
-
+        </div> */}
+        <br/>
+        <br/>
           <div className="mb-6">
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-center" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>Checkout</h1>
         </div>

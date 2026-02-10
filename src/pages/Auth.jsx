@@ -363,6 +363,8 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen bg-background width:1480px">
+      <br/>
+      <br/>
       <div className="flex items-center justify-center px-4 py-8 sm:py-12 width:1480px">
         <div className="w-full  auth-card" style={{width:"1480px"}}>
           <button 
@@ -370,7 +372,7 @@ const Auth = () => {
             onClick={() => navigate("/")}
           >
             <ArrowLeft className="h-3.5 w-3.5" /> 
-            <span>Back</span>
+            <span></span>
           </button>
           <div 
             className="w-full bg-card rounded-[24px] border border-border shadow-soft"

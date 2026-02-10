@@ -153,6 +153,8 @@ const FilteredProducts = () => {
     return (
       <div className="min-h-screen bg-gradient-to-b from-white via-[#f8f7ff] to-white dark:from-[#0f0a1a] dark:via-[#1a1526] dark:to-[#0f0a1a]">
         <div className="px-4 sm:px-6 py-10">
+          <br/>
+
           <div className="mx-auto max-w-7xl">
             <div className="text-center py-12">
               <p className="text-gray-600 dark:text-gray-400">Invalid filter type.</p>
@@ -169,6 +171,8 @@ const FilteredProducts = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-white via-[#f8f7ff] to-white dark:from-[#0f0a1a] dark:via-[#1a1526] dark:to-[#0f0a1a]">
       <div className="px-4 sm:px-6 py-10">
+        <br/>
+        <p/>
         <div className="mx-auto max-w-7xl space-y-8">
           <div className="flex items-center gap-4 flex-wrap">
             <button 
