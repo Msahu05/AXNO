@@ -62,6 +62,7 @@ const allowedOrigins = [
   "https://looklyn.in",
   "https://www.looklyn.in",
   "https://misitemized-janet-quodlibetical.ngrok-free.dev"
+  "https://looklynn.vercel.app"
 
 ];
 
